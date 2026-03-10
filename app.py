@@ -104,7 +104,12 @@ st.subheader("⚡ Canlı Oran Borsası (The-Odds-API)")
 
 api_c1, api_c2 = st.columns([2, 1])
 with api_c1:
-    api_key = st.text_input("The-Odds-API Anahtarı (Buraya Yapıştırın):", type="password")
+    # Bulut kasasından API anahtarını otomatik çekme
+    gizli_api = ""
+    if "API_KEY" in st.secrets:
+        gizli_api = st.secrets["API_KEY"]
+
+    api_key = st.text_input("The-Odds-API Anahtarı (Buraya Yapıştırın):", value=gizli_api, type="password")
 with api_c2:
     fetch_btn = st.button("🔄 Başlamamış Maçları Listele")
 
