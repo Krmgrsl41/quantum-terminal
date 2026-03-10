@@ -6,13 +6,12 @@ from scipy.stats import poisson
 import concurrent.futures
 import requests
 
-# --- QUANTUM DESIGN: V172 CHRONOS (GÜNLÜK ODAK & KRONOLOJİK SIRALAMA) ---
-st.set_page_config(page_title="V172 | QUANTUM CHRONOS", layout="wide", page_icon="⏳")
+# --- QUANTUM DESIGN: V173 PRO ANALYTICS (DETAYLI RADAR & RENKLİ KARTLAR) ---
+st.set_page_config(page_title="V173 | QUANTUM PRO", layout="wide", page_icon="💎")
 
 st.markdown("""
     <style>
     .stApp { background-color: #030507; color: #ffffff; }
-    .stMetric { background: #0c1015; border-radius: 12px; padding: 15px; border: 1px solid #1e2530; }
     div.stButton > button:first-child { background: linear-gradient(90deg, #d4af37, #ffcc00); color:black; border:none; font-weight:900; height: 3.5em; width: 100%; box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4); text-transform: uppercase; letter-spacing: 1px; }
     .news-card { background-color: #0c1015; padding: 15px; border-radius: 10px; border-left: 5px solid #d4af37; margin-top: 10px; }
     .score-row { background: #121820; padding: 8px; border-radius: 5px; margin-bottom: 5px; display: flex; justify-content: space-between; border: 1px solid #1e2530; font-family: monospace; }
@@ -23,7 +22,19 @@ st.markdown("""
     .ai-verdict-box { background: linear-gradient(145deg, #0a0a0a, #1a1500); border: 2px solid #d4af37; padding: 25px; border-radius: 15px; text-align: center; box-shadow: 0 0 20px rgba(212, 175, 55, 0.2); margin-top: 20px; }
     .match-count-badge { background: rgba(0, 255, 204, 0.1); border: 1px solid #00ffcc; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center; }
     .api-box { background: #0c1015; border: 1px solid #8a2be2; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
-    .scout-box { background: linear-gradient(145deg, #0a0a0a, #111827); border: 1px solid #00ffcc; padding: 15px; border-radius: 10px; margin-bottom: 20px; margin-top:20px; }
+    
+    /* V173 YENİ STİLLER: Pro Form Radarı ve Dinamik Kartlar */
+    .scout-box { background: linear-gradient(145deg, #0a0e14, #121820); border: 1px solid #00ffcc; padding: 20px; border-radius: 12px; margin-bottom: 25px; margin-top:20px; box-shadow: 0 4px 15px rgba(0, 255, 204, 0.1); }
+    .team-form-container { display: flex; justify-content: space-between; font-size: 15px; align-items: center; }
+    .badge-w { background-color: rgba(0, 255, 204, 0.2); color: #00ffcc; padding: 2px 6px; border-radius: 4px; font-weight: bold; border: 1px solid #00ffcc; margin: 0 2px;}
+    .badge-d { background-color: rgba(212, 175, 55, 0.2); color: #ffcc00; padding: 2px 6px; border-radius: 4px; font-weight: bold; border: 1px solid #ffcc00; margin: 0 2px;}
+    .badge-l { background-color: rgba(255, 75, 75, 0.2); color: #ff4b4b; padding: 2px 6px; border-radius: 4px; font-weight: bold; border: 1px solid #ff4b4b; margin: 0 2px;}
+    
+    .prob-card { background: #0c1015; border-radius: 10px; padding: 15px; text-align: center; border: 1px solid #1e2530; margin-bottom: 15px; transition: transform 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
+    .prob-card:hover { transform: translateY(-3px); }
+    .prob-title { color: #8b949e; font-size: 14px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
+    .prob-value { font-size: 32px; font-weight: 900; margin: 5px 0; text-shadow: 0 0 10px rgba(255,255,255,0.1); }
+    .prob-odd { color: #ffffff; font-size: 14px; background: #121820; padding: 3px 10px; border-radius: 15px; display: inline-block; border: 1px solid #333; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -92,12 +103,12 @@ with st.sidebar:
     kasa_miktari = st.number_input("Güncel Toplam Kasa (TL)", value=10000, step=500)
     st.markdown(f"<div style='background:#0c1015; padding:10px; border-radius:8px; border:1px solid #1e2530;'><b>Aktif Veri Havuzu:</b> {len(db):,} Maç</div>", unsafe_allow_html=True)
     st.divider()
-    st.info("⏳ V172 CHRONOS ODAK: Sadece bulunduğunuz gün oynanacak maçlar taranır. Liste her zaman en yakın saatten başlar.")
+    st.info("💎 V173 PRO ANALYTICS: Otomatik form radarı detaylandırıldı (Galibiyet/Beraberlik/Mağlubiyet) ve yapay zeka çıktıları görsel renk kodlarıyla güçlendirildi.")
 
 mevcut_ligler = ["TÜM DÜNYA (GLOBAL)"] + sorted([f"{k} | {v}" for k, v in LIG_MAP.items() if k in db['Div'].unique()])
 
-st.markdown("<h1 style='text-align:center; color:#d4af37;'>⏳ QUANTUM CHRONOS V172</h1>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align:center; color:#8b949e;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | Günlük Odak & Tam Otonom Form Motoru</p>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#d4af37;'>💎 QUANTUM PRO V173</h1>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align:center; color:#8b949e;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | Gelişmiş Dinamik Arayüz & Odaklı Radar</p>", unsafe_allow_html=True)
 
 st.markdown("<div class='api-box'>", unsafe_allow_html=True)
 st.subheader("⚡ Canlı Oran Borsası (Günün Hedefleri)")
@@ -130,12 +141,11 @@ if fetch_btn and api_key:
             ]
             
             soccer_count = 0
-            # Günün tarihini hesapla (UTC+3 Türkiye Saatine Göre)
             current_time_utc = datetime.datetime.now(datetime.timezone.utc)
             current_time_tr = current_time_utc + datetime.timedelta(hours=3)
             today_date = current_time_tr.date()
             
-            st.session_state.live_matches.clear() # Listeyi tertemiz sıfırla
+            st.session_state.live_matches.clear()
             
             for league in target_leagues:
                 url = f"https://api.the-odds-api.com/v4/sports/{league}/odds/?apiKey={clean_key}&regions=eu,uk&markets=h2h,totals&oddsFormat=decimal"
@@ -148,12 +158,10 @@ if fetch_btn and api_key:
                             match_time_utc = datetime.datetime.fromisoformat(m['commence_time'].replace('Z', '+00:00'))
                             local_time = match_time_utc + datetime.timedelta(hours=3)
                             
-                            # YENİ FİLTRE: Sadece bugün oynanacaklar VE henüz başlamamışlar
                             if match_time_utc > current_time_utc and local_time.date() == today_date:
                                 time_str = local_time.strftime('%H:%M')
                                 baslik = f"[{time_str}] {m['home_team']} - {m['away_team']} | ({m.get('sport_title', 'Lig')})"
                                 
-                                # Sıralama yapabilmek için zaman damgasını gizlice içine gömüyoruz
                                 m['_sort_time'] = match_time_utc.timestamp()
                                 st.session_state.live_matches[baslik] = m
                                 soccer_count += 1
@@ -170,7 +178,6 @@ if fetch_btn and api_key:
 if st.session_state.live_matches:
     sel_c1, sel_c2 = st.columns([3, 1])
     with sel_c1:
-        # YENİ SIRALAMA: İçine gömdüğümüz zaman damgasına göre (yakından uzağa) listele
         sorted_matches = sorted(list(st.session_state.live_matches.keys()), 
                                 key=lambda x: st.session_state.live_matches[x]['_sort_time'])
         secilen_mac = st.selectbox("Analiz Edilecek Maçı Seçin:", ["Listeden Seçiniz..."] + sorted_matches)
@@ -227,32 +234,39 @@ with c4:
     sec_lig = st.selectbox("Havuz Seçimi", mevcut_ligler)
     st.markdown("<p style='font-size:11px; color:#8b949e; margin-top:-10px;'><i>* UEFA, Japonya ve Kore maçları için TÜM DÜNYA seçili bırakın.</i></p>", unsafe_allow_html=True)
 
+# --- V173 YENİ DETAYLI FORM HESAPLAMA ---
 def get_recent_form(team_name, df):
     team_matches = df[(df['HomeTeam'].str.contains(team_name, case=False, na=False)) | 
                       (df['AwayTeam'].str.contains(team_name, case=False, na=False))].copy()
     if team_matches.empty:
-        return 0, 0, 0, 0
+        return 0, 0, 0, 0, 0, 0, 0
     
     last_5 = team_matches.tail(5)
-    pts = 0
-    gs = 0 
-    gc = 0 
-    games_played = len(last_5)
+    pts = 0; gs = 0; gc = 0; games_played = len(last_5)
+    w = 0; d = 0; l = 0
     
     for _, row in last_5.iterrows():
         is_home = team_name.lower() in str(row['HomeTeam']).lower()
         if is_home:
             gs += row.get('FTHG', 0)
             gc += row.get('FTAG', 0)
-            if row.get('FTR') == 'H': pts += 3
-            elif row.get('FTR') == 'D': pts += 1
+            if row.get('FTR') == 'H': pts += 3; w += 1
+            elif row.get('FTR') == 'D': pts += 1; d += 1
+            else: l += 1
         else:
             gs += row.get('FTAG', 0)
             gc += row.get('FTHG', 0)
-            if row.get('FTR') == 'A': pts += 3
-            elif row.get('FTR') == 'D': pts += 1
+            if row.get('FTR') == 'A': pts += 3; w += 1
+            elif row.get('FTR') == 'D': pts += 1; d += 1
+            else: l += 1
             
-    return pts, gs, gc, games_played
+    return pts, gs, gc, games_played, w, d, l
+
+# Renk belirleyici fonksiyon
+def get_color(prob):
+    if prob >= 60: return "#00ffcc" # Yeşil/Cyan (Güçlü)
+    elif prob >= 40: return "#ffcc00" # Sarı (Orta)
+    else: return "#ff4b4b" # Kırmızı (Zayıf)
 
 if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
     aktif_db = db.copy()
@@ -279,8 +293,9 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
 
     with st.spinner("Otomatik Form Radarı devrede, takımların son 5 maçı taranıyor..."):
         
-        ev_pts, ev_gs, ev_gc, ev_gp = get_recent_form(ev_t, db)
-        dep_pts, dep_gs, dep_gc, dep_gp = get_recent_form(dep_t, db)
+        # Güncellenmiş get_recent_form çağrısı
+        ev_pts, ev_gs, ev_gc, ev_gp, ev_w, ev_d, ev_l = get_recent_form(ev_t, db)
+        dep_pts, dep_gs, dep_gc, dep_gp, dep_w, dep_d, dep_l = get_recent_form(dep_t, db)
         
         ev_momentum = ((ev_pts / max(ev_gp, 1)) * 5 - 6) * 0.8 if ev_gp > 0 else 0
         dep_momentum = ((dep_pts / max(dep_gp, 1)) * 5 - 6) * 0.8 if dep_gp > 0 else 0
@@ -336,36 +351,102 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
         p_kgv = min(99.0, max(1.0, raw_p_kgv + (total_form * 1.0)))
         p_kgy = 100 - p_kgv
 
+        # --- YENİ GÖRSEL: DETAYLI FORM RADARI ---
         st.markdown(f"""
         <div class='scout-box'>
-            <h4 style='color:#00ffcc; margin-top:0; margin-bottom:10px;'>📡 Otomatik Form Radarı (Son {max(ev_gp, dep_gp, 5)} Maç)</h4>
-            <div style='display:flex; justify-content:space-between; font-size:14px;'>
-                <div>
-                    <span style='color:#8b949e;'>🔵 {ev_t} (Ev Sahibi):</span><br>
-                    <b>Puan: {ev_pts}</b> | Atılan: {ev_gs} | Yenilen: {ev_gc}<br>
-                    <span style='font-size:11px; color: {"#00ffcc" if ev_momentum>0 else "#ff4b4b"};'>İvme (Momentum): {ev_momentum:.1f}</span>
+            <div style='display:flex; align-items:center; margin-bottom:15px; border-bottom:1px solid #1e2530; padding-bottom:10px;'>
+                <span style='font-size:20px; margin-right:10px;'>📡</span>
+                <h4 style='color:#00ffcc; margin:0;'>PRO Form Radarı (Son {max(ev_gp, dep_gp, 5)} Maç İstatistiği)</h4>
+            </div>
+            
+            <div class='team-form-container'>
+                <div style='flex:1; padding-right:10px;'>
+                    <div style='font-size:18px; font-weight:bold; color:#ffffff; margin-bottom:5px;'>🔵 {ev_t} (Ev)</div>
+                    <div style='margin-bottom:8px;'>
+                        <span class='badge-w'>{ev_w}G</span>
+                        <span class='badge-d'>{ev_d}B</span>
+                        <span class='badge-l'>{ev_l}M</span>
+                    </div>
+                    <div style='color:#8b949e; font-size:13px; line-height:1.6;'>
+                        <b>Toplanan Puan:</b> <span style='color:#fff'>{ev_pts}</span><br>
+                        <b>Gol (A/Y):</b> <span style='color:#00ffcc'>{ev_gs}</span> - <span style='color:#ff4b4b'>{ev_gc}</span><br>
+                        <b>Momentum İvmesi:</b> <span style='color: {"#00ffcc" if ev_momentum>0 else "#ff4b4b"}; font-weight:bold;'>{ev_momentum:.1f}</span>
+                    </div>
                 </div>
-                <div style='text-align:right;'>
-                    <span style='color:#8b949e;'>🔴 {dep_t} (Deplasman):</span><br>
-                    <b>Puan: {dep_pts}</b> | Atılan: {dep_gs} | Yenilen: {dep_gc}<br>
-                    <span style='font-size:11px; color: {"#00ffcc" if dep_momentum>0 else "#ff4b4b"};'>İvme (Momentum): {dep_momentum:.1f}</span>
+                
+                <div style='width:1px; background-color:#1e2530; margin:0 15px;'></div>
+                
+                <div style='flex:1; padding-left:10px; text-align:right;'>
+                    <div style='font-size:18px; font-weight:bold; color:#ffffff; margin-bottom:5px;'>🔴 {dep_t} (Dep)</div>
+                    <div style='margin-bottom:8px;'>
+                        <span class='badge-w'>{dep_w}G</span>
+                        <span class='badge-d'>{dep_d}B</span>
+                        <span class='badge-l'>{dep_l}M</span>
+                    </div>
+                    <div style='color:#8b949e; font-size:13px; line-height:1.6;'>
+                        <span style='color:#fff'>{dep_pts}</span> <b>:Toplanan Puan</b><br>
+                        <span style='color:#00ffcc'>{dep_gs}</span> - <span style='color:#ff4b4b'>{dep_gc}</span> <b>:(A/Y) Gol</b><br>
+                        <span style='color: {"#00ffcc" if dep_momentum>0 else "#ff4b4b"}; font-weight:bold;'>{dep_momentum:.1f}</span> <b>:Momentum İvmesi</b>
+                    </div>
                 </div>
             </div>
         </div>
         """, unsafe_allow_html=True)
         
+        # --- YENİ GÖRSEL: DİNAMİK RENKLİ İHTİMAL KARTLARI ---
+        st.markdown("<h3 style='margin-bottom:15px; color:#ffffff;'>📊 Taraf & Skor İhtimalleri</h3>", unsafe_allow_html=True)
         r1_c1, r1_c2, r1_c3 = st.columns(3)
-        r1_c1.metric(f"{ev_t} Kazanır", f"%{int(p_ms1)}", f"Oran: {ms1}", delta_color="off")
-        r1_c2.metric("Beraberlik", f"%{int(p_msx)}", f"Oran: {msx}", delta_color="off")
-        r1_c3.metric(f"{dep_t} Kazanır", f"%{int(p_ms2)}", f"Oran: {ms2}", delta_color="off")
-
-        st.divider()
+        
+        r1_c1.markdown(f"""
+        <div class='prob-card' style='border-top: 4px solid {get_color(p_ms1)};'>
+            <div class='prob-title'>{ev_t} Kazanır</div>
+            <div class='prob-value' style='color:{get_color(p_ms1)};'>%{int(p_ms1)}</div>
+            <div class='prob-odd'>Oran: {ms1}</div>
+        </div>""", unsafe_allow_html=True)
+        
+        r1_c2.markdown(f"""
+        <div class='prob-card' style='border-top: 4px solid {get_color(p_msx)};'>
+            <div class='prob-title'>Beraberlik</div>
+            <div class='prob-value' style='color:{get_color(p_msx)};'>%{int(p_msx)}</div>
+            <div class='prob-odd'>Oran: {msx}</div>
+        </div>""", unsafe_allow_html=True)
+        
+        r1_c3.markdown(f"""
+        <div class='prob-card' style='border-top: 4px solid {get_color(p_ms2)};'>
+            <div class='prob-title'>{dep_t} Kazanır</div>
+            <div class='prob-value' style='color:{get_color(p_ms2)};'>%{int(p_ms2)}</div>
+            <div class='prob-odd'>Oran: {ms2}</div>
+        </div>""", unsafe_allow_html=True)
 
         r2_c1, r2_c2, r2_c3, r2_c4 = st.columns(4)
-        r2_c1.metric("2.5 ÜST", f"%{int(p_u25)}", f"Oran: {u25}", delta_color="off")
-        r2_c2.metric("2.5 ALT", f"%{int(p_a25)}", f"Oran: {a25}", delta_color="off")
-        r2_c3.metric("KG VAR", f"%{int(p_kgv)}", f"Oran: {kgv}", delta_color="off")
-        r2_c4.metric("KG YOK", f"%{int(p_kgy)}", f"Oran: {kgy}", delta_color="off")
+        
+        r2_c1.markdown(f"""
+        <div class='prob-card' style='border-top: 4px solid {get_color(p_u25)};'>
+            <div class='prob-title'>2.5 ÜST</div>
+            <div class='prob-value' style='color:{get_color(p_u25)};'>%{int(p_u25)}</div>
+            <div class='prob-odd'>Oran: {u25}</div>
+        </div>""", unsafe_allow_html=True)
+
+        r2_c2.markdown(f"""
+        <div class='prob-card' style='border-top: 4px solid {get_color(p_a25)};'>
+            <div class='prob-title'>2.5 ALT</div>
+            <div class='prob-value' style='color:{get_color(p_a25)};'>%{int(p_a25)}</div>
+            <div class='prob-odd'>Oran: {a25}</div>
+        </div>""", unsafe_allow_html=True)
+
+        r2_c3.markdown(f"""
+        <div class='prob-card' style='border-top: 4px solid {get_color(p_kgv)};'>
+            <div class='prob-title'>KG VAR</div>
+            <div class='prob-value' style='color:{get_color(p_kgv)};'>%{int(p_kgv)}</div>
+            <div class='prob-odd'>Oran: {kgv}</div>
+        </div>""", unsafe_allow_html=True)
+
+        r2_c4.markdown(f"""
+        <div class='prob-card' style='border-top: 4px solid {get_color(p_kgy)};'>
+            <div class='prob-title'>KG YOK</div>
+            <div class='prob-value' style='color:{get_color(p_kgy)};'>%{int(p_kgy)}</div>
+            <div class='prob-odd'>Oran: {kgy}</div>
+        </div>""", unsafe_allow_html=True)
 
         st.divider()
 
