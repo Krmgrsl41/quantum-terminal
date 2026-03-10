@@ -6,8 +6,8 @@ from scipy.stats import poisson
 import concurrent.futures
 import requests
 
-# --- QUANTUM DESIGN: V176 TIMEWEAVER (KRONOLOJİK DÜZELTME & FORM ZİNCİRİ) ---
-st.set_page_config(page_title="V176 | QUANTUM PRO", layout="wide", page_icon="💎")
+# --- QUANTUM DESIGN: V177 THE ARCHITECT (MUTLAK KRONOLOJİ & POISSON SKOR MATRİSİ) ---
+st.set_page_config(page_title="V177 | QUANTUM PRO", layout="wide", page_icon="💎")
 
 st.markdown("""
     <style>
@@ -85,11 +85,13 @@ def load_quantum_data():
     with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
         results = list(executor.map(fetch_and_verify, urls_to_fetch))
         
-    for res_df in results:
-        if not res_df.empty:
-            dfs.append(res_df)
-            
-    return pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
+    if dfs:
+        res_df = pd.concat(dfs, ignore_index=True)
+        # --- KRONOLOJİK DÜZELTME (HAYALET HATA ÇÖZÜMÜ) ---
+        res_df['Date_Parsed'] = pd.to_datetime(res_df['Date'], dayfirst=True, errors='coerce')
+        res_df = res_df.sort_values(['Season', 'Date_Parsed']).reset_index(drop=True)
+        return res_df
+    return pd.DataFrame()
 
 db = load_quantum_data()
 
@@ -98,12 +100,12 @@ with st.sidebar:
     kasa_miktari = st.number_input("Güncel Toplam Kasa (TL)", value=10000, step=500)
     st.markdown(f"<div style='background:#0c1015; padding:10px; border-radius:8px; border:1px solid #1e2530;'><b>Aktif Veri Havuzu:</b> {len(db):,} Maç</div>", unsafe_allow_html=True)
     st.divider()
-    st.info("💎 V176 TIMEWEAVER: Tarih karmaşası giderildi. Son 5 maç istatistiği artık kronolojik olarak kesin doğru sonuçları ve sıralı form dizilimini verir.")
+    st.info("💎 V177 THE ARCHITECT: Tüm veritabanı milisaniyesine kadar kronolojik sıralandı. Skor grafiği yapay zeka xG'sine senkronize edildi.")
 
 mevcut_ligler = ["TÜM DÜNYA (GLOBAL)"] + sorted([f"{k} | {v}" for k, v in LIG_MAP.items() if k in db['Div'].unique()])
 
-st.markdown("<h1 style='text-align:center; color:#d4af37;'>💎 QUANTUM PRO V176</h1>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align:center; color:#8b949e;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | Kronolojik Form Motoru & Kusursuz Radar</p>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#d4af37;'>💎 QUANTUM PRO V177</h1>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align:center; color:#8b949e;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | Senkronize Algoritma & Kusursuz Radar</p>", unsafe_allow_html=True)
 
 st.markdown("<div class='api-box'>", unsafe_allow_html=True)
 st.subheader("⚡ Canlı Oran Borsası (Günün Hedefleri)")
@@ -227,23 +229,19 @@ with c4:
     ev_t = st.text_input("Ev Sahibi", value=st.session_state.ev_t)
     dep_t = st.text_input("Deplasman", value=st.session_state.dep_t)
     sec_lig = st.selectbox("Havuz Seçimi", mevcut_ligler)
-    st.markdown("<p style='font-size:11px; color:#8b949e; margin-top:-10px;'><i>* UEFA, Asya ve Kupa maçları için TÜM DÜNYA seçili bırakın.</i></p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size:11px; color:#8b949e; margin-top:-10px;'><i>* UEFA, Japonya ve Kore maçları için TÜM DÜNYA seçili bırakın.</i></p>", unsafe_allow_html=True)
 
-# --- V176 HATA DÜZELTMESİ (GHOST BUG FIX) ---
 def get_recent_form(team_name, df):
     team_matches = df[(df['HomeTeam'].str.contains(team_name, case=False, na=False)) | 
                       (df['AwayTeam'].str.contains(team_name, case=False, na=False))].copy()
     if team_matches.empty:
         return 0, 0, 0, 0, 0, 0, 0, []
     
-    # Tarihi gerçek takvim zamanına çevirip KRONOLOJİK sıralıyoruz!
-    team_matches['Date_Parsed'] = pd.to_datetime(team_matches['Date'], dayfirst=True, errors='coerce')
-    team_matches = team_matches.sort_values('Date_Parsed').dropna(subset=['Date_Parsed'])
-    
+    # Global db zaten kronolojik olduğu için doğrudan tail(5) en güncel 5 maçtır.
     last_5 = team_matches.tail(5)
     pts = 0; gs = 0; gc = 0; games_played = len(last_5)
     w = 0; d = 0; l = 0
-    seq = [] # Form Zinciri Listesi
+    seq = []
     
     for _, row in last_5.iterrows():
         is_home = team_name.lower() in str(row['HomeTeam']).lower()
@@ -267,7 +265,6 @@ def get_color(prob):
     elif prob >= 40: return "#ffcc00" 
     else: return "#ff4b4b" 
 
-# Form Zinciri HTML Oluşturucu
 def build_seq_html(seq, align="left"):
     if not seq: return ""
     boxes = ""
@@ -276,10 +273,9 @@ def build_seq_html(seq, align="left"):
         elif res == 'B': boxes += "<span style='background:#ffcc00; color:#000; padding:2px 6px; border-radius:3px; font-weight:bold; margin-right:4px;'>B</span>"
         elif res == 'M': boxes += "<span style='background:#ff4b4b; color:#fff; padding:2px 6px; border-radius:3px; font-weight:bold; margin-right:4px;'>M</span>"
 
-    if align == "left":
-        return f"<div style='margin-top:10px; display:flex; align-items:center; font-size:12px;'>{boxes}<span style='color:#8b949e; font-style:italic; margin-left:4px;'>⬅️ Son Maç</span></div>"
-    else:
-        return f"<div style='margin-top:10px; display:flex; align-items:center; justify-content:flex-end; font-size:12px;'><span style='color:#8b949e; font-style:italic; margin-right:8px;'>Son Maç ➡️</span>{boxes}</div>"
+    justify = "flex-start" if align == "left" else "flex-end"
+    # Her iki taraf için de "Yeni Maç" yönünü standartlaştırdım.
+    return f"<div style='margin-top:10px; display:flex; align-items:center; justify-content:{justify}; font-size:12px;'>{boxes}<span style='color:#8b949e; font-style:italic; margin-left:4px;'>⬅️ Son Maç</span></div>"
 
 if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
     aktif_db = db.copy()
@@ -304,7 +300,7 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
         lig_u25_avg = (aktif_db['FTHG'] + aktif_db['FTAG'] > 2.5).mean()
         league_u25_mod = lig_u25_avg / global_u25_avg if global_u25_avg > 0 else 1.0
 
-    with st.spinner("Otomatik Form Radarı devrede, takımların son 5 maçı kronolojik olarak taranıyor..."):
+    with st.spinner("Otomatik Form Radarı devrede, takımların güncel formu ve xG senkronizasyonu yapılıyor..."):
         
         ev_pts, ev_gs, ev_gc, ev_gp, ev_w, ev_d, ev_l, ev_seq = get_recent_form(ev_t, db)
         dep_pts, dep_gs, dep_gc, dep_gp, dep_w, dep_d, dep_l, dep_seq = get_recent_form(dep_t, db)
@@ -537,18 +533,22 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
                 )
 
         with det_r:
-            st.subheader("📈 Tarihsel Skor Matrisi")
-            harman_hg = np.nan_to_num((benzer['FTHG'].mean() + ev_xg) / 2, nan=1.0)
-            harman_ag = np.nan_to_num((benzer['FTAG'].mean() + dep_xg) / 2, nan=1.0)
+            st.subheader("📈 Dinamik Skor Matrisi (Poisson)")
             
-            benzer_skor = benzer.dropna(subset=['FTHG', 'FTAG']).copy()
-            benzer_skor['Skor'] = benzer_skor['FTHG'].astype(int).astype(str) + "-" + benzer_skor['FTAG'].astype(int).astype(str)
-            skor_counts = benzer_skor['Skor'].value_counts()
+            # YENİ POISSON MATRİSİ: Artık geçmişe değil, Yapay Zekanın form destekli beklentisine bakar!
+            score_probs = {}
+            for h in range(5):
+                for a in range(5):
+                    # poisson.pmf olasılığı x 100 ile yüzdeye çevirilir
+                    prob = poisson.pmf(h, ev_xg) * poisson.pmf(a, dep_xg) * 100
+                    score_probs[f"{h}-{a}"] = prob
+                    
+            sorted_scores = sorted(score_probs.items(), key=lambda x: x[1], reverse=True)[:6]
             
-            st.markdown("<p style='color:#8b949e; font-size:13px; margin-bottom:5px;'>En Olası Skor Dağılımı Grafiği:</p>", unsafe_allow_html=True)
+            st.markdown("<p style='color:#8b949e; font-size:13px; margin-bottom:5px;'>Yapay Zeka Formüllerine Göre En Olası Skorlar:</p>", unsafe_allow_html=True)
             chart_data = pd.DataFrame({
-                "Skorlar": list(skor_counts.head(6).keys()),
-                "İhtimal (%)": [int((c / len(benzer_skor)) * 100) for c in skor_counts.head(6).values]
+                "Skorlar": [s[0] for s in sorted_scores],
+                "İhtimal (%)": [int(s[1]) for s in sorted_scores]
             }).set_index("Skorlar")
             st.bar_chart(chart_data, color="#d4af37", height=200)
             
