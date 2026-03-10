@@ -6,8 +6,8 @@ from scipy.stats import poisson
 import concurrent.futures
 import requests
 
-# --- QUANTUM DESIGN: V175 FLAWLESS CORE (KUSURSUZ ARAYÜZ & SIFIR HATA) ---
-st.set_page_config(page_title="V175 | QUANTUM PRO", layout="wide", page_icon="💎")
+# --- QUANTUM DESIGN: V176 TIMEWEAVER (KRONOLOJİK DÜZELTME & FORM ZİNCİRİ) ---
+st.set_page_config(page_title="V176 | QUANTUM PRO", layout="wide", page_icon="💎")
 
 st.markdown("""
     <style>
@@ -98,12 +98,12 @@ with st.sidebar:
     kasa_miktari = st.number_input("Güncel Toplam Kasa (TL)", value=10000, step=500)
     st.markdown(f"<div style='background:#0c1015; padding:10px; border-radius:8px; border:1px solid #1e2530;'><b>Aktif Veri Havuzu:</b> {len(db):,} Maç</div>", unsafe_allow_html=True)
     st.divider()
-    st.info("💎 V175 FLAWLESS: Görsel hatalar tamamen giderildi. Kusursuz entegrasyon sağlandı.")
+    st.info("💎 V176 TIMEWEAVER: Tarih karmaşası giderildi. Son 5 maç istatistiği artık kronolojik olarak kesin doğru sonuçları ve sıralı form dizilimini verir.")
 
 mevcut_ligler = ["TÜM DÜNYA (GLOBAL)"] + sorted([f"{k} | {v}" for k, v in LIG_MAP.items() if k in db['Div'].unique()])
 
-st.markdown("<h1 style='text-align:center; color:#d4af37;'>💎 QUANTUM PRO V175</h1>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align:center; color:#8b949e;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | Gelişmiş Dinamik Arayüz & Odaklı Radar</p>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#d4af37;'>💎 QUANTUM PRO V176</h1>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align:center; color:#8b949e;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | Kronolojik Form Motoru & Kusursuz Radar</p>", unsafe_allow_html=True)
 
 st.markdown("<div class='api-box'>", unsafe_allow_html=True)
 st.subheader("⚡ Canlı Oran Borsası (Günün Hedefleri)")
@@ -227,39 +227,59 @@ with c4:
     ev_t = st.text_input("Ev Sahibi", value=st.session_state.ev_t)
     dep_t = st.text_input("Deplasman", value=st.session_state.dep_t)
     sec_lig = st.selectbox("Havuz Seçimi", mevcut_ligler)
-    st.markdown("<p style='font-size:11px; color:#8b949e; margin-top:-10px;'><i>* UEFA, Japonya ve Kore maçları için TÜM DÜNYA seçili bırakın.</i></p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size:11px; color:#8b949e; margin-top:-10px;'><i>* UEFA, Asya ve Kupa maçları için TÜM DÜNYA seçili bırakın.</i></p>", unsafe_allow_html=True)
 
+# --- V176 HATA DÜZELTMESİ (GHOST BUG FIX) ---
 def get_recent_form(team_name, df):
     team_matches = df[(df['HomeTeam'].str.contains(team_name, case=False, na=False)) | 
                       (df['AwayTeam'].str.contains(team_name, case=False, na=False))].copy()
     if team_matches.empty:
-        return 0, 0, 0, 0, 0, 0, 0
+        return 0, 0, 0, 0, 0, 0, 0, []
+    
+    # Tarihi gerçek takvim zamanına çevirip KRONOLOJİK sıralıyoruz!
+    team_matches['Date_Parsed'] = pd.to_datetime(team_matches['Date'], dayfirst=True, errors='coerce')
+    team_matches = team_matches.sort_values('Date_Parsed').dropna(subset=['Date_Parsed'])
     
     last_5 = team_matches.tail(5)
     pts = 0; gs = 0; gc = 0; games_played = len(last_5)
     w = 0; d = 0; l = 0
+    seq = [] # Form Zinciri Listesi
     
     for _, row in last_5.iterrows():
         is_home = team_name.lower() in str(row['HomeTeam']).lower()
         if is_home:
             gs += row.get('FTHG', 0)
             gc += row.get('FTAG', 0)
-            if row.get('FTR') == 'H': pts += 3; w += 1
-            elif row.get('FTR') == 'D': pts += 1; d += 1
-            else: l += 1
+            if row.get('FTR') == 'H': pts += 3; w += 1; seq.append('G')
+            elif row.get('FTR') == 'D': pts += 1; d += 1; seq.append('B')
+            else: l += 1; seq.append('M')
         else:
             gs += row.get('FTAG', 0)
             gc += row.get('FTHG', 0)
-            if row.get('FTR') == 'A': pts += 3; w += 1
-            elif row.get('FTR') == 'D': pts += 1; d += 1
-            else: l += 1
+            if row.get('FTR') == 'A': pts += 3; w += 1; seq.append('G')
+            elif row.get('FTR') == 'D': pts += 1; d += 1; seq.append('B')
+            else: l += 1; seq.append('M')
             
-    return pts, gs, gc, games_played, w, d, l
+    return pts, gs, gc, games_played, w, d, l, seq
 
 def get_color(prob):
     if prob >= 60: return "#00ffcc" 
     elif prob >= 40: return "#ffcc00" 
     else: return "#ff4b4b" 
+
+# Form Zinciri HTML Oluşturucu
+def build_seq_html(seq, align="left"):
+    if not seq: return ""
+    boxes = ""
+    for res in seq:
+        if res == 'G': boxes += "<span style='background:#00ffcc; color:#000; padding:2px 6px; border-radius:3px; font-weight:bold; margin-right:4px;'>G</span>"
+        elif res == 'B': boxes += "<span style='background:#ffcc00; color:#000; padding:2px 6px; border-radius:3px; font-weight:bold; margin-right:4px;'>B</span>"
+        elif res == 'M': boxes += "<span style='background:#ff4b4b; color:#fff; padding:2px 6px; border-radius:3px; font-weight:bold; margin-right:4px;'>M</span>"
+
+    if align == "left":
+        return f"<div style='margin-top:10px; display:flex; align-items:center; font-size:12px;'>{boxes}<span style='color:#8b949e; font-style:italic; margin-left:4px;'>⬅️ Son Maç</span></div>"
+    else:
+        return f"<div style='margin-top:10px; display:flex; align-items:center; justify-content:flex-end; font-size:12px;'><span style='color:#8b949e; font-style:italic; margin-right:8px;'>Son Maç ➡️</span>{boxes}</div>"
 
 if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
     aktif_db = db.copy()
@@ -284,10 +304,10 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
         lig_u25_avg = (aktif_db['FTHG'] + aktif_db['FTAG'] > 2.5).mean()
         league_u25_mod = lig_u25_avg / global_u25_avg if global_u25_avg > 0 else 1.0
 
-    with st.spinner("Otomatik Form Radarı devrede, takımların son 5 maçı taranıyor..."):
+    with st.spinner("Otomatik Form Radarı devrede, takımların son 5 maçı kronolojik olarak taranıyor..."):
         
-        ev_pts, ev_gs, ev_gc, ev_gp, ev_w, ev_d, ev_l = get_recent_form(ev_t, db)
-        dep_pts, dep_gs, dep_gc, dep_gp, dep_w, dep_d, dep_l = get_recent_form(dep_t, db)
+        ev_pts, ev_gs, ev_gc, ev_gp, ev_w, ev_d, ev_l, ev_seq = get_recent_form(ev_t, db)
+        dep_pts, dep_gs, dep_gc, dep_gp, dep_w, dep_d, dep_l, dep_seq = get_recent_form(dep_t, db)
         
         ev_momentum = ((ev_pts / max(ev_gp, 1)) * 5 - 6) * 0.8 if ev_gp > 0 else 0
         dep_momentum = ((dep_pts / max(dep_gp, 1)) * 5 - 6) * 0.8 if dep_gp > 0 else 0
@@ -345,6 +365,9 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
 
         ev_color = "#00ffcc" if ev_momentum > 0 else "#ff4b4b"
         dep_color = "#00ffcc" if dep_momentum > 0 else "#ff4b4b"
+        
+        ev_seq_html = build_seq_html(ev_seq, "left")
+        dep_seq_html = build_seq_html(dep_seq, "right")
 
         form_radar_html = (
             f"<div class='scout-box'>"
@@ -365,6 +388,7 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
             f"<b>Gol (A/Y):</b> <span style='color:#00ffcc'>{ev_gs}</span> - <span style='color:#ff4b4b'>{ev_gc}</span><br>"
             f"<b>Momentum İvmesi:</b> <span style='color: {ev_color}; font-weight:bold;'>{ev_momentum:.1f}</span>"
             f"</div>"
+            f"{ev_seq_html}"
             f"</div>"
             f"<div style='width:1px; background-color:#1e2530; margin:0 15px;'></div>"
             f"<div style='flex:1; padding-left:10px; text-align:right;'>"
@@ -379,6 +403,7 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
             f"<span style='color:#00ffcc'>{dep_gs}</span> - <span style='color:#ff4b4b'>{dep_gc}</span> <b>:(A/Y) Gol</b><br>"
             f"<span style='color: {dep_color}; font-weight:bold;'>{dep_momentum:.1f}</span> <b>:Momentum İvmesi</b>"
             f"</div>"
+            f"{dep_seq_html}"
             f"</div>"
             f"</div>"
             f"</div>"
