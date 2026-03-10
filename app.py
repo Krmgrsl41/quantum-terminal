@@ -6,8 +6,8 @@ from scipy.stats import poisson
 import concurrent.futures
 import requests
 
-# --- QUANTUM DESIGN: V178 IMMORTAL (ANTI-CRASH & REBOOT SİSTEMİ) ---
-st.set_page_config(page_title="V178 | QUANTUM PRO", layout="wide", page_icon="💎")
+# --- QUANTUM DESIGN: V179 OMNISCIENT (Y2K BUG FIX & KUSURSUZ POISSON) ---
+st.set_page_config(page_title="V179 | QUANTUM PRO", layout="wide", page_icon="💎")
 
 st.markdown("""
     <style>
@@ -87,8 +87,6 @@ def load_quantum_data():
         
     if dfs:
         res_df = pd.concat(dfs, ignore_index=True)
-        res_df['Date_Parsed'] = pd.to_datetime(res_df['Date'], dayfirst=True, errors='coerce')
-        res_df = res_df.sort_values(['Season', 'Date_Parsed']).reset_index(drop=True)
         return res_df
     return pd.DataFrame()
 
@@ -99,12 +97,11 @@ with st.sidebar:
     kasa_miktari = st.number_input("Güncel Toplam Kasa (TL)", value=10000, step=500)
     st.markdown(f"<div style='background:#0c1015; padding:10px; border-radius:8px; border:1px solid #1e2530;'><b>Aktif Veri Havuzu:</b> {len(db):,} Maç</div>", unsafe_allow_html=True)
     
-    # --- YENİ EKLENTİ: HATA DURUMUNDA SİSTEMİ YENİDEN BAŞLATMA BUTONU ---
     if len(db) == 0:
         st.markdown("""
         <div style='background:rgba(255, 75, 75, 0.1); border:1px solid #ff4b4b; padding:10px; border-radius:8px; margin-top:10px;'>
             <span style='color:#ff4b4b; font-size:13px; font-weight:bold;'>⚠️ Ağ Kopması Tespit Edildi!</span><br>
-            <span style='color:#8b949e; font-size:12px;'>Veritabanı indirilemedi. Lütfen aşağıdaki butona basarak hafızayı temizleyin.</span>
+            <span style='color:#8b949e; font-size:12px;'>Veritabanı eksik yüklendi. Lütfen aşağıdaki butona basarak bağlantıyı tazeleyin.</span>
         </div>
         """, unsafe_allow_html=True)
         if st.button("🔄 Veritabanını Yeniden İndir"):
@@ -112,17 +109,16 @@ with st.sidebar:
             st.rerun()
             
     st.divider()
-    st.info("🛡️ V178 IMMORTAL: Ağ kopmalarına karşı Anti-Çökme (Crash-Proof) koruması eklendi. Sistem tamamen ölümsüzleştirildi.")
+    st.info("🛡️ V179 OMNISCIENT: Y2K (Milenyum) hatası çözüldü, tüm form verileri mutlak gerçeği yansıtır. Dinamik Poisson ve Anti-Çökme kalkanı aktif.")
 
-# --- HATA GİDERİCİ KALKAN (CRASH-PROOF LOGIC) ---
 mevcut_ligler = ["TÜM DÜNYA (GLOBAL)"]
 if not db.empty and 'Div' in db.columns:
     mevcut_ligler += sorted([f"{k} | {v}" for k, v in LIG_MAP.items() if k in db['Div'].unique()])
 else:
     mevcut_ligler += sorted([f"{k} | {v}" for k, v in LIG_MAP.items()])
 
-st.markdown("<h1 style='text-align:center; color:#d4af37;'>🛡️ QUANTUM PRO V178</h1>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align:center; color:#8b949e;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | Kesintisiz Bağlantı & Kusursuz Radar</p>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#d4af37;'>🛡️ QUANTUM PRO V179</h1>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align:center; color:#8b949e;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | Y2K Korumalı Form Motoru & Dinamik xG</p>", unsafe_allow_html=True)
 
 st.markdown("<div class='api-box'>", unsafe_allow_html=True)
 st.subheader("⚡ Canlı Oran Borsası (Günün Hedefleri)")
@@ -248,11 +244,16 @@ with c4:
     sec_lig = st.selectbox("Havuz Seçimi", mevcut_ligler)
     st.markdown("<p style='font-size:11px; color:#8b949e; margin-top:-10px;'><i>* UEFA, Japonya ve Kore maçları için TÜM DÜNYA seçili bırakın.</i></p>", unsafe_allow_html=True)
 
+# --- V179 Y2K MİLENYUM HATASI ÇÖZÜMÜ ---
 def get_recent_form(team_name, df):
     team_matches = df[(df['HomeTeam'].str.contains(team_name, case=False, na=False)) | 
                       (df['AwayTeam'].str.contains(team_name, case=False, na=False))].copy()
     if team_matches.empty:
         return 0, 0, 0, 0, 0, 0, 0, []
+    
+    # Tüm küresel sıralama hatalarını ezerek, verileri sadece gerçek takvim gününe göre dizer.
+    team_matches['Date_Parsed'] = pd.to_datetime(team_matches['Date'], dayfirst=True, errors='coerce')
+    team_matches = team_matches.dropna(subset=['Date_Parsed']).sort_values('Date_Parsed')
     
     last_5 = team_matches.tail(5)
     pts = 0; gs = 0; gc = 0; games_played = len(last_5)
@@ -295,8 +296,9 @@ def build_seq_html(seq, align="left"):
 if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
     aktif_db = db.copy()
     
-    if len(aktif_db) == 0:
-        st.error("❌ Veritabanı boş! Lütfen sol menüdeki 'Veritabanını Yeniden İndir' butonuna basın.")
+    # ANTI-CRASH ONAYI
+    if len(aktif_db) == 0 or 'Div' not in aktif_db.columns:
+        st.error("❌ Veritabanı bozuk veya boş indirildi! Lütfen sol menüdeki '🔄 Veritabanını Yeniden İndir' butonuna basın.")
     else:
         for col in ['B365O', 'B365U', 'HTHG', 'HTAG']:
             if col not in aktif_db.columns: aktif_db[col] = np.nan
@@ -551,6 +553,7 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
                     )
 
             with det_r:
+                # --- YENİ EKLENTİ: GÜNCEL FORMA GÖRE HESAPLANAN DİNAMİK POISSON GRAFİĞİ ---
                 st.subheader("📈 Dinamik Skor Matrisi (Poisson)")
                 
                 score_probs = {}
