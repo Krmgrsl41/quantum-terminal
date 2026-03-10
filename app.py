@@ -6,8 +6,8 @@ from scipy.stats import poisson
 import concurrent.futures
 import requests
 
-# --- QUANTUM DESIGN: V177 THE ARCHITECT (MUTLAK KRONOLOJİ & POISSON SKOR MATRİSİ) ---
-st.set_page_config(page_title="V177 | QUANTUM PRO", layout="wide", page_icon="💎")
+# --- QUANTUM DESIGN: V178 IMMORTAL (ANTI-CRASH & REBOOT SİSTEMİ) ---
+st.set_page_config(page_title="V178 | QUANTUM PRO", layout="wide", page_icon="💎")
 
 st.markdown("""
     <style>
@@ -87,7 +87,6 @@ def load_quantum_data():
         
     if dfs:
         res_df = pd.concat(dfs, ignore_index=True)
-        # --- KRONOLOJİK DÜZELTME (HAYALET HATA ÇÖZÜMÜ) ---
         res_df['Date_Parsed'] = pd.to_datetime(res_df['Date'], dayfirst=True, errors='coerce')
         res_df = res_df.sort_values(['Season', 'Date_Parsed']).reset_index(drop=True)
         return res_df
@@ -99,13 +98,31 @@ with st.sidebar:
     st.markdown("<h2 style='color:#d4af37;'>👑 Kasa & Finans Yönetimi</h2>", unsafe_allow_html=True)
     kasa_miktari = st.number_input("Güncel Toplam Kasa (TL)", value=10000, step=500)
     st.markdown(f"<div style='background:#0c1015; padding:10px; border-radius:8px; border:1px solid #1e2530;'><b>Aktif Veri Havuzu:</b> {len(db):,} Maç</div>", unsafe_allow_html=True)
+    
+    # --- YENİ EKLENTİ: HATA DURUMUNDA SİSTEMİ YENİDEN BAŞLATMA BUTONU ---
+    if len(db) == 0:
+        st.markdown("""
+        <div style='background:rgba(255, 75, 75, 0.1); border:1px solid #ff4b4b; padding:10px; border-radius:8px; margin-top:10px;'>
+            <span style='color:#ff4b4b; font-size:13px; font-weight:bold;'>⚠️ Ağ Kopması Tespit Edildi!</span><br>
+            <span style='color:#8b949e; font-size:12px;'>Veritabanı indirilemedi. Lütfen aşağıdaki butona basarak hafızayı temizleyin.</span>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("🔄 Veritabanını Yeniden İndir"):
+            st.cache_data.clear()
+            st.rerun()
+            
     st.divider()
-    st.info("💎 V177 THE ARCHITECT: Tüm veritabanı milisaniyesine kadar kronolojik sıralandı. Skor grafiği yapay zeka xG'sine senkronize edildi.")
+    st.info("🛡️ V178 IMMORTAL: Ağ kopmalarına karşı Anti-Çökme (Crash-Proof) koruması eklendi. Sistem tamamen ölümsüzleştirildi.")
 
-mevcut_ligler = ["TÜM DÜNYA (GLOBAL)"] + sorted([f"{k} | {v}" for k, v in LIG_MAP.items() if k in db['Div'].unique()])
+# --- HATA GİDERİCİ KALKAN (CRASH-PROOF LOGIC) ---
+mevcut_ligler = ["TÜM DÜNYA (GLOBAL)"]
+if not db.empty and 'Div' in db.columns:
+    mevcut_ligler += sorted([f"{k} | {v}" for k, v in LIG_MAP.items() if k in db['Div'].unique()])
+else:
+    mevcut_ligler += sorted([f"{k} | {v}" for k, v in LIG_MAP.items()])
 
-st.markdown("<h1 style='text-align:center; color:#d4af37;'>💎 QUANTUM PRO V177</h1>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align:center; color:#8b949e;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | Senkronize Algoritma & Kusursuz Radar</p>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#d4af37;'>🛡️ QUANTUM PRO V178</h1>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align:center; color:#8b949e;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | Kesintisiz Bağlantı & Kusursuz Radar</p>", unsafe_allow_html=True)
 
 st.markdown("<div class='api-box'>", unsafe_allow_html=True)
 st.subheader("⚡ Canlı Oran Borsası (Günün Hedefleri)")
@@ -237,7 +254,6 @@ def get_recent_form(team_name, df):
     if team_matches.empty:
         return 0, 0, 0, 0, 0, 0, 0, []
     
-    # Global db zaten kronolojik olduğu için doğrudan tail(5) en güncel 5 maçtır.
     last_5 = team_matches.tail(5)
     pts = 0; gs = 0; gc = 0; games_played = len(last_5)
     w = 0; d = 0; l = 0
@@ -274,306 +290,306 @@ def build_seq_html(seq, align="left"):
         elif res == 'M': boxes += "<span style='background:#ff4b4b; color:#fff; padding:2px 6px; border-radius:3px; font-weight:bold; margin-right:4px;'>M</span>"
 
     justify = "flex-start" if align == "left" else "flex-end"
-    # Her iki taraf için de "Yeni Maç" yönünü standartlaştırdım.
     return f"<div style='margin-top:10px; display:flex; align-items:center; justify-content:{justify}; font-size:12px;'>{boxes}<span style='color:#8b949e; font-style:italic; margin-left:4px;'>⬅️ Son Maç</span></div>"
 
 if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
     aktif_db = db.copy()
     
-    for col in ['B365O', 'B365U', 'HTHG', 'HTAG']:
-        if col not in aktif_db.columns: aktif_db[col] = np.nan
-        
-    lig_kodu = None
-    if sec_lig != "TÜM DÜNYA (GLOBAL)":
-        lig_kodu = sec_lig.split(" | ")[0]
-        aktif_db = aktif_db[aktif_db['Div'] == lig_kodu]
-
-    ev_gecmis = aktif_db[aktif_db['HomeTeam'].str.contains(ev_t, case=False, na=False, regex=False)] if 'HomeTeam' in aktif_db.columns else pd.DataFrame()
-    dep_gecmis = aktif_db[aktif_db['AwayTeam'].str.contains(dep_t, case=False, na=False, regex=False)] if 'AwayTeam' in aktif_db.columns else pd.DataFrame()
-    
-    ham_ev_xg = ev_gecmis['FTHG'].mean() if not ev_gecmis.empty and 'FTHG' in ev_gecmis.columns else 1.5
-    ham_dep_xg = dep_gecmis['FTAG'].mean() if not dep_gecmis.empty and 'FTAG' in dep_gecmis.columns else 1.1
-
-    global_u25_avg = (db['FTHG'] + db['FTAG'] > 2.5).mean() if 'FTHG' in db.columns else 0.5
-    league_u25_mod = 1.0
-    if lig_kodu and 'FTHG' in aktif_db.columns:
-        lig_u25_avg = (aktif_db['FTHG'] + aktif_db['FTAG'] > 2.5).mean()
-        league_u25_mod = lig_u25_avg / global_u25_avg if global_u25_avg > 0 else 1.0
-
-    with st.spinner("Otomatik Form Radarı devrede, takımların güncel formu ve xG senkronizasyonu yapılıyor..."):
-        
-        ev_pts, ev_gs, ev_gc, ev_gp, ev_w, ev_d, ev_l, ev_seq = get_recent_form(ev_t, db)
-        dep_pts, dep_gs, dep_gc, dep_gp, dep_w, dep_d, dep_l, dep_seq = get_recent_form(dep_t, db)
-        
-        ev_momentum = ((ev_pts / max(ev_gp, 1)) * 5 - 6) * 0.8 if ev_gp > 0 else 0
-        dep_momentum = ((dep_pts / max(dep_gp, 1)) * 5 - 6) * 0.8 if dep_gp > 0 else 0
-
-        hassasiyet = 0.05
-        while hassasiyet <= 0.40:
-            aktif_db['diff'] = np.sqrt((aktif_db['B365H']-ms1)**2 + (aktif_db['B365A']-ms2)**2 + (aktif_db['B365O'].fillna(u25)-u25)**2)
-            benzer = aktif_db[aktif_db['diff'] <= hassasiyet].sort_values('diff')
-            if len(benzer) >= 20: break
-            hassasiyet += 0.05
-
-    if len(benzer) >= 10:
-        benzer = benzer.head(75) 
-        
-        season_weights = {'2526': 2.0, '2425': 1.8, '2324': 1.6, '2223': 1.4, '2122': 1.2, '2021': 1.0, '1920': 0.8, '1819': 0.7, '1718': 0.6, '1617': 0.5, '1516': 0.4, '1415': 0.3, '1314': 0.2, '1213': 0.1, '1112': 0.1, '1011': 0.1}
-        benzer['s_weight'] = benzer['Season'].map(season_weights).fillna(0.1)
-        
-        if lig_kodu is None:
-            benzer['l_weight'] = benzer['Div'].map(LEAGUE_WEIGHTS).fillna(0.8)
-        else:
-            benzer['l_weight'] = 1.0 
-            
-        benzer['weight'] = (1 / (benzer['diff'] + 0.01)) * benzer['s_weight'] * benzer['l_weight']
-        w_sum = benzer['weight'].sum()
-
-        raw_p_ms1 = (benzer[benzer['FTR']=='H']['weight'].sum() / w_sum) * 100 if 'FTR' in benzer.columns else 0
-        raw_p_msx = (benzer[benzer['FTR']=='D']['weight'].sum() / w_sum) * 100 if 'FTR' in benzer.columns else 0
-        raw_p_ms2 = (benzer[benzer['FTR']=='A']['weight'].sum() / w_sum) * 100 if 'FTR' in benzer.columns else 0
-        
-        raw_p_u25 = min(99.0, ((benzer[(benzer['FTHG']+benzer['FTAG'])>2.5]['weight'].sum() / w_sum) * 100) * league_u25_mod) if 'FTHG' in benzer.columns else 0
-        raw_p_a25 = 100 - raw_p_u25 if raw_p_u25 > 0 else 0
-        raw_p_kgv = min(99.0, ((benzer[(benzer['FTHG']>0) & (benzer['FTAG']>0)]['weight'].sum() / w_sum) * 100) * league_u25_mod) if 'FTHG' in benzer.columns else 0
-        raw_p_kgy = 100 - raw_p_kgv if raw_p_kgv > 0 else 0
-
-        ev_sapma = ev_momentum * 1.5
-        dep_sapma = dep_momentum * 1.5
-        
-        p_ms1 = max(0.1, raw_p_ms1 + ev_sapma - (dep_sapma * 0.5))
-        p_ms2 = max(0.1, raw_p_ms2 + dep_sapma - (ev_sapma * 0.5))
-        p_msx = max(0.1, 100 - (p_ms1 + p_ms2)) 
-        
-        toplam_ms = p_ms1 + p_msx + p_ms2
-        p_ms1 = (p_ms1 / toplam_ms) * 100
-        p_msx = (p_msx / toplam_ms) * 100
-        p_ms2 = (p_ms2 / toplam_ms) * 100
-        
-        ev_xg = max(0.1, ham_ev_xg + (ev_momentum * 0.05))
-        dep_xg = max(0.1, ham_dep_xg + (dep_momentum * 0.05))
-
-        total_form = ev_momentum + dep_momentum
-        p_u25 = min(99.0, max(1.0, raw_p_u25 + (total_form * 1.0)))
-        p_a25 = 100 - p_u25
-        p_kgv = min(99.0, max(1.0, raw_p_kgv + (total_form * 1.0)))
-        p_kgy = 100 - p_kgv
-
-        ev_color = "#00ffcc" if ev_momentum > 0 else "#ff4b4b"
-        dep_color = "#00ffcc" if dep_momentum > 0 else "#ff4b4b"
-        
-        ev_seq_html = build_seq_html(ev_seq, "left")
-        dep_seq_html = build_seq_html(dep_seq, "right")
-
-        form_radar_html = (
-            f"<div class='scout-box'>"
-            f"<div style='display:flex; align-items:center; margin-bottom:15px; border-bottom:1px solid #1e2530; padding-bottom:10px;'>"
-            f"<span style='font-size:20px; margin-right:10px;'>📡</span>"
-            f"<h4 style='color:#00ffcc; margin:0;'>PRO Form Radarı (Son {max(ev_gp, dep_gp, 5)} Maç İstatistiği)</h4>"
-            f"</div>"
-            f"<div class='team-form-container'>"
-            f"<div style='flex:1; padding-right:10px;'>"
-            f"<div style='font-size:18px; font-weight:bold; color:#ffffff; margin-bottom:5px;'>🔵 {ev_t} (Ev)</div>"
-            f"<div style='margin-bottom:8px;'>"
-            f"<span class='badge-w'>{ev_w}G</span>"
-            f"<span class='badge-d'>{ev_d}B</span>"
-            f"<span class='badge-l'>{ev_l}M</span>"
-            f"</div>"
-            f"<div style='color:#8b949e; font-size:13px; line-height:1.6;'>"
-            f"<b>Toplanan Puan:</b> <span style='color:#fff'>{ev_pts}</span><br>"
-            f"<b>Gol (A/Y):</b> <span style='color:#00ffcc'>{ev_gs}</span> - <span style='color:#ff4b4b'>{ev_gc}</span><br>"
-            f"<b>Momentum İvmesi:</b> <span style='color: {ev_color}; font-weight:bold;'>{ev_momentum:.1f}</span>"
-            f"</div>"
-            f"{ev_seq_html}"
-            f"</div>"
-            f"<div style='width:1px; background-color:#1e2530; margin:0 15px;'></div>"
-            f"<div style='flex:1; padding-left:10px; text-align:right;'>"
-            f"<div style='font-size:18px; font-weight:bold; color:#ffffff; margin-bottom:5px;'>🔴 {dep_t} (Dep)</div>"
-            f"<div style='margin-bottom:8px;'>"
-            f"<span class='badge-w'>{dep_w}G</span>"
-            f"<span class='badge-d'>{dep_d}B</span>"
-            f"<span class='badge-l'>{dep_l}M</span>"
-            f"</div>"
-            f"<div style='color:#8b949e; font-size:13px; line-height:1.6;'>"
-            f"<span style='color:#fff'>{dep_pts}</span> <b>:Toplanan Puan</b><br>"
-            f"<span style='color:#00ffcc'>{dep_gs}</span> - <span style='color:#ff4b4b'>{dep_gc}</span> <b>:(A/Y) Gol</b><br>"
-            f"<span style='color: {dep_color}; font-weight:bold;'>{dep_momentum:.1f}</span> <b>:Momentum İvmesi</b>"
-            f"</div>"
-            f"{dep_seq_html}"
-            f"</div>"
-            f"</div>"
-            f"</div>"
-        )
-        st.markdown(form_radar_html, unsafe_allow_html=True)
-        
-        st.markdown("<h3 style='margin-bottom:15px; color:#ffffff;'>📊 Taraf & Skor İhtimalleri</h3>", unsafe_allow_html=True)
-        r1_c1, r1_c2, r1_c3 = st.columns(3)
-        
-        p_ms1_c = get_color(p_ms1)
-        r1_c1.markdown(
-            f"<div class='prob-card' style='border-top: 4px solid {p_ms1_c};'>"
-            f"<div class='prob-title'>{ev_t} Kazanır</div>"
-            f"<div class='prob-value' style='color:{p_ms1_c};'>%{int(p_ms1)}</div>"
-            f"<div class='prob-odd'>Oran: {ms1}</div>"
-            f"</div>", unsafe_allow_html=True)
-        
-        p_msx_c = get_color(p_msx)
-        r1_c2.markdown(
-            f"<div class='prob-card' style='border-top: 4px solid {p_msx_c};'>"
-            f"<div class='prob-title'>Beraberlik</div>"
-            f"<div class='prob-value' style='color:{p_msx_c};'>%{int(p_msx)}</div>"
-            f"<div class='prob-odd'>Oran: {msx}</div>"
-            f"</div>", unsafe_allow_html=True)
-        
-        p_ms2_c = get_color(p_ms2)
-        r1_c3.markdown(
-            f"<div class='prob-card' style='border-top: 4px solid {p_ms2_c};'>"
-            f"<div class='prob-title'>{dep_t} Kazanır</div>"
-            f"<div class='prob-value' style='color:{p_ms2_c};'>%{int(p_ms2)}</div>"
-            f"<div class='prob-odd'>Oran: {ms2}</div>"
-            f"</div>", unsafe_allow_html=True)
-
-        r2_c1, r2_c2, r2_c3, r2_c4 = st.columns(4)
-        
-        p_u25_c = get_color(p_u25)
-        r2_c1.markdown(
-            f"<div class='prob-card' style='border-top: 4px solid {p_u25_c};'>"
-            f"<div class='prob-title'>2.5 ÜST</div>"
-            f"<div class='prob-value' style='color:{p_u25_c};'>%{int(p_u25)}</div>"
-            f"<div class='prob-odd'>Oran: {u25}</div>"
-            f"</div>", unsafe_allow_html=True)
-
-        p_a25_c = get_color(p_a25)
-        r2_c2.markdown(
-            f"<div class='prob-card' style='border-top: 4px solid {p_a25_c};'>"
-            f"<div class='prob-title'>2.5 ALT</div>"
-            f"<div class='prob-value' style='color:{p_a25_c};'>%{int(p_a25)}</div>"
-            f"<div class='prob-odd'>Oran: {a25}</div>"
-            f"</div>", unsafe_allow_html=True)
-
-        p_kgv_c = get_color(p_kgv)
-        r2_c3.markdown(
-            f"<div class='prob-card' style='border-top: 4px solid {p_kgv_c};'>"
-            f"<div class='prob-title'>KG VAR</div>"
-            f"<div class='prob-value' style='color:{p_kgv_c};'>%{int(p_kgv)}</div>"
-            f"<div class='prob-odd'>Oran: {kgv}</div>"
-            f"</div>", unsafe_allow_html=True)
-
-        p_kgy_c = get_color(p_kgy)
-        r2_c4.markdown(
-            f"<div class='prob-card' style='border-top: 4px solid {p_kgy_c};'>"
-            f"<div class='prob-title'>KG YOK</div>"
-            f"<div class='prob-value' style='color:{p_kgy_c};'>%{int(p_kgy)}</div>"
-            f"<div class='prob-odd'>Oran: {kgy}</div>"
-            f"</div>", unsafe_allow_html=True)
-
-        st.divider()
-
-        targets = [
-            ("MS 1", p_ms1, ms1), ("MS X", p_msx, msx), ("MS 2", p_ms2, ms2), 
-            ("2.5 Üst", p_u25, u25), ("2.5 Alt", p_a25, a25),
-            ("KG Var", p_kgv, kgv), ("KG Yok", p_kgy, kgy)
-        ]
-
-        det_l, det_r = st.columns(2)
-        with det_l:
-            st.subheader("🧠 Tam Otonom Banko Tahmini")
-            
-            en_guvenilir_tahmin = None
-            en_yuksek_ihtimal = -1
-            
-            for t in targets:
-                name, prob, odd = t
-                if prob > en_yuksek_ihtimal:
-                    en_yuksek_ihtimal = prob
-                    en_guvenilir_tahmin = t
-
-            name, prob, odd = en_guvenilir_tahmin
-            
-            b_val = odd - 1
-            p_val = prob / 100
-            q_val = 1 - p_val
-            kelly_fraction = ((b_val * p_val) - q_val) / b_val if b_val > 0 else 0
-            quarter_kelly = max(0, (kelly_fraction / 4))
-            
-            if quarter_kelly > 0:
-                onerilen_yatirim = min(kasa_miktari * quarter_kelly, kasa_miktari * 0.05)
-                yatirim_notu = f"<b style='color:#00ffcc; font-size:16px;'>💰 Güvenli Kasa Oranı (Kelly): {int(onerilen_yatirim)} TL</b>"
-            else:
-                yatirim_notu = f"<span style='color:#ffcc00; font-size:14px;'>⚠️ Oran düşük olduğu için uzun vadeli yatırım değil, günlük banko/kombine bahsidir.</span>"
-            
-            ai_mesaj = f"Takımların güncel form momentumunu otomatik olarak ölçtüm ve 25 yıllık veriyle harmanladım. Bu maçta ihtimali en yüksek senaryo şudur:"
-
-            ai_verdict_html = (
-                f"<div class='ai-verdict-box'>"
-                f"<p style='color:#8b949e; font-size:14px; text-align:left; font-style:italic;'>\"{ai_mesaj}\"</p>"
-                f"<h1 style='color:#d4af37; font-size: 40px; margin: 10px 0;'>🎯 {name} 🎯</h1>"
-                f"<div style='display: flex; justify-content: space-around; margin: 20px 0;'>"
-                f"<div><span style='color:#8b949e;'>Dinamik İhtimal:</span><br><b style='font-size:24px; color:#00ffcc;'>%{int(prob)}</b></div>"
-                f"<div><span style='color:#8b949e;'>Piyasa Oranı:</span><br><b style='font-size:24px;'>{odd:.2f}</b></div>"
-                f"</div>"
-                f"<hr style='border-color: #333;'>"
-                f"{yatirim_notu}"
-                f"</div>"
-            )
-            st.markdown(ai_verdict_html, unsafe_allow_html=True)
-
-            st.divider()
-            
-            st.subheader("🏆 İhtimal Hiyerarşisi")
-            sirali_ihtimaller = sorted(targets, key=lambda x: x[1], reverse=True)
-            for i, (isim, i_prob, i_odd) in enumerate(sirali_ihtimaller):
-                renk = "#00ffcc" if i_prob >= 60 else ("#d4af37" if i_prob >= 40 else "#ff4b4b")
-                st.markdown(
-                    f"<div class='rank-row' style='border-left: 5px solid {renk}; margin-bottom: 5px;'>"
-                    f"<span style='font-size: 15px;'><b>{i+1}.</b> {isim}</span>"
-                    f"<span style='color:{renk}; font-weight:900; font-size:18px;'>%{int(i_prob)}</span>"
-                    f"</div>", 
-                    unsafe_allow_html=True
-                )
-
-        with det_r:
-            st.subheader("📈 Dinamik Skor Matrisi (Poisson)")
-            
-            # YENİ POISSON MATRİSİ: Artık geçmişe değil, Yapay Zekanın form destekli beklentisine bakar!
-            score_probs = {}
-            for h in range(5):
-                for a in range(5):
-                    # poisson.pmf olasılığı x 100 ile yüzdeye çevirilir
-                    prob = poisson.pmf(h, ev_xg) * poisson.pmf(a, dep_xg) * 100
-                    score_probs[f"{h}-{a}"] = prob
-                    
-            sorted_scores = sorted(score_probs.items(), key=lambda x: x[1], reverse=True)[:6]
-            
-            st.markdown("<p style='color:#8b949e; font-size:13px; margin-bottom:5px;'>Yapay Zeka Formüllerine Göre En Olası Skorlar:</p>", unsafe_allow_html=True)
-            chart_data = pd.DataFrame({
-                "Skorlar": [s[0] for s in sorted_scores],
-                "İhtimal (%)": [int(s[1]) for s in sorted_scores]
-            }).set_index("Skorlar")
-            st.bar_chart(chart_data, color="#d4af37", height=200)
-            
-            st.divider()
-
-            xg_html = (
-                f"<div style='background:#121820; padding:20px; border-radius:10px; border-left:5px solid #8a2be2; border: 1px solid #1e2530;'>"
-                f"<h4 style='color:#8a2be2; margin-top:0; margin-bottom:15px;'>⚽ Güncel xG Beklentisi (Form Destekli)</h4>"
-                f"<div style='display:flex; justify-content:space-between; align-items:center;'>"
-                f"<div>"
-                f"<span style='color:#8b949e; font-size:14px;'>{ev_t} (Ev) xG:</span><br>"
-                f"<b style='font-size:24px; color:#ffffff;'>{ev_xg:.2f}</b>"
-                f"</div>"
-                f"<div>"
-                f"<span style='color:#8b949e; font-size:14px;'>{dep_t} (Dep) xG:</span><br>"
-                f"<b style='font-size:24px; color:#ffffff;'>{dep_xg:.2f}</b>"
-                f"</div>"
-                f"<div style='text-align:right;'>"
-                f"<span style='color:#8b949e; font-size:14px;'>Maçın Toplam xG'si:</span><br>"
-                f"<b style='font-size:26px; color:#00ffcc;'>{(ev_xg + dep_xg):.2f}</b>"
-                f"</div>"
-                f"</div>"
-                f"</div>"
-            )
-            st.markdown(xg_html, unsafe_allow_html=True)
-
+    if len(aktif_db) == 0:
+        st.error("❌ Veritabanı boş! Lütfen sol menüdeki 'Veritabanını Yeniden İndir' butonuna basın.")
     else:
-        st.error("❌ Veritabanında hiçbir istatistiksel geçerliliği olan benzer maç bulunamadı.")
+        for col in ['B365O', 'B365U', 'HTHG', 'HTAG']:
+            if col not in aktif_db.columns: aktif_db[col] = np.nan
+            
+        lig_kodu = None
+        if sec_lig != "TÜM DÜNYA (GLOBAL)":
+            lig_kodu = sec_lig.split(" | ")[0]
+            aktif_db = aktif_db[aktif_db['Div'] == lig_kodu]
+
+        ev_gecmis = aktif_db[aktif_db['HomeTeam'].str.contains(ev_t, case=False, na=False, regex=False)] if 'HomeTeam' in aktif_db.columns else pd.DataFrame()
+        dep_gecmis = aktif_db[aktif_db['AwayTeam'].str.contains(dep_t, case=False, na=False, regex=False)] if 'AwayTeam' in aktif_db.columns else pd.DataFrame()
+        
+        ham_ev_xg = ev_gecmis['FTHG'].mean() if not ev_gecmis.empty and 'FTHG' in ev_gecmis.columns else 1.5
+        ham_dep_xg = dep_gecmis['FTAG'].mean() if not dep_gecmis.empty and 'FTAG' in dep_gecmis.columns else 1.1
+
+        global_u25_avg = (db['FTHG'] + db['FTAG'] > 2.5).mean() if 'FTHG' in db.columns else 0.5
+        league_u25_mod = 1.0
+        if lig_kodu and 'FTHG' in aktif_db.columns:
+            lig_u25_avg = (aktif_db['FTHG'] + aktif_db['FTAG'] > 2.5).mean()
+            league_u25_mod = lig_u25_avg / global_u25_avg if global_u25_avg > 0 else 1.0
+
+        with st.spinner("Otomatik Form Radarı devrede, takımların güncel formu ve xG senkronizasyonu yapılıyor..."):
+            
+            ev_pts, ev_gs, ev_gc, ev_gp, ev_w, ev_d, ev_l, ev_seq = get_recent_form(ev_t, db)
+            dep_pts, dep_gs, dep_gc, dep_gp, dep_w, dep_d, dep_l, dep_seq = get_recent_form(dep_t, db)
+            
+            ev_momentum = ((ev_pts / max(ev_gp, 1)) * 5 - 6) * 0.8 if ev_gp > 0 else 0
+            dep_momentum = ((dep_pts / max(dep_gp, 1)) * 5 - 6) * 0.8 if dep_gp > 0 else 0
+
+            hassasiyet = 0.05
+            while hassasiyet <= 0.40:
+                aktif_db['diff'] = np.sqrt((aktif_db['B365H']-ms1)**2 + (aktif_db['B365A']-ms2)**2 + (aktif_db['B365O'].fillna(u25)-u25)**2)
+                benzer = aktif_db[aktif_db['diff'] <= hassasiyet].sort_values('diff')
+                if len(benzer) >= 20: break
+                hassasiyet += 0.05
+
+        if len(benzer) >= 10:
+            benzer = benzer.head(75) 
+            
+            season_weights = {'2526': 2.0, '2425': 1.8, '2324': 1.6, '2223': 1.4, '2122': 1.2, '2021': 1.0, '1920': 0.8, '1819': 0.7, '1718': 0.6, '1617': 0.5, '1516': 0.4, '1415': 0.3, '1314': 0.2, '1213': 0.1, '1112': 0.1, '1011': 0.1}
+            benzer['s_weight'] = benzer['Season'].map(season_weights).fillna(0.1)
+            
+            if lig_kodu is None:
+                benzer['l_weight'] = benzer['Div'].map(LEAGUE_WEIGHTS).fillna(0.8)
+            else:
+                benzer['l_weight'] = 1.0 
+                
+            benzer['weight'] = (1 / (benzer['diff'] + 0.01)) * benzer['s_weight'] * benzer['l_weight']
+            w_sum = benzer['weight'].sum()
+
+            raw_p_ms1 = (benzer[benzer['FTR']=='H']['weight'].sum() / w_sum) * 100 if 'FTR' in benzer.columns else 0
+            raw_p_msx = (benzer[benzer['FTR']=='D']['weight'].sum() / w_sum) * 100 if 'FTR' in benzer.columns else 0
+            raw_p_ms2 = (benzer[benzer['FTR']=='A']['weight'].sum() / w_sum) * 100 if 'FTR' in benzer.columns else 0
+            
+            raw_p_u25 = min(99.0, ((benzer[(benzer['FTHG']+benzer['FTAG'])>2.5]['weight'].sum() / w_sum) * 100) * league_u25_mod) if 'FTHG' in benzer.columns else 0
+            raw_p_a25 = 100 - raw_p_u25 if raw_p_u25 > 0 else 0
+            raw_p_kgv = min(99.0, ((benzer[(benzer['FTHG']>0) & (benzer['FTAG']>0)]['weight'].sum() / w_sum) * 100) * league_u25_mod) if 'FTHG' in benzer.columns else 0
+            raw_p_kgy = 100 - raw_p_kgv if raw_p_kgv > 0 else 0
+
+            ev_sapma = ev_momentum * 1.5
+            dep_sapma = dep_momentum * 1.5
+            
+            p_ms1 = max(0.1, raw_p_ms1 + ev_sapma - (dep_sapma * 0.5))
+            p_ms2 = max(0.1, raw_p_ms2 + dep_sapma - (ev_sapma * 0.5))
+            p_msx = max(0.1, 100 - (p_ms1 + p_ms2)) 
+            
+            toplam_ms = p_ms1 + p_msx + p_ms2
+            p_ms1 = (p_ms1 / toplam_ms) * 100
+            p_msx = (p_msx / toplam_ms) * 100
+            p_ms2 = (p_ms2 / toplam_ms) * 100
+            
+            ev_xg = max(0.1, ham_ev_xg + (ev_momentum * 0.05))
+            dep_xg = max(0.1, ham_dep_xg + (dep_momentum * 0.05))
+
+            total_form = ev_momentum + dep_momentum
+            p_u25 = min(99.0, max(1.0, raw_p_u25 + (total_form * 1.0)))
+            p_a25 = 100 - p_u25
+            p_kgv = min(99.0, max(1.0, raw_p_kgv + (total_form * 1.0)))
+            p_kgy = 100 - p_kgv
+
+            ev_color = "#00ffcc" if ev_momentum > 0 else "#ff4b4b"
+            dep_color = "#00ffcc" if dep_momentum > 0 else "#ff4b4b"
+            
+            ev_seq_html = build_seq_html(ev_seq, "left")
+            dep_seq_html = build_seq_html(dep_seq, "right")
+
+            form_radar_html = (
+                f"<div class='scout-box'>"
+                f"<div style='display:flex; align-items:center; margin-bottom:15px; border-bottom:1px solid #1e2530; padding-bottom:10px;'>"
+                f"<span style='font-size:20px; margin-right:10px;'>📡</span>"
+                f"<h4 style='color:#00ffcc; margin:0;'>PRO Form Radarı (Son {max(ev_gp, dep_gp, 5)} Maç İstatistiği)</h4>"
+                f"</div>"
+                f"<div class='team-form-container'>"
+                f"<div style='flex:1; padding-right:10px;'>"
+                f"<div style='font-size:18px; font-weight:bold; color:#ffffff; margin-bottom:5px;'>🔵 {ev_t} (Ev)</div>"
+                f"<div style='margin-bottom:8px;'>"
+                f"<span class='badge-w'>{ev_w}G</span>"
+                f"<span class='badge-d'>{ev_d}B</span>"
+                f"<span class='badge-l'>{ev_l}M</span>"
+                f"</div>"
+                f"<div style='color:#8b949e; font-size:13px; line-height:1.6;'>"
+                f"<b>Toplanan Puan:</b> <span style='color:#fff'>{ev_pts}</span><br>"
+                f"<b>Gol (A/Y):</b> <span style='color:#00ffcc'>{ev_gs}</span> - <span style='color:#ff4b4b'>{ev_gc}</span><br>"
+                f"<b>Momentum İvmesi:</b> <span style='color: {ev_color}; font-weight:bold;'>{ev_momentum:.1f}</span>"
+                f"</div>"
+                f"{ev_seq_html}"
+                f"</div>"
+                f"<div style='width:1px; background-color:#1e2530; margin:0 15px;'></div>"
+                f"<div style='flex:1; padding-left:10px; text-align:right;'>"
+                f"<div style='font-size:18px; font-weight:bold; color:#ffffff; margin-bottom:5px;'>🔴 {dep_t} (Dep)</div>"
+                f"<div style='margin-bottom:8px;'>"
+                f"<span class='badge-w'>{dep_w}G</span>"
+                f"<span class='badge-d'>{dep_d}B</span>"
+                f"<span class='badge-l'>{dep_l}M</span>"
+                f"</div>"
+                f"<div style='color:#8b949e; font-size:13px; line-height:1.6;'>"
+                f"<span style='color:#fff'>{dep_pts}</span> <b>:Toplanan Puan</b><br>"
+                f"<span style='color:#00ffcc'>{dep_gs}</span> - <span style='color:#ff4b4b'>{dep_gc}</span> <b>:(A/Y) Gol</b><br>"
+                f"<span style='color: {dep_color}; font-weight:bold;'>{dep_momentum:.1f}</span> <b>:Momentum İvmesi</b>"
+                f"</div>"
+                f"{dep_seq_html}"
+                f"</div>"
+                f"</div>"
+                f"</div>"
+            )
+            st.markdown(form_radar_html, unsafe_allow_html=True)
+            
+            st.markdown("<h3 style='margin-bottom:15px; color:#ffffff;'>📊 Taraf & Skor İhtimalleri</h3>", unsafe_allow_html=True)
+            r1_c1, r1_c2, r1_c3 = st.columns(3)
+            
+            p_ms1_c = get_color(p_ms1)
+            r1_c1.markdown(
+                f"<div class='prob-card' style='border-top: 4px solid {p_ms1_c};'>"
+                f"<div class='prob-title'>{ev_t} Kazanır</div>"
+                f"<div class='prob-value' style='color:{p_ms1_c};'>%{int(p_ms1)}</div>"
+                f"<div class='prob-odd'>Oran: {ms1}</div>"
+                f"</div>", unsafe_allow_html=True)
+            
+            p_msx_c = get_color(p_msx)
+            r1_c2.markdown(
+                f"<div class='prob-card' style='border-top: 4px solid {p_msx_c};'>"
+                f"<div class='prob-title'>Beraberlik</div>"
+                f"<div class='prob-value' style='color:{p_msx_c};'>%{int(p_msx)}</div>"
+                f"<div class='prob-odd'>Oran: {msx}</div>"
+                f"</div>", unsafe_allow_html=True)
+            
+            p_ms2_c = get_color(p_ms2)
+            r1_c3.markdown(
+                f"<div class='prob-card' style='border-top: 4px solid {p_ms2_c};'>"
+                f"<div class='prob-title'>{dep_t} Kazanır</div>"
+                f"<div class='prob-value' style='color:{p_ms2_c};'>%{int(p_ms2)}</div>"
+                f"<div class='prob-odd'>Oran: {ms2}</div>"
+                f"</div>", unsafe_allow_html=True)
+
+            r2_c1, r2_c2, r2_c3, r2_c4 = st.columns(4)
+            
+            p_u25_c = get_color(p_u25)
+            r2_c1.markdown(
+                f"<div class='prob-card' style='border-top: 4px solid {p_u25_c};'>"
+                f"<div class='prob-title'>2.5 ÜST</div>"
+                f"<div class='prob-value' style='color:{p_u25_c};'>%{int(p_u25)}</div>"
+                f"<div class='prob-odd'>Oran: {u25}</div>"
+                f"</div>", unsafe_allow_html=True)
+
+            p_a25_c = get_color(p_a25)
+            r2_c2.markdown(
+                f"<div class='prob-card' style='border-top: 4px solid {p_a25_c};'>"
+                f"<div class='prob-title'>2.5 ALT</div>"
+                f"<div class='prob-value' style='color:{p_a25_c};'>%{int(p_a25)}</div>"
+                f"<div class='prob-odd'>Oran: {a25}</div>"
+                f"</div>", unsafe_allow_html=True)
+
+            p_kgv_c = get_color(p_kgv)
+            r2_c3.markdown(
+                f"<div class='prob-card' style='border-top: 4px solid {p_kgv_c};'>"
+                f"<div class='prob-title'>KG VAR</div>"
+                f"<div class='prob-value' style='color:{p_kgv_c};'>%{int(p_kgv)}</div>"
+                f"<div class='prob-odd'>Oran: {kgv}</div>"
+                f"</div>", unsafe_allow_html=True)
+
+            p_kgy_c = get_color(p_kgy)
+            r2_c4.markdown(
+                f"<div class='prob-card' style='border-top: 4px solid {p_kgy_c};'>"
+                f"<div class='prob-title'>KG YOK</div>"
+                f"<div class='prob-value' style='color:{p_kgy_c};'>%{int(p_kgy)}</div>"
+                f"<div class='prob-odd'>Oran: {kgy}</div>"
+                f"</div>", unsafe_allow_html=True)
+
+            st.divider()
+
+            targets = [
+                ("MS 1", p_ms1, ms1), ("MS X", p_msx, msx), ("MS 2", p_ms2, ms2), 
+                ("2.5 Üst", p_u25, u25), ("2.5 Alt", p_a25, a25),
+                ("KG Var", p_kgv, kgv), ("KG Yok", p_kgy, kgy)
+            ]
+
+            det_l, det_r = st.columns(2)
+            with det_l:
+                st.subheader("🧠 Tam Otonom Banko Tahmini")
+                
+                en_guvenilir_tahmin = None
+                en_yuksek_ihtimal = -1
+                
+                for t in targets:
+                    name, prob, odd = t
+                    if prob > en_yuksek_ihtimal:
+                        en_yuksek_ihtimal = prob
+                        en_guvenilir_tahmin = t
+
+                name, prob, odd = en_guvenilir_tahmin
+                
+                b_val = odd - 1
+                p_val = prob / 100
+                q_val = 1 - p_val
+                kelly_fraction = ((b_val * p_val) - q_val) / b_val if b_val > 0 else 0
+                quarter_kelly = max(0, (kelly_fraction / 4))
+                
+                if quarter_kelly > 0:
+                    onerilen_yatirim = min(kasa_miktari * quarter_kelly, kasa_miktari * 0.05)
+                    yatirim_notu = f"<b style='color:#00ffcc; font-size:16px;'>💰 Güvenli Kasa Oranı (Kelly): {int(onerilen_yatirim)} TL</b>"
+                else:
+                    yatirim_notu = f"<span style='color:#ffcc00; font-size:14px;'>⚠️ Oran düşük olduğu için uzun vadeli yatırım değil, günlük banko/kombine bahsidir.</span>"
+                
+                ai_mesaj = f"Takımların güncel form momentumunu otomatik olarak ölçtüm ve 25 yıllık veriyle harmanladım. Bu maçta ihtimali en yüksek senaryo şudur:"
+
+                ai_verdict_html = (
+                    f"<div class='ai-verdict-box'>"
+                    f"<p style='color:#8b949e; font-size:14px; text-align:left; font-style:italic;'>\"{ai_mesaj}\"</p>"
+                    f"<h1 style='color:#d4af37; font-size: 40px; margin: 10px 0;'>🎯 {name} 🎯</h1>"
+                    f"<div style='display: flex; justify-content: space-around; margin: 20px 0;'>"
+                    f"<div><span style='color:#8b949e;'>Dinamik İhtimal:</span><br><b style='font-size:24px; color:#00ffcc;'>%{int(prob)}</b></div>"
+                    f"<div><span style='color:#8b949e;'>Piyasa Oranı:</span><br><b style='font-size:24px;'>{odd:.2f}</b></div>"
+                    f"</div>"
+                    f"<hr style='border-color: #333;'>"
+                    f"{yatirim_notu}"
+                    f"</div>"
+                )
+                st.markdown(ai_verdict_html, unsafe_allow_html=True)
+
+                st.divider()
+                
+                st.subheader("🏆 İhtimal Hiyerarşisi")
+                sirali_ihtimaller = sorted(targets, key=lambda x: x[1], reverse=True)
+                for i, (isim, i_prob, i_odd) in enumerate(sirali_ihtimaller):
+                    renk = "#00ffcc" if i_prob >= 60 else ("#d4af37" if i_prob >= 40 else "#ff4b4b")
+                    st.markdown(
+                        f"<div class='rank-row' style='border-left: 5px solid {renk}; margin-bottom: 5px;'>"
+                        f"<span style='font-size: 15px;'><b>{i+1}.</b> {isim}</span>"
+                        f"<span style='color:{renk}; font-weight:900; font-size:18px;'>%{int(i_prob)}</span>"
+                        f"</div>", 
+                        unsafe_allow_html=True
+                    )
+
+            with det_r:
+                st.subheader("📈 Dinamik Skor Matrisi (Poisson)")
+                
+                score_probs = {}
+                for h in range(5):
+                    for a in range(5):
+                        prob = poisson.pmf(h, ev_xg) * poisson.pmf(a, dep_xg) * 100
+                        score_probs[f"{h}-{a}"] = prob
+                        
+                sorted_scores = sorted(score_probs.items(), key=lambda x: x[1], reverse=True)[:6]
+                
+                st.markdown("<p style='color:#8b949e; font-size:13px; margin-bottom:5px;'>Yapay Zeka Formüllerine Göre En Olası Skorlar:</p>", unsafe_allow_html=True)
+                chart_data = pd.DataFrame({
+                    "Skorlar": [s[0] for s in sorted_scores],
+                    "İhtimal (%)": [int(s[1]) for s in sorted_scores]
+                }).set_index("Skorlar")
+                st.bar_chart(chart_data, color="#d4af37", height=200)
+                
+                st.divider()
+
+                xg_html = (
+                    f"<div style='background:#121820; padding:20px; border-radius:10px; border-left:5px solid #8a2be2; border: 1px solid #1e2530;'>"
+                    f"<h4 style='color:#8a2be2; margin-top:0; margin-bottom:15px;'>⚽ Güncel xG Beklentisi (Form Destekli)</h4>"
+                    f"<div style='display:flex; justify-content:space-between; align-items:center;'>"
+                    f"<div>"
+                    f"<span style='color:#8b949e; font-size:14px;'>{ev_t} (Ev) xG:</span><br>"
+                    f"<b style='font-size:24px; color:#ffffff;'>{ev_xg:.2f}</b>"
+                    f"</div>"
+                    f"<div>"
+                    f"<span style='color:#8b949e; font-size:14px;'>{dep_t} (Dep) xG:</span><br>"
+                    f"<b style='font-size:24px; color:#ffffff;'>{dep_xg:.2f}</b>"
+                    f"</div>"
+                    f"<div style='text-align:right;'>"
+                    f"<span style='color:#8b949e; font-size:14px;'>Maçın Toplam xG'si:</span><br>"
+                    f"<b style='font-size:26px; color:#00ffcc;'>{(ev_xg + dep_xg):.2f}</b>"
+                    f"</div>"
+                    f"</div>"
+                    f"</div>"
+                )
+                st.markdown(xg_html, unsafe_allow_html=True)
+
+        else:
+            st.error("❌ Veritabanında hiçbir istatistiksel geçerliliği olan benzer maç bulunamadı.")
