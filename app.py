@@ -6,8 +6,8 @@ from scipy.stats import poisson
 import concurrent.futures
 import requests
 
-# --- QUANTUM DESIGN: V171 GLOBAL EXPANSION (ASYA & ALT LİGLER) ---
-st.set_page_config(page_title="V171 | QUANTUM GLOBAL", layout="wide", page_icon="🌍")
+# --- QUANTUM DESIGN: V172 CHRONOS (GÜNLÜK ODAK & KRONOLOJİK SIRALAMA) ---
+st.set_page_config(page_title="V172 | QUANTUM CHRONOS", layout="wide", page_icon="⏳")
 
 st.markdown("""
     <style>
@@ -92,15 +92,15 @@ with st.sidebar:
     kasa_miktari = st.number_input("Güncel Toplam Kasa (TL)", value=10000, step=500)
     st.markdown(f"<div style='background:#0c1015; padding:10px; border-radius:8px; border:1px solid #1e2530;'><b>Aktif Veri Havuzu:</b> {len(db):,} Maç</div>", unsafe_allow_html=True)
     st.divider()
-    st.info("🌍 V171 GLOBAL EXPANSION: Çıta yükseltildi! Artık Japonya, G.Kore ve Avrupa'nın Majör Alt Ligleri de radarımıza dahil edildi.")
+    st.info("⏳ V172 CHRONOS ODAK: Sadece bulunduğunuz gün oynanacak maçlar taranır. Liste her zaman en yakın saatten başlar.")
 
 mevcut_ligler = ["TÜM DÜNYA (GLOBAL)"] + sorted([f"{k} | {v}" for k, v in LIG_MAP.items() if k in db['Div'].unique()])
 
-st.markdown("<h1 style='text-align:center; color:#d4af37;'>🌍 QUANTUM GLOBAL V171</h1>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align:center; color:#8b949e;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | Asya, Alt Ligler ve Avrupa Kupaları Hedefli Radar</p>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#d4af37;'>⏳ QUANTUM CHRONOS V172</h1>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align:center; color:#8b949e;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | Günlük Odak & Tam Otonom Form Motoru</p>", unsafe_allow_html=True)
 
 st.markdown("<div class='api-box'>", unsafe_allow_html=True)
-st.subheader("⚡ Canlı Oran Borsası (The-Odds-API)")
+st.subheader("⚡ Canlı Oran Borsası (Günün Hedefleri)")
 
 api_c1, api_c2 = st.columns([2, 1])
 with api_c1:
@@ -110,17 +110,15 @@ with api_c1:
     api_key = st.text_input("The-Odds-API Anahtarı (Bulut Kasasına Kilitli):", value=gizli_api, type="password")
     
 with api_c2:
-    fetch_btn = st.button("🔄 Hedef 19 Ligdeki Maçları Bul")
+    fetch_btn = st.button("🔄 Bugünün Fırsatlarını Bul")
 
 if 'live_matches' not in st.session_state:
     st.session_state.live_matches = {}
 
-# --- V171 ASYA VE ALT LİG GENİŞLEMESİ ---
 if fetch_btn and api_key:
-    with st.spinner("Küresel radar devrede! Asya, Avrupa ve Alt Ligler taranıyor..."):
+    with st.spinner("Bugün oynanacak maçlar aranıyor ve saati yaklaşanlar öne alınıyor..."):
         try:
             clean_key = api_key.strip()
-            # Kapsam Genişletildi: 19 Kritik Lig
             target_leagues = [
                 'soccer_turkey_super_league', 'soccer_epl', 'soccer_spain_la_liga',
                 'soccer_italy_serie_a', 'soccer_germany_bundesliga', 'soccer_france_ligue_one',
@@ -132,7 +130,12 @@ if fetch_btn and api_key:
             ]
             
             soccer_count = 0
-            current_time = datetime.datetime.now(datetime.timezone.utc)
+            # Günün tarihini hesapla (UTC+3 Türkiye Saatine Göre)
+            current_time_utc = datetime.datetime.now(datetime.timezone.utc)
+            current_time_tr = current_time_utc + datetime.timedelta(hours=3)
+            today_date = current_time_tr.date()
+            
+            st.session_state.live_matches.clear() # Listeyi tertemiz sıfırla
             
             for league in target_leagues:
                 url = f"https://api.the-odds-api.com/v4/sports/{league}/odds/?apiKey={clean_key}&regions=eu,uk&markets=h2h,totals&oddsFormat=decimal"
@@ -142,27 +145,34 @@ if fetch_btn and api_key:
                     matches = response.json()
                     for m in matches:
                         try:
-                            match_time = datetime.datetime.fromisoformat(m['commence_time'].replace('Z', '+00:00'))
-                            if match_time > current_time:
-                                local_time = match_time + datetime.timedelta(hours=3)
-                                time_str = local_time.strftime('%d.%m %H:%M')
+                            match_time_utc = datetime.datetime.fromisoformat(m['commence_time'].replace('Z', '+00:00'))
+                            local_time = match_time_utc + datetime.timedelta(hours=3)
+                            
+                            # YENİ FİLTRE: Sadece bugün oynanacaklar VE henüz başlamamışlar
+                            if match_time_utc > current_time_utc and local_time.date() == today_date:
+                                time_str = local_time.strftime('%H:%M')
                                 baslik = f"[{time_str}] {m['home_team']} - {m['away_team']} | ({m.get('sport_title', 'Lig')})"
+                                
+                                # Sıralama yapabilmek için zaman damgasını gizlice içine gömüyoruz
+                                m['_sort_time'] = match_time_utc.timestamp()
                                 st.session_state.live_matches[baslik] = m
                                 soccer_count += 1
                         except Exception:
                             pass
             
             if soccer_count > 0:
-                st.success(f"✅ Başarılı! Genişletilmiş radardan tam {soccer_count} adet maç çekildi.")
+                st.success(f"✅ Başarılı! Sadece BUGÜN oynanacak tam {soccer_count} hedef maç bulundu.")
             else:
-                st.warning("⚠️ Bağlantı başarılı ancak seçili 19 ligde şu an yaklaşan maç bulunamadı.")
+                st.warning("⚠️ Bağlantı başarılı ancak hedef 19 ligde BUGÜN için başlamamış maç bulunmuyor.")
         except Exception as e:
             st.error(f"❌ Sistemsel bağlantı hatası: {str(e)}")
 
 if st.session_state.live_matches:
     sel_c1, sel_c2 = st.columns([3, 1])
     with sel_c1:
-        sorted_matches = sorted(list(st.session_state.live_matches.keys()))
+        # YENİ SIRALAMA: İçine gömdüğümüz zaman damgasına göre (yakından uzağa) listele
+        sorted_matches = sorted(list(st.session_state.live_matches.keys()), 
+                                key=lambda x: st.session_state.live_matches[x]['_sort_time'])
         secilen_mac = st.selectbox("Analiz Edilecek Maçı Seçin:", ["Listeden Seçiniz..."] + sorted_matches)
     with sel_c2:
         if st.button("🚀 Oranları Kutulara Aktar"):
