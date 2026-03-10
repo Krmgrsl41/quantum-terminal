@@ -6,8 +6,8 @@ from scipy.stats import poisson
 import concurrent.futures
 import requests
 
-# --- QUANTUM DESIGN: V169 AUTOSCOUT (AUTO FORM TRACKER) ---
-st.set_page_config(page_title="V169 | QUANTUM AUTOSCOUT", layout="wide", page_icon="📡")
+# --- QUANTUM DESIGN: V171 GLOBAL EXPANSION (ASYA & ALT LİGLER) ---
+st.set_page_config(page_title="V171 | QUANTUM GLOBAL", layout="wide", page_icon="🌍")
 
 st.markdown("""
     <style>
@@ -92,44 +92,55 @@ with st.sidebar:
     kasa_miktari = st.number_input("Güncel Toplam Kasa (TL)", value=10000, step=500)
     st.markdown(f"<div style='background:#0c1015; padding:10px; border-radius:8px; border:1px solid #1e2530;'><b>Aktif Veri Havuzu:</b> {len(db):,} Maç</div>", unsafe_allow_html=True)
     st.divider()
-    st.info("📡 V169 AUTOSCOUT: Sisteme 'Otomatik Form Radarı' entegre edildi. Artık manuel form girmenize gerek yok, AI takımların son 5 maçını kendi bulur ve hesaba katar.")
+    st.info("🌍 V171 GLOBAL EXPANSION: Çıta yükseltildi! Artık Japonya, G.Kore ve Avrupa'nın Majör Alt Ligleri de radarımıza dahil edildi.")
 
 mevcut_ligler = ["TÜM DÜNYA (GLOBAL)"] + sorted([f"{k} | {v}" for k, v in LIG_MAP.items() if k in db['Div'].unique()])
 
-st.markdown("<h1 style='text-align:center; color:#d4af37;'>📡 QUANTUM AUTOSCOUT V169</h1>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align:center; color:#8b949e;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | Gelişmiş Tam Otonom Form ve İsabet Motoru</p>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#d4af37;'>🌍 QUANTUM GLOBAL V171</h1>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align:center; color:#8b949e;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | Asya, Alt Ligler ve Avrupa Kupaları Hedefli Radar</p>", unsafe_allow_html=True)
 
 st.markdown("<div class='api-box'>", unsafe_allow_html=True)
 st.subheader("⚡ Canlı Oran Borsası (The-Odds-API)")
 
 api_c1, api_c2 = st.columns([2, 1])
 with api_c1:
-    # Bulut kasasından API anahtarını otomatik çekme
     gizli_api = ""
     if "API_KEY" in st.secrets:
         gizli_api = st.secrets["API_KEY"]
-
-    api_key = st.text_input("The-Odds-API Anahtarı (Buraya Yapıştırın):", value=gizli_api, type="password")
+    api_key = st.text_input("The-Odds-API Anahtarı (Bulut Kasasına Kilitli):", value=gizli_api, type="password")
+    
 with api_c2:
-    fetch_btn = st.button("🔄 Başlamamış Maçları Listele")
+    fetch_btn = st.button("🔄 Hedef 19 Ligdeki Maçları Bul")
 
 if 'live_matches' not in st.session_state:
     st.session_state.live_matches = {}
 
+# --- V171 ASYA VE ALT LİG GENİŞLEMESİ ---
 if fetch_btn and api_key:
-    with st.spinner("Global bahis borsasından güncel maçlar çekiliyor..."):
+    with st.spinner("Küresel radar devrede! Asya, Avrupa ve Alt Ligler taranıyor..."):
         try:
             clean_key = api_key.strip()
-            url = f"https://api.the-odds-api.com/v4/sports/upcoming/odds/?apiKey={clean_key}&regions=eu,uk&markets=h2h,totals&oddsFormat=decimal"
-            response = requests.get(url)
+            # Kapsam Genişletildi: 19 Kritik Lig
+            target_leagues = [
+                'soccer_turkey_super_league', 'soccer_epl', 'soccer_spain_la_liga',
+                'soccer_italy_serie_a', 'soccer_germany_bundesliga', 'soccer_france_ligue_one',
+                'soccer_uefa_champs_league', 'soccer_uefa_europa_league', 'soccer_uefa_europa_conference_league',
+                'soccer_netherlands_eredivisie', 'soccer_portugal_primeira_liga', 'soccer_belgium_first_div',
+                'soccer_efl_champ', 'soccer_spain_segunda_division', 'soccer_italy_serie_b', 
+                'soccer_germany_liga2', 'soccer_france_ligue_two',
+                'soccer_japan_j_league', 'soccer_korea_kleague1'
+            ]
             
-            if response.status_code == 200:
-                matches = response.json()
-                soccer_count = 0
-                current_time = datetime.datetime.now(datetime.timezone.utc)
+            soccer_count = 0
+            current_time = datetime.datetime.now(datetime.timezone.utc)
+            
+            for league in target_leagues:
+                url = f"https://api.the-odds-api.com/v4/sports/{league}/odds/?apiKey={clean_key}&regions=eu,uk&markets=h2h,totals&oddsFormat=decimal"
+                response = requests.get(url)
                 
-                for m in matches:
-                    if 'soccer' in m.get('sport_key', '').lower():
+                if response.status_code == 200:
+                    matches = response.json()
+                    for m in matches:
                         try:
                             match_time = datetime.datetime.fromisoformat(m['commence_time'].replace('Z', '+00:00'))
                             if match_time > current_time:
@@ -139,22 +150,20 @@ if fetch_btn and api_key:
                                 st.session_state.live_matches[baslik] = m
                                 soccer_count += 1
                         except Exception:
-                            pass 
-                
-                if soccer_count > 0:
-                    st.success(f"✅ Başarılı! Küresel borsadan {soccer_count} adet maç çekildi.")
-                else:
-                    st.warning("⚠️ Bağlantı başarılı ancak maç bulunamadı.")
+                            pass
+            
+            if soccer_count > 0:
+                st.success(f"✅ Başarılı! Genişletilmiş radardan tam {soccer_count} adet maç çekildi.")
             else:
-                error_msg = response.json().get('message', 'Bilinmeyen API Hatası')
-                st.error(f"❌ API Bağlantı Hatası: {error_msg} (Kod: {response.status_code})")
+                st.warning("⚠️ Bağlantı başarılı ancak seçili 19 ligde şu an yaklaşan maç bulunamadı.")
         except Exception as e:
             st.error(f"❌ Sistemsel bağlantı hatası: {str(e)}")
 
 if st.session_state.live_matches:
     sel_c1, sel_c2 = st.columns([3, 1])
     with sel_c1:
-        secilen_mac = st.selectbox("Analiz Edilecek Maçı Seçin:", ["Listeden Seçiniz..."] + list(st.session_state.live_matches.keys()))
+        sorted_matches = sorted(list(st.session_state.live_matches.keys()))
+        secilen_mac = st.selectbox("Analiz Edilecek Maçı Seçin:", ["Listeden Seçiniz..."] + sorted_matches)
     with sel_c2:
         if st.button("🚀 Oranları Kutulara Aktar"):
             if secilen_mac != "Listeden Seçiniz...":
@@ -206,7 +215,7 @@ with c4:
     ev_t = st.text_input("Ev Sahibi", value=st.session_state.ev_t)
     dep_t = st.text_input("Deplasman", value=st.session_state.dep_t)
     sec_lig = st.selectbox("Havuz Seçimi", mevcut_ligler)
-    st.markdown("<p style='font-size:11px; color:#8b949e; margin-top:-10px;'><i>* UEFA maçları için TÜM DÜNYA seçili bırakın.</i></p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size:11px; color:#8b949e; margin-top:-10px;'><i>* UEFA, Japonya ve Kore maçları için TÜM DÜNYA seçili bırakın.</i></p>", unsafe_allow_html=True)
 
 def get_recent_form(team_name, df):
     team_matches = df[(df['HomeTeam'].str.contains(team_name, case=False, na=False)) | 
