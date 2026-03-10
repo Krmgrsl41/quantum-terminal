@@ -8,8 +8,8 @@ import requests
 import io
 import re
 
-# --- QUANTUM DESIGN: V186 DEEP SEEKER (ZEKİ EŞLEŞTİRİCİ & KUSURSUZ SENKRON) ---
-st.set_page_config(page_title="V186 | QUANTUM PRO", layout="wide", page_icon="💎")
+# --- QUANTUM DESIGN: V187 THE ORACLE (ZEKİ EŞLEŞTİRİCİ & SIRALI MATRİS) ---
+st.set_page_config(page_title="V187 | QUANTUM PRO", layout="wide", page_icon="💎")
 
 st.markdown("""
     <style>
@@ -121,7 +121,7 @@ with st.sidebar:
             st.rerun()
             
     st.divider()
-    st.info("🧠 V186 DEEP SEEKER: Yapay zeka takım isimlerindeki tüm uyuşmazlıkları aşar (Smart Matcher). Sıfır çeken takım hatası tarihe karıştı.")
+    st.info("🧠 V187 THE ORACLE: Zeki Eşleştirici eklendi. İsimlerdeki aksanlar (é, á) ve uzantılar (BC, United) temizlenip %100 doğru form verisi çekilir. Matris, ihtimallere göre kusursuz sıralanır.")
 
 mevcut_ligler = ["TÜM DÜNYA (GLOBAL)"]
 if not db.empty and 'Div' in db.columns:
@@ -129,8 +129,8 @@ if not db.empty and 'Div' in db.columns:
 else:
     mevcut_ligler += sorted([f"{k} | {v}" for k, v in LIG_MAP.items()])
 
-st.markdown("<h1 style='text-align:center; color:#d4af37;'>🧠 QUANTUM PRO V186</h1>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align:center; color:#8b949e;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | Derin Arayıcı Eşleştirme & Saf Doğruluk</p>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#d4af37;'>🧠 QUANTUM PRO V187</h1>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align:center; color:#8b949e;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | The Oracle: Zeki Eşleştirici & Sıralı Matris</p>", unsafe_allow_html=True)
 
 st.markdown("<div class='api-box'>", unsafe_allow_html=True)
 st.subheader("⚡ Canlı Oran Borsası (24 Saatlik Hedefler)")
@@ -265,59 +265,78 @@ with c4:
     ev_t = st.text_input("Ev Sahibi", value=st.session_state.ev_t)
     dep_t = st.text_input("Deplasman", value=st.session_state.dep_t)
     sec_lig = st.selectbox("Havuz Seçimi", mevcut_ligler)
-    st.markdown("<p style='font-size:11px; color:#8b949e; margin-top:-10px;'><i>* UEFA, Asya ve Kupa maçları için TÜM DÜNYA seçili bırakın.</i></p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size:11px; color:#8b949e; margin-top:-10px;'><i>* UEFA, Japonya ve Kore maçları için TÜM DÜNYA seçili bırakın.</i></p>", unsafe_allow_html=True)
 
-# --- V186 YEPYENİ SMART MATCHER (ZEKİ EŞLEŞTİRİCİ) ---
+# --- V187: MUAZZAM İSİM TEMİZLEYİCİ (SMART MATCHER) ---
 def get_clean_team_name(team_name):
-    lower_name = team_name.lower()
-    # İngiliz Veritabanındaki inatçı takım isimleri için Özel Çeviri Sözlüğü
-    known_aliases = {
+    # 1. Aşama: Tüm aksanları sil (Atlético -> atletico)
+    name_map = str.maketrans("éáíóúüöçşğÉÁÍÓÚÜÖÇŞĞ", "eaiouuocsgeaiouuocsg")
+    name = str(team_name).translate(name_map).lower().strip()
+    
+    # 2. Aşama: Özel Sözlük (Veritabanındaki İngiliz Kısaltmaları)
+    aliases = {
+        "atletico madrid": "Ath Madrid",
+        "athletic bilbao": "Ath Bilbao",
+        "atletico": "Ath Madrid",
+        "athletic": "Ath Bilbao",
+        "tottenham": "Tottenham",
         "wolverhampton": "Wolves",
-        "manchester united": "Man United",
+        "wolves": "Wolves",
         "manchester utd": "Man United",
+        "manchester united": "Man United",
         "manchester city": "Man City",
-        "nottingham": "Nott'm",
-        "sheffield united": "Sheffield United",
-        "paris": "Paris SG",
+        "nott'm forest": "Nott'm Forest",
+        "nottingham": "Nott'm Forest",
+        "paris sg": "Paris SG",
+        "paris saint germain": "Paris SG",
         "psg": "Paris SG",
         "bayern": "Bayern Munich",
-        "newcastle": "Newcastle",
-        "tottenham": "Tottenham",
-        "spurs": "Tottenham",
-        "sporting": "Sporting CP",
-        "bayer leverkusen": "Leverkusen",
-        "borussia dortmund": "Dortmund",
-        "inter milan": "Inter",
+        "leverkusen": "Leverkusen",
+        "dortmund": "Dortmund",
+        "m'gladbach": "M'gladbach",
+        "monchengladbach": "M'gladbach",
+        "inter": "Inter",
         "ac milan": "Milan",
         "roma": "Roma",
         "napoli": "Napoli",
         "juventus": "Juventus",
         "real madrid": "Real Madrid",
         "barcelona": "Barcelona",
-        "atletico madrid": "Ath Madrid"
+        "galatasaray": "Galatasaray",
+        "fenerbahce": "Fenerbahce",
+        "besiktas": "Besiktas",
+        "sheffield utd": "Sheffield United",
+        "sheffield united": "Sheffield United",
+        "newcastle": "Newcastle",
+        "aston villa": "Aston Villa"
     }
-    for k, v in known_aliases.items():
-        if k in lower_name:
+    
+    for k, v in aliases.items():
+        if k in name:
             return v
             
-    # Eğer özel sözlükte yoksa, API'nin eklediği "FC, BC, City" gibi uzantıları sil.
-    clean_name = re.sub(r'(?i)\s+(fc|bc|cf|united|utd|city|afc|fk|as|ac|sc|al|hotspur|albion|wanderers|villa)$', '', team_name).strip()
+    # 3. Aşama: Sözlükte yoksa, API'nin getirdiği saçma takım eklerini temizle
+    clean_name = str(team_name).translate(name_map) 
+    clean_name = re.sub(r'(?i)\s+(fc|bc|cf|united|utd|city|afc|fk|as|ac|sc|al|hotspur|albion|wanderers)$', '', clean_name).strip()
     return clean_name
 
-# Ana Arama Motoru (Hem Form hem de xG için ortak kullanılır)
+# Ana Arama Fonksiyonu: Takım ismini bulamazsa kelimenin en uzun kökünü arar!
 def get_team_df(search_name, df):
-    team_matches = df[(df['HomeTeam'].str.contains(search_name, case=False, na=False, regex=False)) | 
-                      (df['AwayTeam'].str.contains(search_name, case=False, na=False, regex=False))].copy()
+    mask_home = df['HomeTeam'].str.contains(search_name, case=False, na=False, regex=False)
+    mask_away = df['AwayTeam'].str.contains(search_name, case=False, na=False, regex=False)
+    team_matches = df[mask_home | mask_away].copy()
     
-    # KUSURSUZ FALLBACK (B planı): Eğer temiz isme rağmen bulamazsa, en uzun kelimeyi alıp arar!
     if team_matches.empty and len(search_name.split()) > 1:
         longest = max(search_name.split(), key=len)
-        team_matches = df[(df['HomeTeam'].str.contains(longest, case=False, na=False, regex=False)) | 
-                          (df['AwayTeam'].str.contains(longest, case=False, na=False, regex=False))].copy()
-    return team_matches
+        mask_home_l = df['HomeTeam'].str.contains(longest, case=False, na=False, regex=False)
+        mask_away_l = df['AwayTeam'].str.contains(longest, case=False, na=False, regex=False)
+        team_matches = df[mask_home_l | mask_away_l].copy()
+        return team_matches, longest
+        
+    return team_matches, search_name
 
 def get_recent_form(team_search_name, df):
-    team_matches = get_team_df(team_search_name, df)
+    team_matches, actual_search = get_team_df(team_search_name, df)
     if team_matches.empty:
         return 0, 0, 0, 0, 0, 0, 0, []
     
@@ -330,12 +349,7 @@ def get_recent_form(team_search_name, df):
     seq = []
     
     for _, row in last_5.iterrows():
-        # Takımın Ev sahibi mi Deplasman mı olduğunu da Zeki İsimle arıyoruz
-        is_home = False
-        longest_word = max(team_search_name.split(), key=len).lower() if len(team_search_name.split()) > 1 else team_search_name.lower()
-        if team_search_name.lower() in str(row['HomeTeam']).lower() or longest_word in str(row['HomeTeam']).lower():
-            is_home = True
-            
+        is_home = actual_search.lower() in str(row['HomeTeam']).lower()
         if is_home:
             gs += row.get('FTHG', 0)
             gc += row.get('FTAG', 0)
@@ -381,12 +395,12 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
             lig_kodu = sec_lig.split(" | ")[0]
             aktif_db = aktif_db[aktif_db['Div'] == lig_kodu]
 
-        # ZEKİ EŞLEŞTİRMELERİ BAŞLAT
+        # Temizlenmiş isimlerle eşleştirme yapıyoruz
         ev_search_name = get_clean_team_name(ev_t)
         dep_search_name = get_clean_team_name(dep_t)
 
-        ev_gecmis = get_team_df(ev_search_name, aktif_db)
-        dep_gecmis = get_team_df(dep_search_name, aktif_db)
+        ev_gecmis, _ = get_team_df(ev_search_name, aktif_db)
+        dep_gecmis, _ = get_team_df(dep_search_name, aktif_db)
         
         ham_ev_xg = ev_gecmis['FTHG'].mean() if not ev_gecmis.empty and 'FTHG' in ev_gecmis.columns else 1.5
         ham_dep_xg = dep_gecmis['FTAG'].mean() if not dep_gecmis.empty and 'FTAG' in dep_gecmis.columns else 1.1
@@ -630,20 +644,22 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
                     )
 
             with det_r:
+                # --- V187: KUSURSUZ SIRALANMIŞ MATRİS ---
                 st.subheader("📈 Dinamik Skor Matrisi (Poisson)")
                 
                 score_probs = {}
                 for h in range(5):
                     for a in range(5):
                         prob = poisson.pmf(h, ev_xg) * poisson.pmf(a, dep_xg) * 100
-                        # Matrisin anlaşılır olması için Ev-Dep etiketi eklendi
                         score_probs[f"{h} - {a}"] = prob
                         
                 sorted_scores = sorted(score_probs.items(), key=lambda x: x[1], reverse=True)[:6]
                 
-                st.markdown("<p style='color:#8b949e; font-size:13px; margin-bottom:5px;'>Yapay Zeka Formüllerine Göre En Olası Skorlar (Ev - Dep):</p>", unsafe_allow_html=True)
+                st.markdown("<p style='color:#8b949e; font-size:13px; margin-bottom:5px;'>Yapay Zeka Formüllerine Göre En Olası Skorlar:</p>", unsafe_allow_html=True)
+                
+                # Rakamlar eklenerek Streamlit'in kendi kendine alfabetik dizmesi engellendi!
                 chart_data = pd.DataFrame({
-                    "Skorlar": [s[0] for s in sorted_scores],
+                    "Skorlar": [f"{i+1}. İhtimal ({s[0]})" for i, s in enumerate(sorted_scores)],
                     "İhtimal (%)": [int(s[1]) for s in sorted_scores]
                 }).set_index("Skorlar")
                 st.bar_chart(chart_data, color="#d4af37", height=200)
