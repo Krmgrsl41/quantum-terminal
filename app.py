@@ -7,8 +7,8 @@ import concurrent.futures
 import requests
 import io
 
-# --- QUANTUM DESIGN: V182 DIAGNOSTICS (API KOTA KONTROLÜ & OPTİMİZASYON) ---
-st.set_page_config(page_title="V182 | QUANTUM PRO", layout="wide", page_icon="💎")
+# --- QUANTUM DESIGN: V183 PRECISION (24 SAATLİK HASSAS ODAK & KRONOLOJİK SIRALAMA) ---
+st.set_page_config(page_title="V183 | QUANTUM PRO", layout="wide", page_icon="💎")
 
 st.markdown("""
     <style>
@@ -120,7 +120,7 @@ with st.sidebar:
             st.rerun()
             
     st.divider()
-    st.info("🛠️ V182 DIAGNOSTICS: API Hata Teşhis sistemi eklendi ve kota harcaması %50 azaltıldı.")
+    st.info("🎯 V183 PRECISION: Odak 24 saate indirildi. Maçlar her zaman en yakın başlama saatinden en uzağa doğru listelenir.")
 
 mevcut_ligler = ["TÜM DÜNYA (GLOBAL)"]
 if not db.empty and 'Div' in db.columns:
@@ -128,11 +128,11 @@ if not db.empty and 'Div' in db.columns:
 else:
     mevcut_ligler += sorted([f"{k} | {v}" for k, v in LIG_MAP.items()])
 
-st.markdown("<h1 style='text-align:center; color:#d4af37;'>🛠️ QUANTUM PRO V182</h1>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align:center; color:#8b949e;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | API Teşhis Motoru & Tam Senkronizasyon</p>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#d4af37;'>🎯 QUANTUM PRO V183</h1>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align:center; color:#8b949e;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | 24 Saatlik Hassas Radar & Tam Senkronizasyon</p>", unsafe_allow_html=True)
 
 st.markdown("<div class='api-box'>", unsafe_allow_html=True)
-st.subheader("⚡ Canlı Oran Borsası (Ufuk Taraması)")
+st.subheader("⚡ Canlı Oran Borsası (24 Saatlik Hedefler)")
 
 api_c1, api_c2 = st.columns([2, 1])
 with api_c1:
@@ -142,13 +142,13 @@ with api_c1:
     api_key = st.text_input("The-Odds-API Anahtarı (Bulut Kasasına Kilitli):", value=gizli_api, type="password")
     
 with api_c2:
-    fetch_btn = st.button("🔄 Önümüzdeki Fırsatları Bul")
+    fetch_btn = st.button("🔄 Yaklaşan Maçları Bul (24s)")
 
 if 'live_matches' not in st.session_state:
     st.session_state.live_matches = {}
 
 if fetch_btn and api_key:
-    with st.spinner("Önümüzdeki 48 Saat içinde oynanacak maçlar aranıyor..."):
+    with st.spinner("Önümüzdeki 24 Saat içinde oynanacak maçlar yakından uzağa sıralanıyor..."):
         try:
             clean_key = api_key.strip()
             target_leagues = [
@@ -163,19 +163,18 @@ if fetch_btn and api_key:
             
             soccer_count = 0
             current_time_utc = datetime.datetime.now(datetime.timezone.utc)
-            horizon_time_utc = current_time_utc + datetime.timedelta(hours=48)
+            # ODAK 24 SAATE DÜŞÜRÜLDÜ
+            horizon_time_utc = current_time_utc + datetime.timedelta(hours=24)
             
             st.session_state.live_matches.clear()
             api_error_message = None
             
             for league in target_leagues:
-                # KOTA TASARRUFU: Sadece 'eu' bölgesini çekiyoruz (Maliyeti yarıya indirdik!)
                 url = f"https://api.the-odds-api.com/v4/sports/{league}/odds/?apiKey={clean_key}&regions=eu&markets=h2h,totals&oddsFormat=decimal"
                 response = requests.get(url)
                 
-                # --- YENİ HATA TEŞHİS SİSTEMİ ---
                 if response.status_code == 429:
-                    api_error_message = "🚨 KOTA DOLDU: The-Odds-API aylık 500 istek sınırınız tükenmiş! Sistemi çok fazla taradığınız için kotanız bitti. ÇÖZÜM: the-odds-api.com sitesinden yeni bir mail adresiyle ücretsiz yeni bir API anahtarı alın."
+                    api_error_message = "🚨 KOTA DOLDU: The-Odds-API aylık 500 istek sınırınız tükenmiş! Yeni bir mail ile API almalısınız."
                     break
                 elif response.status_code == 401:
                     api_error_message = "🚨 YETKİSİZ ANAHTAR: API Anahtarınız hatalı, eksik veya silinmiş."
@@ -184,30 +183,30 @@ if fetch_btn and api_key:
                     api_error_message = f"🚨 BAĞLANTI HATASI: API Sunucusu {response.status_code} hatası döndürdü."
                     break
                 
-                # Eğer hata yoksa 200 döndüyse devam et
                 matches = response.json()
                 for m in matches:
                     try:
                         match_time_utc = datetime.datetime.fromisoformat(m['commence_time'].replace('Z', '+00:00'))
                         local_time = match_time_utc + datetime.timedelta(hours=3)
                         
+                        # 24 Saat Filtresi
                         if current_time_utc < match_time_utc < horizon_time_utc:
                             time_str = local_time.strftime('%d.%m %H:%M')
                             baslik = f"[{time_str}] {m['home_team']} - {m['away_team']} | ({m.get('sport_title', 'Lig')})"
                             
+                            # KRONOLOJİK SIRALAMA İÇİN ZAMAN DAMGASI
                             m['_sort_time'] = match_time_utc.timestamp()
                             st.session_state.live_matches[baslik] = m
                             soccer_count += 1
                     except Exception:
                         pass
             
-            # --- TEŞHİS SONUÇ EKRANI ---
             if api_error_message:
                 st.error(api_error_message)
             elif soccer_count > 0:
-                st.success(f"✅ Başarılı! Önümüzdeki 48 saat içinde oynanacak {soccer_count} adet maç bulundu.")
+                st.success(f"✅ Başarılı! Önümüzdeki 24 saat içinde oynanacak {soccer_count} adet maç bulundu.")
             else:
-                st.warning("⚠️ Seçili liglerde önümüzdeki 48 saat içinde maç bulunamadı veya oranlar henüz açılmadı.")
+                st.warning("⚠️ Seçili liglerde önümüzdeki 24 saat içinde maç bulunamadı veya oranlar henüz açılmadı.")
                 
         except Exception as e:
             st.error(f"❌ Sistemsel bağlantı hatası: {str(e)}")
@@ -215,6 +214,7 @@ if fetch_btn and api_key:
 if st.session_state.live_matches:
     sel_c1, sel_c2 = st.columns([3, 1])
     with sel_c1:
+        # ZAMAN DAMGASINA GÖRE YAKINDAN UZAĞA SIRALAMA UYGULANIR
         sorted_matches = sorted(list(st.session_state.live_matches.keys()), 
                                 key=lambda x: st.session_state.live_matches[x]['_sort_time'])
         secilen_mac = st.selectbox("Analiz Edilecek Maçı Seçin:", ["Listeden Seçiniz..."] + sorted_matches)
@@ -608,7 +608,7 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
                     f"<span style='color:#8b949e; font-size:14px;'>{dep_t} (Dep) xG:</span><br>"
                     f"<b style='font-size:24px; color:#ffffff;'>{dep_xg:.2f}</b>"
                     f"</div>"
-                    f"<div style='text-align:right;'>"
+                    f"div style='text-align:right;'>"
                     f"<span style='color:#8b949e; font-size:14px;'>Maçın Toplam xG'si:</span><br>"
                     f"<b style='font-size:26px; color:#00ffcc;'>{(ev_xg + dep_xg):.2f}</b>"
                     f"</div>"
