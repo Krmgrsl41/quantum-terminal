@@ -7,8 +7,8 @@ import concurrent.futures
 import requests
 import io
 
-# --- QUANTUM DESIGN: V180 GHOST PROTOCOL (SİBER GÜVENLİK & HAYALET MODU) ---
-st.set_page_config(page_title="V180 | QUANTUM PRO", layout="wide", page_icon="💎")
+# --- QUANTUM DESIGN: V181 HORIZON (48 SAATLİK UFUK RADARI & SİBER KALKAN) ---
+st.set_page_config(page_title="V181 | QUANTUM PRO", layout="wide", page_icon="💎")
 
 st.markdown("""
     <style>
@@ -66,10 +66,8 @@ def load_quantum_data():
     leagues = list(LIG_MAP.keys())
     urls_to_fetch = [(s, l, f'https://www.football-data.co.uk/mmz4281/{s}/{l}.csv') for s in seasons for l in leagues]
     
-    # --- V180 HAYALET MODU (GHOST PROTOCOL) ENTEGRASYONU ---
     def fetch_and_verify(item):
         s, l, url = item
-        # İngiliz sunucusunu kandırmak için Google Chrome maskesi takıyoruz
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         }
@@ -93,7 +91,6 @@ def load_quantum_data():
             return pd.DataFrame()
 
     dfs = []
-    # Siber saldırı olarak algılanmasın diye indirme kolunu 50'den 15'e düşürdük (Sessiz İndirme)
     with concurrent.futures.ThreadPoolExecutor(max_workers=15) as executor:
         results = list(executor.map(fetch_and_verify, urls_to_fetch))
         
@@ -123,7 +120,7 @@ with st.sidebar:
             st.rerun()
             
     st.divider()
-    st.info("🛡️ V180 GHOST PROTOCOL: Veri tabanı sunucularının bizi engellemesini önleyen 'Hayalet Modu' ve Chrome Dijital Maskesi eklendi.")
+    st.info("📡 V181 HORIZON: API radarı güncellendi. Sadece bugün değil, önümüzdeki 48 saatlik periyottaki tüm hedef maçlar taranır.")
 
 mevcut_ligler = ["TÜM DÜNYA (GLOBAL)"]
 if not db.empty and 'Div' in db.columns:
@@ -131,11 +128,11 @@ if not db.empty and 'Div' in db.columns:
 else:
     mevcut_ligler += sorted([f"{k} | {v}" for k, v in LIG_MAP.items()])
 
-st.markdown("<h1 style='text-align:center; color:#d4af37;'>🛡️ QUANTUM PRO V180</h1>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align:center; color:#8b949e;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | Ghost Protocol & Dinamik xG</p>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#d4af37;'>📡 QUANTUM PRO V181</h1>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align:center; color:#8b949e;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | 48 Saatlik Ufuk Radarı & Dinamik xG</p>", unsafe_allow_html=True)
 
 st.markdown("<div class='api-box'>", unsafe_allow_html=True)
-st.subheader("⚡ Canlı Oran Borsası (Günün Hedefleri)")
+st.subheader("⚡ Canlı Oran Borsası (Ufuk Taraması)")
 
 api_c1, api_c2 = st.columns([2, 1])
 with api_c1:
@@ -145,13 +142,13 @@ with api_c1:
     api_key = st.text_input("The-Odds-API Anahtarı (Bulut Kasasına Kilitli):", value=gizli_api, type="password")
     
 with api_c2:
-    fetch_btn = st.button("🔄 Bugünün Fırsatlarını Bul")
+    fetch_btn = st.button("🔄 Önümüzdeki Fırsatları Bul")
 
 if 'live_matches' not in st.session_state:
     st.session_state.live_matches = {}
 
 if fetch_btn and api_key:
-    with st.spinner("Bugün oynanacak maçlar aranıyor ve saati yaklaşanlar öne alınıyor..."):
+    with st.spinner("Önümüzdeki 48 Saat içinde oynanacak maçlar aranıyor..."):
         try:
             clean_key = api_key.strip()
             target_leagues = [
@@ -166,8 +163,8 @@ if fetch_btn and api_key:
             
             soccer_count = 0
             current_time_utc = datetime.datetime.now(datetime.timezone.utc)
-            current_time_tr = current_time_utc + datetime.timedelta(hours=3)
-            today_date = current_time_tr.date()
+            # YENİ ODAK: Şu andan itibaren 48 saat sonrasına kadar olan maçları getir!
+            horizon_time_utc = current_time_utc + datetime.timedelta(hours=48)
             
             st.session_state.live_matches.clear()
             
@@ -182,8 +179,9 @@ if fetch_btn and api_key:
                             match_time_utc = datetime.datetime.fromisoformat(m['commence_time'].replace('Z', '+00:00'))
                             local_time = match_time_utc + datetime.timedelta(hours=3)
                             
-                            if match_time_utc > current_time_utc and local_time.date() == today_date:
-                                time_str = local_time.strftime('%H:%M')
+                            # EĞER maç şu andan ilerideyse VE 48 saat içindeyse listeye al:
+                            if current_time_utc < match_time_utc < horizon_time_utc:
+                                time_str = local_time.strftime('%d.%m %H:%M') # Gün ve Saat birleşti
                                 baslik = f"[{time_str}] {m['home_team']} - {m['away_team']} | ({m.get('sport_title', 'Lig')})"
                                 
                                 m['_sort_time'] = match_time_utc.timestamp()
@@ -193,9 +191,9 @@ if fetch_btn and api_key:
                             pass
             
             if soccer_count > 0:
-                st.success(f"✅ Başarılı! Sadece BUGÜN oynanacak tam {soccer_count} hedef maç bulundu.")
+                st.success(f"✅ Başarılı! Önümüzdeki 48 saat içinde oynanacak {soccer_count} adet hedef maç bulundu.")
             else:
-                st.warning("⚠️ Bağlantı başarılı ancak hedef 19 ligde BUGÜN için başlamamış maç bulunmuyor.")
+                st.warning("⚠️ Hedef 19 ligde önümüzdeki 48 saat içinde oynanacak maç bulunmuyor.")
         except Exception as e:
             st.error(f"❌ Sistemsel bağlantı hatası: {str(e)}")
 
@@ -364,6 +362,7 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
             raw_p_msx = (benzer[benzer['FTR']=='D']['weight'].sum() / w_sum) * 100 if 'FTR' in benzer.columns else 0
             raw_p_ms2 = (benzer[benzer['FTR']=='A']['weight'].sum() / w_sum) * 100 if 'FTR' in benzer.columns else 0
             
+            raw_p_u25 = min(99.0, ((benzer[(benzer['FTHG'])>2.5]['weight'].sum() / w_sum) * 100) * league_u25_mod) if 'FTHG' in benzer.columns else 0 #Note: A small bug here from earlier, fixing dynamically. (benzer['FTHG']+benzer['FTAG'])>2.5
             raw_p_u25 = min(99.0, ((benzer[(benzer['FTHG']+benzer['FTAG'])>2.5]['weight'].sum() / w_sum) * 100) * league_u25_mod) if 'FTHG' in benzer.columns else 0
             raw_p_a25 = 100 - raw_p_u25 if raw_p_u25 > 0 else 0
             raw_p_kgv = min(99.0, ((benzer[(benzer['FTHG']>0) & (benzer['FTAG']>0)]['weight'].sum() / w_sum) * 100) * league_u25_mod) if 'FTHG' in benzer.columns else 0
