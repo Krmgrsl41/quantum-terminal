@@ -8,8 +8,8 @@ import requests
 import io
 import re
 
-# --- QUANTUM DESIGN: V187 THE ORACLE (ZEKİ EŞLEŞTİRİCİ & SIRALI MATRİS) ---
-st.set_page_config(page_title="V187 | QUANTUM PRO", layout="wide", page_icon="💎")
+# --- QUANTUM DESIGN: V188 APEX PREDICTOR (DERİN MATEMATİK & H2H ENTEGRASYONU) ---
+st.set_page_config(page_title="V188 | QUANTUM APEX", layout="wide", page_icon="💎")
 
 st.markdown("""
     <style>
@@ -121,7 +121,7 @@ with st.sidebar:
             st.rerun()
             
     st.divider()
-    st.info("🧠 V187 THE ORACLE: Zeki Eşleştirici eklendi. İsimlerdeki aksanlar (é, á) ve uzantılar (BC, United) temizlenip %100 doğru form verisi çekilir. Matris, ihtimallere göre kusursuz sıralanır.")
+    st.info("🦅 V188 APEX PREDICTOR: Yapay Zeka artık H2H (İkili Rekabet) geçmişini ve İç Saha/Dış Saha (Home/Away) dinamiklerini hesaba katarak kusursuz Net xG hesaplar.")
 
 mevcut_ligler = ["TÜM DÜNYA (GLOBAL)"]
 if not db.empty and 'Div' in db.columns:
@@ -129,8 +129,8 @@ if not db.empty and 'Div' in db.columns:
 else:
     mevcut_ligler += sorted([f"{k} | {v}" for k, v in LIG_MAP.items()])
 
-st.markdown("<h1 style='text-align:center; color:#d4af37;'>🧠 QUANTUM PRO V187</h1>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align:center; color:#8b949e;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | The Oracle: Zeki Eşleştirici & Sıralı Matris</p>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#d4af37;'>🦅 QUANTUM APEX V188</h1>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align:center; color:#8b949e;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | Derin xG Motoru & İkili Rekabet (H2H) Ağırlığı</p>", unsafe_allow_html=True)
 
 st.markdown("<div class='api-box'>", unsafe_allow_html=True)
 st.subheader("⚡ Canlı Oran Borsası (24 Saatlik Hedefler)")
@@ -265,15 +265,12 @@ with c4:
     ev_t = st.text_input("Ev Sahibi", value=st.session_state.ev_t)
     dep_t = st.text_input("Deplasman", value=st.session_state.dep_t)
     sec_lig = st.selectbox("Havuz Seçimi", mevcut_ligler)
-    st.markdown("<p style='font-size:11px; color:#8b949e; margin-top:-10px;'><i>* UEFA, Japonya ve Kore maçları için TÜM DÜNYA seçili bırakın.</i></p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size:11px; color:#8b949e; margin-top:-10px;'><i>* UEFA, Asya ve Kupa maçları için TÜM DÜNYA seçili bırakın.</i></p>", unsafe_allow_html=True)
 
-# --- V187: MUAZZAM İSİM TEMİZLEYİCİ (SMART MATCHER) ---
 def get_clean_team_name(team_name):
-    # 1. Aşama: Tüm aksanları sil (Atlético -> atletico)
     name_map = str.maketrans("éáíóúüöçşğÉÁÍÓÚÜÖÇŞĞ", "eaiouuocsgeaiouuocsg")
     name = str(team_name).translate(name_map).lower().strip()
     
-    # 2. Aşama: Özel Sözlük (Veritabanındaki İngiliz Kısaltmaları)
     aliases = {
         "atletico madrid": "Ath Madrid",
         "athletic bilbao": "Ath Bilbao",
@@ -315,12 +312,10 @@ def get_clean_team_name(team_name):
         if k in name:
             return v
             
-    # 3. Aşama: Sözlükte yoksa, API'nin getirdiği saçma takım eklerini temizle
     clean_name = str(team_name).translate(name_map) 
     clean_name = re.sub(r'(?i)\s+(fc|bc|cf|united|utd|city|afc|fk|as|ac|sc|al|hotspur|albion|wanderers)$', '', clean_name).strip()
     return clean_name
 
-# Ana Arama Fonksiyonu: Takım ismini bulamazsa kelimenin en uzun kökünü arar!
 def get_team_df(search_name, df):
     mask_home = df['HomeTeam'].str.contains(search_name, case=False, na=False, regex=False)
     mask_away = df['AwayTeam'].str.contains(search_name, case=False, na=False, regex=False)
@@ -395,30 +390,64 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
             lig_kodu = sec_lig.split(" | ")[0]
             aktif_db = aktif_db[aktif_db['Div'] == lig_kodu]
 
-        # Temizlenmiş isimlerle eşleştirme yapıyoruz
         ev_search_name = get_clean_team_name(ev_t)
         dep_search_name = get_clean_team_name(dep_t)
 
-        ev_gecmis, _ = get_team_df(ev_search_name, aktif_db)
-        dep_gecmis, _ = get_team_df(dep_search_name, aktif_db)
+        ev_gecmis, act_ev = get_team_df(ev_search_name, aktif_db)
+        dep_gecmis, act_dep = get_team_df(dep_search_name, aktif_db)
         
-        ham_ev_xg = ev_gecmis['FTHG'].mean() if not ev_gecmis.empty and 'FTHG' in ev_gecmis.columns else 1.5
-        ham_dep_xg = dep_gecmis['FTAG'].mean() if not dep_gecmis.empty and 'FTAG' in dep_gecmis.columns else 1.1
-
-        global_u25_avg = (db['FTHG'] + db['FTAG'] > 2.5).mean() if 'FTHG' in db.columns else 0.5
-        league_u25_mod = 1.0
-        if lig_kodu and 'FTHG' in aktif_db.columns:
-            lig_u25_avg = (aktif_db['FTHG'] + aktif_db['FTAG'] > 2.5).mean()
-            league_u25_mod = lig_u25_avg / global_u25_avg if global_u25_avg > 0 else 1.0
-
-        with st.spinner("Otomatik Form Radarı devrede, Zeki Eşleştirici takımları tarıyor..."):
+        with st.spinner("V188 APEX PREDICTOR devrede: İç/Dış Saha dinamikleri ve H2H geçmişi hesaplanıyor..."):
             
+            # --- V188 YENİ: İÇ SAHA / DIŞ SAHA GERÇEK xG HESAPLAMASI ---
+            # Sadece Ev Sahibinin 'İç Saha' maçları
+            ev_home_matches = ev_gecmis[ev_gecmis['HomeTeam'].str.contains(act_ev, case=False, na=False)].tail(5)
+            # Sadece Deplasmanın 'Dış Saha' maçları
+            dep_away_matches = dep_gecmis[dep_gecmis['AwayTeam'].str.contains(act_dep, case=False, na=False)].tail(5)
+            
+            ev_scored_home = ev_home_matches['FTHG'].mean() if not ev_home_matches.empty else 1.5
+            ev_conceded_home = ev_home_matches['FTAG'].mean() if not ev_home_matches.empty else 1.0
+            
+            dep_scored_away = dep_away_matches['FTAG'].mean() if not dep_away_matches.empty else 1.1
+            dep_conceded_away = dep_away_matches['FTHG'].mean() if not dep_away_matches.empty else 1.5
+            
+            # Gerçek xG Çarpışması Formülü: (Senin Attığın + Rakibin Yediği) / 2
+            true_ev_xg = (ev_scored_home + dep_conceded_away) / 2
+            true_dep_xg = (dep_scored_away + ev_conceded_home) / 2
+
+            # --- V188 YENİ: H2H (İKİLİ REKABET) PSİKOLOJİK ÜSTÜNLÜK ---
+            h2h_mask = (
+                (aktif_db['HomeTeam'].str.contains(act_ev, case=False, na=False) & aktif_db['AwayTeam'].str.contains(act_dep, case=False, na=False)) |
+                (aktif_db['HomeTeam'].str.contains(act_dep, case=False, na=False) & aktif_db['AwayTeam'].str.contains(act_ev, case=False, na=False))
+            )
+            h2h_df = aktif_db[h2h_mask].dropna(subset=['Date']).tail(5)
+            
+            ev_h2h_pts = 0
+            dep_h2h_pts = 0
+            if not h2h_df.empty:
+                for _, row in h2h_df.iterrows():
+                    if act_ev.lower() in str(row['HomeTeam']).lower():
+                        if row['FTR'] == 'H': ev_h2h_pts += 3
+                        elif row['FTR'] == 'A': dep_h2h_pts += 3
+                    else:
+                        if row['FTR'] == 'A': ev_h2h_pts += 3
+                        elif row['FTR'] == 'H': dep_h2h_pts += 3
+                max_pts = len(h2h_df) * 3
+                h2h_advantage = (ev_h2h_pts - dep_h2h_pts) / max_pts # -1 ile 1 arası
+            else:
+                h2h_advantage = 0.0
+
+            # Normal Genel Form
             ev_pts, ev_gs, ev_gc, ev_gp, ev_w, ev_d, ev_l, ev_seq = get_recent_form(ev_search_name, db)
             dep_pts, dep_gs, dep_gc, dep_gp, dep_w, dep_d, dep_l, dep_seq = get_recent_form(dep_search_name, db)
             
             ev_momentum = ((ev_pts / max(ev_gp, 1)) * 5 - 6) * 0.8 if ev_gp > 0 else 0
             dep_momentum = ((dep_pts / max(dep_gp, 1)) * 5 - 6) * 0.8 if dep_gp > 0 else 0
 
+            # Gerçek xG'yi Form İvmesiyle Harmanlıyoruz
+            ev_xg = max(0.1, true_ev_xg + (ev_momentum * 0.05))
+            dep_xg = max(0.1, true_dep_xg + (dep_momentum * 0.05))
+
+            # Tarihsel Eşleşme Taraması
             hassasiyet = 0.05
             while hassasiyet <= 0.40:
                 aktif_db['diff'] = np.sqrt((aktif_db['B365H']-ms1)**2 + (aktif_db['B365A']-ms2)**2 + (aktif_db['B365O'].fillna(u25)-u25)**2)
@@ -431,12 +460,7 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
             
             season_weights = {'2526': 2.0, '2425': 1.8, '2324': 1.6, '2223': 1.4, '2122': 1.2, '2021': 1.0, '1920': 0.8, '1819': 0.7, '1718': 0.6, '1617': 0.5, '1516': 0.4, '1415': 0.3, '1314': 0.2, '1213': 0.1, '1112': 0.1, '1011': 0.1}
             benzer['s_weight'] = benzer['Season'].map(season_weights).fillna(0.1)
-            
-            if lig_kodu is None:
-                benzer['l_weight'] = benzer['Div'].map(LEAGUE_WEIGHTS).fillna(0.8)
-            else:
-                benzer['l_weight'] = 1.0 
-                
+            benzer['l_weight'] = benzer['Div'].map(LEAGUE_WEIGHTS).fillna(0.8) if lig_kodu is None else 1.0 
             benzer['weight'] = (1 / (benzer['diff'] + 0.01)) * benzer['s_weight'] * benzer['l_weight']
             w_sum = benzer['weight'].sum()
 
@@ -444,13 +468,14 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
             raw_p_msx = (benzer[benzer['FTR']=='D']['weight'].sum() / w_sum) * 100 if 'FTR' in benzer.columns else 0
             raw_p_ms2 = (benzer[benzer['FTR']=='A']['weight'].sum() / w_sum) * 100 if 'FTR' in benzer.columns else 0
             
-            raw_p_u25 = min(99.0, ((benzer[(benzer['FTHG']+benzer['FTAG'])>2.5]['weight'].sum() / w_sum) * 100) * league_u25_mod) if 'FTHG' in benzer.columns else 0
+            raw_p_u25 = min(99.0, ((benzer[(benzer['FTHG']+benzer['FTAG'])>2.5]['weight'].sum() / w_sum) * 100)) if 'FTHG' in benzer.columns else 0
             raw_p_a25 = 100 - raw_p_u25 if raw_p_u25 > 0 else 0
-            raw_p_kgv = min(99.0, ((benzer[(benzer['FTHG']>0) & (benzer['FTAG']>0)]['weight'].sum() / w_sum) * 100) * league_u25_mod) if 'FTHG' in benzer.columns else 0
+            raw_p_kgv = min(99.0, ((benzer[(benzer['FTHG']>0) & (benzer['FTAG']>0)]['weight'].sum() / w_sum) * 100)) if 'FTHG' in benzer.columns else 0
             raw_p_kgy = 100 - raw_p_kgv if raw_p_kgv > 0 else 0
 
-            ev_sapma = ev_momentum * 1.5
-            dep_sapma = dep_momentum * 1.5
+            # V188: H2H Psikolojik Ağırlığını ve Form Sapmasını Formüle Ekleme
+            ev_sapma = (ev_momentum * 1.5) + (h2h_advantage * 3.0)
+            dep_sapma = (dep_momentum * 1.5) - (h2h_advantage * 3.0)
             
             p_ms1 = max(0.1, raw_p_ms1 + ev_sapma - (dep_sapma * 0.5))
             p_ms2 = max(0.1, raw_p_ms2 + dep_sapma - (ev_sapma * 0.5))
@@ -461,13 +486,11 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
             p_msx = (p_msx / toplam_ms) * 100
             p_ms2 = (p_ms2 / toplam_ms) * 100
             
-            ev_xg = max(0.1, ham_ev_xg + (ev_momentum * 0.05))
-            dep_xg = max(0.1, ham_dep_xg + (dep_momentum * 0.05))
-
-            total_form = ev_momentum + dep_momentum
-            p_u25 = min(99.0, max(1.0, raw_p_u25 + (total_form * 1.0)))
+            # V188: Alt/Üst Oranlarını Gerçek xG Çarpışması İle Etkileme
+            xg_sum_diff = (true_ev_xg + true_dep_xg) - 2.5
+            p_u25 = min(99.0, max(1.0, raw_p_u25 + (ev_momentum + dep_momentum)*0.5 + (xg_sum_diff * 6.0)))
             p_a25 = 100 - p_u25
-            p_kgv = min(99.0, max(1.0, raw_p_kgv + (total_form * 1.0)))
+            p_kgv = min(99.0, max(1.0, raw_p_kgv + (ev_momentum + dep_momentum)*0.5 + (xg_sum_diff * 4.0)))
             p_kgy = 100 - p_kgv
 
             ev_color = "#00ffcc" if ev_momentum > 0 else "#ff4b4b"
@@ -613,7 +636,7 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
                 else:
                     yatirim_notu = f"<span style='color:#ffcc00; font-size:14px;'>⚠️ Oran düşük olduğu için uzun vadeli yatırım değil, günlük banko/kombine bahsidir.</span>"
                 
-                ai_mesaj = f"Takımların güncel form momentumunu otomatik olarak ölçtüm ve 25 yıllık veriyle harmanladım. Bu maçta ihtimali en yüksek senaryo şudur:"
+                ai_mesaj = f"Takımların Genel formunu, İÇ/DIŞ saha özel performanslarını ve Aralarındaki Psikolojik Rekabeti (H2H) 25 yıllık veriyle harmanladım. Olasılığı en yüksek senaryo budur:"
 
                 ai_verdict_html = (
                     f"<div class='ai-verdict-box'>"
@@ -644,7 +667,6 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
                     )
 
             with det_r:
-                # --- V187: KUSURSUZ SIRALANMIŞ MATRİS ---
                 st.subheader("📈 Dinamik Skor Matrisi (Poisson)")
                 
                 score_probs = {}
@@ -657,7 +679,7 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
                 
                 st.markdown("<p style='color:#8b949e; font-size:13px; margin-bottom:5px;'>Yapay Zeka Formüllerine Göre En Olası Skorlar:</p>", unsafe_allow_html=True)
                 
-                # Rakamlar eklenerek Streamlit'in kendi kendine alfabetik dizmesi engellendi!
+                # Streamlit'in Alfabetik Sıralamasını Kırmak İçin Özel Hile (Rakamlar Eklendi)
                 chart_data = pd.DataFrame({
                     "Skorlar": [f"{i+1}. İhtimal ({s[0]})" for i, s in enumerate(sorted_scores)],
                     "İhtimal (%)": [int(s[1]) for s in sorted_scores]
@@ -668,7 +690,7 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
 
                 xg_html = (
                     f"<div style='background:#121820; padding:20px; border-radius:10px; border-left:5px solid #8a2be2; border: 1px solid #1e2530;'>"
-                    f"<h4 style='color:#8a2be2; margin-top:0; margin-bottom:15px;'>⚽ Güncel xG Beklentisi (Form Destekli)</h4>"
+                    f"<h4 style='color:#8a2be2; margin-top:0; margin-bottom:15px;'>⚽ Gerçek xG Çarpışması (İç Saha vs Dış Saha)</h4>"
                     f"<div style='display:flex; justify-content:space-between; align-items:center;'>"
                     f"<div>"
                     f"<span style='color:#8b949e; font-size:14px;'>{ev_t} (Ev) xG:</span><br>"
