@@ -7,8 +7,8 @@ import concurrent.futures
 import requests
 import io
 
-# --- QUANTUM DESIGN: V181 HORIZON (48 SAATLİK UFUK RADARI & SİBER KALKAN) ---
-st.set_page_config(page_title="V181 | QUANTUM PRO", layout="wide", page_icon="💎")
+# --- QUANTUM DESIGN: V182 DIAGNOSTICS (API KOTA KONTROLÜ & OPTİMİZASYON) ---
+st.set_page_config(page_title="V182 | QUANTUM PRO", layout="wide", page_icon="💎")
 
 st.markdown("""
     <style>
@@ -120,7 +120,7 @@ with st.sidebar:
             st.rerun()
             
     st.divider()
-    st.info("📡 V181 HORIZON: API radarı güncellendi. Sadece bugün değil, önümüzdeki 48 saatlik periyottaki tüm hedef maçlar taranır.")
+    st.info("🛠️ V182 DIAGNOSTICS: API Hata Teşhis sistemi eklendi ve kota harcaması %50 azaltıldı.")
 
 mevcut_ligler = ["TÜM DÜNYA (GLOBAL)"]
 if not db.empty and 'Div' in db.columns:
@@ -128,8 +128,8 @@ if not db.empty and 'Div' in db.columns:
 else:
     mevcut_ligler += sorted([f"{k} | {v}" for k, v in LIG_MAP.items()])
 
-st.markdown("<h1 style='text-align:center; color:#d4af37;'>📡 QUANTUM PRO V181</h1>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align:center; color:#8b949e;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | 48 Saatlik Ufuk Radarı & Dinamik xG</p>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#d4af37;'>🛠️ QUANTUM PRO V182</h1>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align:center; color:#8b949e;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | API Teşhis Motoru & Tam Senkronizasyon</p>", unsafe_allow_html=True)
 
 st.markdown("<div class='api-box'>", unsafe_allow_html=True)
 st.subheader("⚡ Canlı Oran Borsası (Ufuk Taraması)")
@@ -163,37 +163,52 @@ if fetch_btn and api_key:
             
             soccer_count = 0
             current_time_utc = datetime.datetime.now(datetime.timezone.utc)
-            # YENİ ODAK: Şu andan itibaren 48 saat sonrasına kadar olan maçları getir!
             horizon_time_utc = current_time_utc + datetime.timedelta(hours=48)
             
             st.session_state.live_matches.clear()
+            api_error_message = None
             
             for league in target_leagues:
-                url = f"https://api.the-odds-api.com/v4/sports/{league}/odds/?apiKey={clean_key}&regions=eu,uk&markets=h2h,totals&oddsFormat=decimal"
+                # KOTA TASARRUFU: Sadece 'eu' bölgesini çekiyoruz (Maliyeti yarıya indirdik!)
+                url = f"https://api.the-odds-api.com/v4/sports/{league}/odds/?apiKey={clean_key}&regions=eu&markets=h2h,totals&oddsFormat=decimal"
                 response = requests.get(url)
                 
-                if response.status_code == 200:
-                    matches = response.json()
-                    for m in matches:
-                        try:
-                            match_time_utc = datetime.datetime.fromisoformat(m['commence_time'].replace('Z', '+00:00'))
-                            local_time = match_time_utc + datetime.timedelta(hours=3)
+                # --- YENİ HATA TEŞHİS SİSTEMİ ---
+                if response.status_code == 429:
+                    api_error_message = "🚨 KOTA DOLDU: The-Odds-API aylık 500 istek sınırınız tükenmiş! Sistemi çok fazla taradığınız için kotanız bitti. ÇÖZÜM: the-odds-api.com sitesinden yeni bir mail adresiyle ücretsiz yeni bir API anahtarı alın."
+                    break
+                elif response.status_code == 401:
+                    api_error_message = "🚨 YETKİSİZ ANAHTAR: API Anahtarınız hatalı, eksik veya silinmiş."
+                    break
+                elif response.status_code != 200:
+                    api_error_message = f"🚨 BAĞLANTI HATASI: API Sunucusu {response.status_code} hatası döndürdü."
+                    break
+                
+                # Eğer hata yoksa 200 döndüyse devam et
+                matches = response.json()
+                for m in matches:
+                    try:
+                        match_time_utc = datetime.datetime.fromisoformat(m['commence_time'].replace('Z', '+00:00'))
+                        local_time = match_time_utc + datetime.timedelta(hours=3)
+                        
+                        if current_time_utc < match_time_utc < horizon_time_utc:
+                            time_str = local_time.strftime('%d.%m %H:%M')
+                            baslik = f"[{time_str}] {m['home_team']} - {m['away_team']} | ({m.get('sport_title', 'Lig')})"
                             
-                            # EĞER maç şu andan ilerideyse VE 48 saat içindeyse listeye al:
-                            if current_time_utc < match_time_utc < horizon_time_utc:
-                                time_str = local_time.strftime('%d.%m %H:%M') # Gün ve Saat birleşti
-                                baslik = f"[{time_str}] {m['home_team']} - {m['away_team']} | ({m.get('sport_title', 'Lig')})"
-                                
-                                m['_sort_time'] = match_time_utc.timestamp()
-                                st.session_state.live_matches[baslik] = m
-                                soccer_count += 1
-                        except Exception:
-                            pass
+                            m['_sort_time'] = match_time_utc.timestamp()
+                            st.session_state.live_matches[baslik] = m
+                            soccer_count += 1
+                    except Exception:
+                        pass
             
-            if soccer_count > 0:
-                st.success(f"✅ Başarılı! Önümüzdeki 48 saat içinde oynanacak {soccer_count} adet hedef maç bulundu.")
+            # --- TEŞHİS SONUÇ EKRANI ---
+            if api_error_message:
+                st.error(api_error_message)
+            elif soccer_count > 0:
+                st.success(f"✅ Başarılı! Önümüzdeki 48 saat içinde oynanacak {soccer_count} adet maç bulundu.")
             else:
-                st.warning("⚠️ Hedef 19 ligde önümüzdeki 48 saat içinde oynanacak maç bulunmuyor.")
+                st.warning("⚠️ Seçili liglerde önümüzdeki 48 saat içinde maç bulunamadı veya oranlar henüz açılmadı.")
+                
         except Exception as e:
             st.error(f"❌ Sistemsel bağlantı hatası: {str(e)}")
 
@@ -362,7 +377,6 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
             raw_p_msx = (benzer[benzer['FTR']=='D']['weight'].sum() / w_sum) * 100 if 'FTR' in benzer.columns else 0
             raw_p_ms2 = (benzer[benzer['FTR']=='A']['weight'].sum() / w_sum) * 100 if 'FTR' in benzer.columns else 0
             
-            raw_p_u25 = min(99.0, ((benzer[(benzer['FTHG'])>2.5]['weight'].sum() / w_sum) * 100) * league_u25_mod) if 'FTHG' in benzer.columns else 0 #Note: A small bug here from earlier, fixing dynamically. (benzer['FTHG']+benzer['FTAG'])>2.5
             raw_p_u25 = min(99.0, ((benzer[(benzer['FTHG']+benzer['FTAG'])>2.5]['weight'].sum() / w_sum) * 100) * league_u25_mod) if 'FTHG' in benzer.columns else 0
             raw_p_a25 = 100 - raw_p_u25 if raw_p_u25 > 0 else 0
             raw_p_kgv = min(99.0, ((benzer[(benzer['FTHG']>0) & (benzer['FTAG']>0)]['weight'].sum() / w_sum) * 100) * league_u25_mod) if 'FTHG' in benzer.columns else 0
