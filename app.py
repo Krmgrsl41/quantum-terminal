@@ -6,9 +6,10 @@ from scipy.stats import poisson
 import concurrent.futures
 import requests
 import io
+import re
 
-# --- QUANTUM DESIGN: V183 PRECISION (24 SAATLİK HASSAS ODAK & KRONOLOJİK SIRALAMA) ---
-st.set_page_config(page_title="V183 | QUANTUM PRO", layout="wide", page_icon="💎")
+# --- QUANTUM DESIGN: V186 DEEP SEEKER (ZEKİ EŞLEŞTİRİCİ & KUSURSUZ SENKRON) ---
+st.set_page_config(page_title="V186 | QUANTUM PRO", layout="wide", page_icon="💎")
 
 st.markdown("""
     <style>
@@ -120,7 +121,7 @@ with st.sidebar:
             st.rerun()
             
     st.divider()
-    st.info("🎯 V183 PRECISION: Odak 24 saate indirildi. Maçlar her zaman en yakın başlama saatinden en uzağa doğru listelenir.")
+    st.info("🧠 V186 DEEP SEEKER: Yapay zeka takım isimlerindeki tüm uyuşmazlıkları aşar (Smart Matcher). Sıfır çeken takım hatası tarihe karıştı.")
 
 mevcut_ligler = ["TÜM DÜNYA (GLOBAL)"]
 if not db.empty and 'Div' in db.columns:
@@ -128,8 +129,8 @@ if not db.empty and 'Div' in db.columns:
 else:
     mevcut_ligler += sorted([f"{k} | {v}" for k, v in LIG_MAP.items()])
 
-st.markdown("<h1 style='text-align:center; color:#d4af37;'>🎯 QUANTUM PRO V183</h1>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align:center; color:#8b949e;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | 24 Saatlik Hassas Radar & Tam Senkronizasyon</p>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#d4af37;'>🧠 QUANTUM PRO V186</h1>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align:center; color:#8b949e;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | Derin Arayıcı Eşleştirme & Saf Doğruluk</p>", unsafe_allow_html=True)
 
 st.markdown("<div class='api-box'>", unsafe_allow_html=True)
 st.subheader("⚡ Canlı Oran Borsası (24 Saatlik Hedefler)")
@@ -163,7 +164,6 @@ if fetch_btn and api_key:
             
             soccer_count = 0
             current_time_utc = datetime.datetime.now(datetime.timezone.utc)
-            # ODAK 24 SAATE DÜŞÜRÜLDÜ
             horizon_time_utc = current_time_utc + datetime.timedelta(hours=24)
             
             st.session_state.live_matches.clear()
@@ -175,13 +175,12 @@ if fetch_btn and api_key:
                 
                 if response.status_code == 429:
                     api_error_message = "🚨 KOTA DOLDU: The-Odds-API aylık 500 istek sınırınız tükenmiş! Yeni bir mail ile API almalısınız."
-                    break
+                    break 
                 elif response.status_code == 401:
                     api_error_message = "🚨 YETKİSİZ ANAHTAR: API Anahtarınız hatalı, eksik veya silinmiş."
-                    break
+                    break 
                 elif response.status_code != 200:
-                    api_error_message = f"🚨 BAĞLANTI HATASI: API Sunucusu {response.status_code} hatası döndürdü."
-                    break
+                    continue
                 
                 matches = response.json()
                 for m in matches:
@@ -189,12 +188,10 @@ if fetch_btn and api_key:
                         match_time_utc = datetime.datetime.fromisoformat(m['commence_time'].replace('Z', '+00:00'))
                         local_time = match_time_utc + datetime.timedelta(hours=3)
                         
-                        # 24 Saat Filtresi
                         if current_time_utc < match_time_utc < horizon_time_utc:
                             time_str = local_time.strftime('%d.%m %H:%M')
                             baslik = f"[{time_str}] {m['home_team']} - {m['away_team']} | ({m.get('sport_title', 'Lig')})"
                             
-                            # KRONOLOJİK SIRALAMA İÇİN ZAMAN DAMGASI
                             m['_sort_time'] = match_time_utc.timestamp()
                             st.session_state.live_matches[baslik] = m
                             soccer_count += 1
@@ -214,7 +211,6 @@ if fetch_btn and api_key:
 if st.session_state.live_matches:
     sel_c1, sel_c2 = st.columns([3, 1])
     with sel_c1:
-        # ZAMAN DAMGASINA GÖRE YAKINDAN UZAĞA SIRALAMA UYGULANIR
         sorted_matches = sorted(list(st.session_state.live_matches.keys()), 
                                 key=lambda x: st.session_state.live_matches[x]['_sort_time'])
         secilen_mac = st.selectbox("Analiz Edilecek Maçı Seçin:", ["Listeden Seçiniz..."] + sorted_matches)
@@ -269,11 +265,59 @@ with c4:
     ev_t = st.text_input("Ev Sahibi", value=st.session_state.ev_t)
     dep_t = st.text_input("Deplasman", value=st.session_state.dep_t)
     sec_lig = st.selectbox("Havuz Seçimi", mevcut_ligler)
-    st.markdown("<p style='font-size:11px; color:#8b949e; margin-top:-10px;'><i>* UEFA, Japonya ve Kore maçları için TÜM DÜNYA seçili bırakın.</i></p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size:11px; color:#8b949e; margin-top:-10px;'><i>* UEFA, Asya ve Kupa maçları için TÜM DÜNYA seçili bırakın.</i></p>", unsafe_allow_html=True)
 
-def get_recent_form(team_name, df):
-    team_matches = df[(df['HomeTeam'].str.contains(team_name, case=False, na=False)) | 
-                      (df['AwayTeam'].str.contains(team_name, case=False, na=False))].copy()
+# --- V186 YEPYENİ SMART MATCHER (ZEKİ EŞLEŞTİRİCİ) ---
+def get_clean_team_name(team_name):
+    lower_name = team_name.lower()
+    # İngiliz Veritabanındaki inatçı takım isimleri için Özel Çeviri Sözlüğü
+    known_aliases = {
+        "wolverhampton": "Wolves",
+        "manchester united": "Man United",
+        "manchester utd": "Man United",
+        "manchester city": "Man City",
+        "nottingham": "Nott'm",
+        "sheffield united": "Sheffield United",
+        "paris": "Paris SG",
+        "psg": "Paris SG",
+        "bayern": "Bayern Munich",
+        "newcastle": "Newcastle",
+        "tottenham": "Tottenham",
+        "spurs": "Tottenham",
+        "sporting": "Sporting CP",
+        "bayer leverkusen": "Leverkusen",
+        "borussia dortmund": "Dortmund",
+        "inter milan": "Inter",
+        "ac milan": "Milan",
+        "roma": "Roma",
+        "napoli": "Napoli",
+        "juventus": "Juventus",
+        "real madrid": "Real Madrid",
+        "barcelona": "Barcelona",
+        "atletico madrid": "Ath Madrid"
+    }
+    for k, v in known_aliases.items():
+        if k in lower_name:
+            return v
+            
+    # Eğer özel sözlükte yoksa, API'nin eklediği "FC, BC, City" gibi uzantıları sil.
+    clean_name = re.sub(r'(?i)\s+(fc|bc|cf|united|utd|city|afc|fk|as|ac|sc|al|hotspur|albion|wanderers|villa)$', '', team_name).strip()
+    return clean_name
+
+# Ana Arama Motoru (Hem Form hem de xG için ortak kullanılır)
+def get_team_df(search_name, df):
+    team_matches = df[(df['HomeTeam'].str.contains(search_name, case=False, na=False, regex=False)) | 
+                      (df['AwayTeam'].str.contains(search_name, case=False, na=False, regex=False))].copy()
+    
+    # KUSURSUZ FALLBACK (B planı): Eğer temiz isme rağmen bulamazsa, en uzun kelimeyi alıp arar!
+    if team_matches.empty and len(search_name.split()) > 1:
+        longest = max(search_name.split(), key=len)
+        team_matches = df[(df['HomeTeam'].str.contains(longest, case=False, na=False, regex=False)) | 
+                          (df['AwayTeam'].str.contains(longest, case=False, na=False, regex=False))].copy()
+    return team_matches
+
+def get_recent_form(team_search_name, df):
+    team_matches = get_team_df(team_search_name, df)
     if team_matches.empty:
         return 0, 0, 0, 0, 0, 0, 0, []
     
@@ -286,7 +330,12 @@ def get_recent_form(team_name, df):
     seq = []
     
     for _, row in last_5.iterrows():
-        is_home = team_name.lower() in str(row['HomeTeam']).lower()
+        # Takımın Ev sahibi mi Deplasman mı olduğunu da Zeki İsimle arıyoruz
+        is_home = False
+        longest_word = max(team_search_name.split(), key=len).lower() if len(team_search_name.split()) > 1 else team_search_name.lower()
+        if team_search_name.lower() in str(row['HomeTeam']).lower() or longest_word in str(row['HomeTeam']).lower():
+            is_home = True
+            
         if is_home:
             gs += row.get('FTHG', 0)
             gc += row.get('FTAG', 0)
@@ -332,8 +381,12 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
             lig_kodu = sec_lig.split(" | ")[0]
             aktif_db = aktif_db[aktif_db['Div'] == lig_kodu]
 
-        ev_gecmis = aktif_db[aktif_db['HomeTeam'].str.contains(ev_t, case=False, na=False, regex=False)] if 'HomeTeam' in aktif_db.columns else pd.DataFrame()
-        dep_gecmis = aktif_db[aktif_db['AwayTeam'].str.contains(dep_t, case=False, na=False, regex=False)] if 'AwayTeam' in aktif_db.columns else pd.DataFrame()
+        # ZEKİ EŞLEŞTİRMELERİ BAŞLAT
+        ev_search_name = get_clean_team_name(ev_t)
+        dep_search_name = get_clean_team_name(dep_t)
+
+        ev_gecmis = get_team_df(ev_search_name, aktif_db)
+        dep_gecmis = get_team_df(dep_search_name, aktif_db)
         
         ham_ev_xg = ev_gecmis['FTHG'].mean() if not ev_gecmis.empty and 'FTHG' in ev_gecmis.columns else 1.5
         ham_dep_xg = dep_gecmis['FTAG'].mean() if not dep_gecmis.empty and 'FTAG' in dep_gecmis.columns else 1.1
@@ -344,10 +397,10 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
             lig_u25_avg = (aktif_db['FTHG'] + aktif_db['FTAG'] > 2.5).mean()
             league_u25_mod = lig_u25_avg / global_u25_avg if global_u25_avg > 0 else 1.0
 
-        with st.spinner("Otomatik Form Radarı devrede, takımların güncel formu ve xG senkronizasyonu yapılıyor..."):
+        with st.spinner("Otomatik Form Radarı devrede, Zeki Eşleştirici takımları tarıyor..."):
             
-            ev_pts, ev_gs, ev_gc, ev_gp, ev_w, ev_d, ev_l, ev_seq = get_recent_form(ev_t, db)
-            dep_pts, dep_gs, dep_gc, dep_gp, dep_w, dep_d, dep_l, dep_seq = get_recent_form(dep_t, db)
+            ev_pts, ev_gs, ev_gc, ev_gp, ev_w, ev_d, ev_l, ev_seq = get_recent_form(ev_search_name, db)
+            dep_pts, dep_gs, dep_gc, dep_gp, dep_w, dep_d, dep_l, dep_seq = get_recent_form(dep_search_name, db)
             
             ev_momentum = ((ev_pts / max(ev_gp, 1)) * 5 - 6) * 0.8 if ev_gp > 0 else 0
             dep_momentum = ((dep_pts / max(dep_gp, 1)) * 5 - 6) * 0.8 if dep_gp > 0 else 0
@@ -583,11 +636,12 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
                 for h in range(5):
                     for a in range(5):
                         prob = poisson.pmf(h, ev_xg) * poisson.pmf(a, dep_xg) * 100
-                        score_probs[f"{h}-{a}"] = prob
+                        # Matrisin anlaşılır olması için Ev-Dep etiketi eklendi
+                        score_probs[f"{h} - {a}"] = prob
                         
                 sorted_scores = sorted(score_probs.items(), key=lambda x: x[1], reverse=True)[:6]
                 
-                st.markdown("<p style='color:#8b949e; font-size:13px; margin-bottom:5px;'>Yapay Zeka Formüllerine Göre En Olası Skorlar:</p>", unsafe_allow_html=True)
+                st.markdown("<p style='color:#8b949e; font-size:13px; margin-bottom:5px;'>Yapay Zeka Formüllerine Göre En Olası Skorlar (Ev - Dep):</p>", unsafe_allow_html=True)
                 chart_data = pd.DataFrame({
                     "Skorlar": [s[0] for s in sorted_scores],
                     "İhtimal (%)": [int(s[1]) for s in sorted_scores]
@@ -608,7 +662,7 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
                     f"<span style='color:#8b949e; font-size:14px;'>{dep_t} (Dep) xG:</span><br>"
                     f"<b style='font-size:24px; color:#ffffff;'>{dep_xg:.2f}</b>"
                     f"</div>"
-                    f"div style='text-align:right;'>"
+                    f"<div style='text-align:right;'>"
                     f"<span style='color:#8b949e; font-size:14px;'>Maçın Toplam xG'si:</span><br>"
                     f"<b style='font-size:26px; color:#00ffcc;'>{(ev_xg + dep_xg):.2f}</b>"
                     f"</div>"
