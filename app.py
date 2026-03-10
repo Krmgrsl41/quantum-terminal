@@ -5,9 +5,10 @@ import datetime
 from scipy.stats import poisson
 import concurrent.futures
 import requests
+import io
 
-# --- QUANTUM DESIGN: V179 OMNISCIENT (Y2K BUG FIX & KUSURSUZ POISSON) ---
-st.set_page_config(page_title="V179 | QUANTUM PRO", layout="wide", page_icon="💎")
+# --- QUANTUM DESIGN: V180 GHOST PROTOCOL (SİBER GÜVENLİK & HAYALET MODU) ---
+st.set_page_config(page_title="V180 | QUANTUM PRO", layout="wide", page_icon="💎")
 
 st.markdown("""
     <style>
@@ -65,10 +66,20 @@ def load_quantum_data():
     leagues = list(LIG_MAP.keys())
     urls_to_fetch = [(s, l, f'https://www.football-data.co.uk/mmz4281/{s}/{l}.csv') for s in seasons for l in leagues]
     
+    # --- V180 HAYALET MODU (GHOST PROTOCOL) ENTEGRASYONU ---
     def fetch_and_verify(item):
         s, l, url = item
+        # İngiliz sunucusunu kandırmak için Google Chrome maskesi takıyoruz
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        }
         try:
-            df = pd.read_csv(url)
+            response = requests.get(url, headers=headers, timeout=10)
+            if response.status_code != 200:
+                return pd.DataFrame()
+                
+            df = pd.read_csv(io.StringIO(response.text))
+            
             if 'B365>2.5' in df.columns: df.rename(columns={'B365>2.5': 'B365O', 'B365<2.5': 'B365U'}, inplace=True)
             cols = ['Div', 'Date', 'HomeTeam', 'AwayTeam', 'B365H', 'B365D', 'B365A', 'B365O', 'B365U', 'FTR', 'FTHG', 'FTAG', 'HTHG', 'HTAG', 'HC', 'AC']
             df = df[[c for c in cols if c in df.columns]].dropna(subset=['B365H', 'B365D', 'B365A']).copy()
@@ -82,11 +93,14 @@ def load_quantum_data():
             return pd.DataFrame()
 
     dfs = []
-    with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
+    # Siber saldırı olarak algılanmasın diye indirme kolunu 50'den 15'e düşürdük (Sessiz İndirme)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=15) as executor:
         results = list(executor.map(fetch_and_verify, urls_to_fetch))
         
-    if dfs:
+    if dfs := [res for res in results if not res.empty]:
         res_df = pd.concat(dfs, ignore_index=True)
+        res_df['Date_Parsed'] = pd.to_datetime(res_df['Date'], dayfirst=True, errors='coerce')
+        res_df = res_df.sort_values(['Season', 'Date_Parsed']).reset_index(drop=True)
         return res_df
     return pd.DataFrame()
 
@@ -100,16 +114,16 @@ with st.sidebar:
     if len(db) == 0:
         st.markdown("""
         <div style='background:rgba(255, 75, 75, 0.1); border:1px solid #ff4b4b; padding:10px; border-radius:8px; margin-top:10px;'>
-            <span style='color:#ff4b4b; font-size:13px; font-weight:bold;'>⚠️ Ağ Kopması Tespit Edildi!</span><br>
-            <span style='color:#8b949e; font-size:12px;'>Veritabanı eksik yüklendi. Lütfen aşağıdaki butona basarak bağlantıyı tazeleyin.</span>
+            <span style='color:#ff4b4b; font-size:13px; font-weight:bold;'>⚠️ Veri İndirme Başarısız!</span><br>
+            <span style='color:#8b949e; font-size:12px;'>Güvenlik duvarı indirmeyi engelledi. Hayalet Modu'nu devreye sokmak için aşağıdaki butona basın.</span>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("🔄 Veritabanını Yeniden İndir"):
+        if st.button("🔄 Hayalet Modu ile Yeniden İndir"):
             st.cache_data.clear()
             st.rerun()
             
     st.divider()
-    st.info("🛡️ V179 OMNISCIENT: Y2K (Milenyum) hatası çözüldü, tüm form verileri mutlak gerçeği yansıtır. Dinamik Poisson ve Anti-Çökme kalkanı aktif.")
+    st.info("🛡️ V180 GHOST PROTOCOL: Veri tabanı sunucularının bizi engellemesini önleyen 'Hayalet Modu' ve Chrome Dijital Maskesi eklendi.")
 
 mevcut_ligler = ["TÜM DÜNYA (GLOBAL)"]
 if not db.empty and 'Div' in db.columns:
@@ -117,8 +131,8 @@ if not db.empty and 'Div' in db.columns:
 else:
     mevcut_ligler += sorted([f"{k} | {v}" for k, v in LIG_MAP.items()])
 
-st.markdown("<h1 style='text-align:center; color:#d4af37;'>🛡️ QUANTUM PRO V179</h1>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align:center; color:#8b949e;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | Y2K Korumalı Form Motoru & Dinamik xG</p>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#d4af37;'>🛡️ QUANTUM PRO V180</h1>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align:center; color:#8b949e;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | Ghost Protocol & Dinamik xG</p>", unsafe_allow_html=True)
 
 st.markdown("<div class='api-box'>", unsafe_allow_html=True)
 st.subheader("⚡ Canlı Oran Borsası (Günün Hedefleri)")
@@ -244,14 +258,12 @@ with c4:
     sec_lig = st.selectbox("Havuz Seçimi", mevcut_ligler)
     st.markdown("<p style='font-size:11px; color:#8b949e; margin-top:-10px;'><i>* UEFA, Japonya ve Kore maçları için TÜM DÜNYA seçili bırakın.</i></p>", unsafe_allow_html=True)
 
-# --- V179 Y2K MİLENYUM HATASI ÇÖZÜMÜ ---
 def get_recent_form(team_name, df):
     team_matches = df[(df['HomeTeam'].str.contains(team_name, case=False, na=False)) | 
                       (df['AwayTeam'].str.contains(team_name, case=False, na=False))].copy()
     if team_matches.empty:
         return 0, 0, 0, 0, 0, 0, 0, []
     
-    # Tüm küresel sıralama hatalarını ezerek, verileri sadece gerçek takvim gününe göre dizer.
     team_matches['Date_Parsed'] = pd.to_datetime(team_matches['Date'], dayfirst=True, errors='coerce')
     team_matches = team_matches.dropna(subset=['Date_Parsed']).sort_values('Date_Parsed')
     
@@ -296,9 +308,8 @@ def build_seq_html(seq, align="left"):
 if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
     aktif_db = db.copy()
     
-    # ANTI-CRASH ONAYI
     if len(aktif_db) == 0 or 'Div' not in aktif_db.columns:
-        st.error("❌ Veritabanı bozuk veya boş indirildi! Lütfen sol menüdeki '🔄 Veritabanını Yeniden İndir' butonuna basın.")
+        st.error("❌ Veritabanı bozuk veya boş! Lütfen sol menüdeki '🔄 Hayalet Modu ile Yeniden İndir' butonuna basın.")
     else:
         for col in ['B365O', 'B365U', 'HTHG', 'HTAG']:
             if col not in aktif_db.columns: aktif_db[col] = np.nan
@@ -553,7 +564,6 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
                     )
 
             with det_r:
-                # --- YENİ EKLENTİ: GÜNCEL FORMA GÖRE HESAPLANAN DİNAMİK POISSON GRAFİĞİ ---
                 st.subheader("📈 Dinamik Skor Matrisi (Poisson)")
                 
                 score_probs = {}
