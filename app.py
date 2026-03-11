@@ -256,7 +256,34 @@ if st.session_state.live_matches:
                 if u25_list: st.session_state.u25 = round(sum(u25_list)/len(u25_list), 2)
                 st.rerun() 
 st.markdown("</div>", unsafe_allow_html=True)
-
+# --- AKILLI KOPYALAMA (SMART PASTE) MOTORU ---
+with st.expander("✂️ GİZLİ SİLAH: Siteden Oran Kopyala / Yapıştır (Smart Paste)"):
+    st.markdown("<p style='color:#8b949e; font-size:14px;'>Maçkolik veya Nesine gibi sitelerden kopyaladığınız <b>oran metinlerini</b> direkt buraya yapıştırın. Sistem içindeki sayıları cımbızla çekip kutulara otomatik dağıtır.</p>", unsafe_allow_html=True)
+    
+    paste_text = st.text_area("Kopyalanan Metni Yapıştırın (Örn: Fenerbahçe 2,10 3,20 2,80 1,75 1,85):", height=80)
+    
+    if st.button("🪄 METNİ ÇÖZÜMLE VE KUTULARA DAĞIT"):
+        if paste_text:
+            # Virgüllü oranları (2,10) noktalıya (2.10) çevir ve 2 ondalıklı sayıları bul
+            raw_numbers = re.findall(r'\b[0-9]+[\.,][0-9]{2}\b', paste_text)
+            floats = [float(x.replace(',', '.')) for x in raw_numbers]
+            
+            if len(floats) >= 3:
+                st.session_state.ms1 = floats[0]
+                st.session_state.msx = floats[1]
+                st.session_state.ms2 = floats[2]
+                
+                if len(floats) >= 5: # Genelde sitelerde 4. ve 5. sayı 2.5 Alt ve Üst'tür
+                    st.session_state.u25 = floats[3]
+                    st.session_state.o25 = floats[4]
+                    
+                if len(floats) >= 7: # Genelde 6. ve 7. sayı KG Var / Yok'tur
+                    st.session_state.btts_y = floats[5]
+                    st.session_state.btts_n = floats[6]
+                    
+                st.rerun()
+            else:
+                st.error("❌ Metin içinde geçerli bir oran formatı (örn: 2.10 veya 2,10) bulunamadı! En az Taraf Oranlarını kopyaladığınızdan emin olun.")
 # --- ARAYÜZ (GÜNCEL GRID) ---
 st.markdown("<div class='input-container'>", unsafe_allow_html=True)
 top_c1, top_c2, top_c3 = st.columns([1.5, 1.5, 1.5])
@@ -764,3 +791,4 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
 
         else:
             st.error("❌ Veritabanında hiçbir istatistiksel geçerliliği olan benzer maç bulunamadı.")
+
