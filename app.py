@@ -9,40 +9,53 @@ import io
 import re
 from sklearn.ensemble import RandomForestClassifier
 
-# --- QUANTUM DESIGN: V195 HT SNIPER (İ.Y 1.5 ÜST POISSON RADARI) ---
-st.set_page_config(page_title="V195 | QUANTUM APEX", layout="wide", page_icon="🎯")
+# --- QUANTUM DESIGN: V196 THE PRESTIGE (UI/UX, PREMIUM TYPOGRAPHY & BIG FONTS) ---
+st.set_page_config(page_title="V196 | QUANTUM APEX", layout="wide", page_icon="💎")
 
+# V196 TASARIM GÜNCELLEMESİ: Google Fonts 'Inter' eklendi, font boyutları büyütüldü, gölgeler yumuşatıldı.
 st.markdown("""
     <style>
-    .stApp { background-color: #030507; color: #ffffff; }
-    div.stButton > button:first-child { background: linear-gradient(90deg, #d4af37, #ffcc00); color:black; border:none; font-weight:900; height: 3.5em; width: 100%; box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4); text-transform: uppercase; letter-spacing: 1px; }
-    .news-card { background-color: #0c1015; padding: 15px; border-radius: 10px; border-left: 5px solid #d4af37; margin-top: 10px; }
-    .score-row { background: #121820; padding: 8px; border-radius: 5px; margin-bottom: 5px; display: flex; justify-content: space-between; border: 1px solid #1e2530; font-family: monospace; }
-    .danger-zone { background: rgba(255, 75, 75, 0.1); border-left: 5px solid #ff4b4b; padding: 15px; border-radius: 10px; margin-top: 10px; }
-    .safe-zone { background: rgba(0, 255, 204, 0.1); border-left: 5px solid #00ffcc; padding: 15px; border-radius: 10px; margin-top: 10px; }
-    .rank-row { background: #0c1015; padding: 12px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #1e2530; transition: transform 0.2s; }
-    .rank-row:hover { transform: scale(1.01); border-color: #d4af37; }
-    .ai-verdict-box { background: linear-gradient(145deg, #0a0a0a, #1a1500); border: 2px solid #d4af37; padding: 25px; border-radius: 15px; text-align: center; box-shadow: 0 0 20px rgba(212, 175, 55, 0.2); margin-top: 20px; }
-    .match-count-badge { background: rgba(0, 255, 204, 0.1); border: 1px solid #00ffcc; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center; }
-    .api-box { background: #0c1015; border: 1px solid #8a2be2; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
-    .scout-box { background: linear-gradient(145deg, #0a0e14, #121820); border: 1px solid #00ffcc; padding: 20px; border-radius: 12px; margin-bottom: 25px; margin-top:20px; box-shadow: 0 4px 15px rgba(0, 255, 204, 0.1); }
-    .team-form-container { display: flex; justify-content: space-between; font-size: 15px; align-items: center; }
-    .badge-w { background-color: rgba(0, 255, 204, 0.2); color: #00ffcc; padding: 2px 6px; border-radius: 4px; font-weight: bold; border: 1px solid #00ffcc; margin: 0 2px;}
-    .badge-d { background-color: rgba(212, 175, 55, 0.2); color: #ffcc00; padding: 2px 6px; border-radius: 4px; font-weight: bold; border: 1px solid #ffcc00; margin: 0 2px;}
-    .badge-l { background-color: rgba(255, 75, 75, 0.2); color: #ff4b4b; padding: 2px 6px; border-radius: 4px; font-weight: bold; border: 1px solid #ff4b4b; margin: 0 2px;}
-    .prob-card { background: #0c1015; border-radius: 10px; padding: 15px; text-align: center; border: 1px solid #1e2530; margin-bottom: 15px; transition: transform 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
-    .prob-card:hover { transform: translateY(-3px); }
-    .prob-title { color: #8b949e; font-size: 14px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
-    .prob-value { font-size: 32px; font-weight: 900; margin: 5px 0; text-shadow: 0 0 10px rgba(255,255,255,0.1); }
-    .prob-odd { color: #ffffff; font-size: 14px; background: #121820; padding: 3px 10px; border-radius: 15px; display: inline-block; border: 1px solid #333; }
-    .syndicate-badge { background: #1a1500; border: 1px solid #d4af37; color: #d4af37; padding: 3px 8px; border-radius: 5px; font-size: 11px; font-weight: bold; margin-right: 5px; display:inline-block; margin-bottom:5px;}
-    .value-alarm { background: linear-gradient(90deg, #ff0000, #800000); padding: 15px; border-radius: 10px; margin-top: 15px; text-align: center; border: 2px solid #ff4b4b; box-shadow: 0 0 20px rgba(255,0,0,0.5); animation: pulse 2s infinite; }
-    .trap-alarm { background: linear-gradient(90deg, #8a2be2, #4b0082); padding: 15px; border-radius: 10px; margin-top: 15px; text-align: center; border: 2px solid #d4af37; box-shadow: 0 0 20px rgba(138,43,226,0.5); }
-    @keyframes pulse { 0% { box-shadow: 0 0 10px rgba(255,0,0,0.5); } 50% { box-shadow: 0 0 25px rgba(255,0,0,1); } 100% { box-shadow: 0 0 10px rgba(255,0,0,0.5); } }
-    .dna-box { background: #121820; padding: 15px; border-radius: 10px; border-left: 5px solid #8a2be2; margin-bottom: 15px; font-size: 14px; display: flex; justify-content: space-between; align-items: center;}
-    .alt-market { background: #0c1015; padding: 15px; border-radius: 10px; border: 1px solid #1e2530; margin-bottom: 15px; text-align: center; }
-    .ml-box { background: linear-gradient(90deg, #0f2027, #203a43, #2c5364); padding: 15px; border-radius: 10px; border-left: 5px solid #00ffcc; margin-top: 15px; }
-    .backtest-box { background: #0a0a0a; padding: 20px; border-radius: 10px; border: 1px solid #d4af37; margin-top: 20px; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
+    
+    .stApp { background-color: #05070a; color: #ffffff; font-family: 'Inter', sans-serif; }
+    
+    div.stButton > button:first-child { 
+        background: linear-gradient(90deg, #d4af37, #ffcc00); color:black; border:none; 
+        font-weight:900; font-size: 18px; height: 3.5em; width: 100%; 
+        box-shadow: 0 6px 20px rgba(212, 175, 55, 0.5); text-transform: uppercase; letter-spacing: 1.5px; border-radius: 12px; transition: all 0.3s ease;
+    }
+    div.stButton > button:first-child:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(212, 175, 55, 0.7); }
+    
+    h1, h2, h3, h4 { font-family: 'Inter', sans-serif; font-weight: 800; letter-spacing: -0.5px; }
+    
+    .ai-verdict-box { background: linear-gradient(145deg, #0a0a0a, #151100); border: 2px solid #d4af37; padding: 35px; border-radius: 20px; text-align: center; box-shadow: 0 10px 30px rgba(212, 175, 55, 0.15); margin-top: 20px; }
+    .api-box { background: #0c1015; border: 1px solid #8a2be2; padding: 25px; border-radius: 15px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(138, 43, 226, 0.1); }
+    .scout-box { background: linear-gradient(145deg, #0a0e14, #121820); border: 1px solid #00ffcc; padding: 30px; border-radius: 15px; margin-bottom: 25px; margin-top:10px; box-shadow: 0 8px 25px rgba(0, 255, 204, 0.1); }
+    
+    .prob-card { background: #0c1015; border-radius: 15px; padding: 25px 15px; text-align: center; border: 1px solid #1e2530; margin-bottom: 15px; transition: transform 0.2s; box-shadow: 0 6px 12px rgba(0,0,0,0.3); }
+    .prob-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+    .prob-title { color: #8b949e; font-size: 16px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+    .prob-value { font-size: 42px; font-weight: 900; margin: 10px 0; text-shadow: 0 0 15px rgba(255,255,255,0.15); }
+    .prob-odd { color: #ffffff; font-size: 16px; background: #121820; padding: 6px 15px; border-radius: 20px; display: inline-block; border: 1px solid #333; font-weight:600;}
+    
+    .rank-row { background: #0c1015; padding: 18px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #1e2530; transition: all 0.2s; }
+    .rank-row:hover { transform: scale(1.02); border-color: #d4af37; box-shadow: 0 5px 15px rgba(212, 175, 55, 0.1);}
+    
+    .team-form-container { display: flex; justify-content: space-between; font-size: 16px; align-items: center; }
+    .badge-w, .badge-d, .badge-l { padding: 4px 10px; border-radius: 6px; font-weight: 800; margin: 0 3px; font-size: 14px;}
+    .badge-w { background-color: rgba(0, 255, 204, 0.2); color: #00ffcc; border: 1px solid #00ffcc; }
+    .badge-d { background-color: rgba(212, 175, 55, 0.2); color: #ffcc00; border: 1px solid #ffcc00; }
+    .badge-l { background-color: rgba(255, 75, 75, 0.2); color: #ff4b4b; border: 1px solid #ff4b4b; }
+    
+    .syndicate-badge { background: #1a1500; border: 1px solid #d4af37; color: #d4af37; padding: 5px 10px; border-radius: 6px; font-size: 13px; font-weight: 800; margin-right: 6px; display:inline-block; margin-bottom:8px;}
+    
+    .value-alarm { background: linear-gradient(90deg, #ff0000, #800000); padding: 25px; border-radius: 15px; margin-top: 20px; text-align: center; border: 2px solid #ff4b4b; box-shadow: 0 0 25px rgba(255,0,0,0.5); animation: pulse 2s infinite; }
+    .trap-alarm { background: linear-gradient(90deg, #8a2be2, #4b0082); padding: 25px; border-radius: 15px; margin-top: 20px; text-align: center; border: 2px solid #d4af37; box-shadow: 0 0 25px rgba(138,43,226,0.5); }
+    @keyframes pulse { 0% { box-shadow: 0 0 15px rgba(255,0,0,0.5); } 50% { box-shadow: 0 0 35px rgba(255,0,0,0.8); } 100% { box-shadow: 0 0 15px rgba(255,0,0,0.5); } }
+    
+    .dna-box { background: #121820; padding: 20px; border-radius: 15px; border-left: 6px solid #8a2be2; margin-bottom: 20px; font-size: 16px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.2);}
+    .alt-market { background: #0c1015; padding: 25px; border-radius: 15px; border: 1px solid #1e2530; margin-bottom: 20px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+    .ml-box { background: linear-gradient(90deg, #0f2027, #203a43, #2c5364); padding: 25px; border-radius: 15px; border-left: 6px solid #00ffcc; margin-top: 20px; box-shadow: 0 4px 15px rgba(0,255,204,0.15);}
     </style>
     """, unsafe_allow_html=True)
 
@@ -116,16 +129,16 @@ db = load_quantum_data()
 
 with st.sidebar:
     st.markdown("<h3 style='color:#00ffcc;'>🎛️ Radar Kalibrasyonu</h3>", unsafe_allow_html=True)
-    value_threshold = st.slider("🚨 Value Alarm Hassasiyeti (%)", min_value=3, max_value=25, value=10, step=1, help="Yapay Zeka tahmini ile bahis şirketinin gizli yüzdesi arasında kaç puanlık bir uçurum olduğunda kırmızı alarm çalsın?")
+    value_threshold = st.slider("🚨 Value Alarm Hassasiyeti (%)", min_value=3, max_value=25, value=10, step=1)
     
     st.divider()
-    st.markdown(f"<div style='background:#0c1015; padding:10px; border-radius:8px; border:1px solid #1e2530;'><b>Aktif Veri Havuzu:</b> {len(db):,} Maç</div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='background:#0c1015; padding:15px; border-radius:10px; border:1px solid #1e2530; font-size:16px;'><b>Aktif Veri Havuzu:</b><br><span style='font-size:20px; color:#d4af37;'>{len(db):,} Maç</span></div>", unsafe_allow_html=True)
     
     if len(db) == 0:
         st.markdown("""
-        <div style='background:rgba(255, 75, 75, 0.1); border:1px solid #ff4b4b; padding:10px; border-radius:8px; margin-top:10px;'>
-            <span style='color:#ff4b4b; font-size:13px; font-weight:bold;'>⚠️ Veri İndirme Başarısız!</span><br>
-            <span style='color:#8b949e; font-size:12px;'>Güvenlik duvarı indirmeyi engelledi. Hayalet Modu'nu devreye sokmak için aşağıdaki butona basın.</span>
+        <div style='background:rgba(255, 75, 75, 0.1); border:1px solid #ff4b4b; padding:15px; border-radius:10px; margin-top:15px;'>
+            <span style='color:#ff4b4b; font-size:15px; font-weight:bold;'>⚠️ Veri İndirme Başarısız!</span><br>
+            <span style='color:#8b949e; font-size:14px;'>Güvenlik duvarı indirmeyi engelledi. Hayalet Modu'nu devreye sokmak için aşağıdaki butona basın.</span>
         </div>
         """, unsafe_allow_html=True)
         if st.button("🔄 Hayalet Modu ile Yeniden İndir"):
@@ -133,7 +146,7 @@ with st.sidebar:
             st.rerun()
             
     st.divider()
-    st.info("🎯 V195 HT SNIPER: İlk Yarı beklentisi 1.5 Üst hedefine göre Poisson olasılık formülüyle yeniden kalibre edildi.")
+    st.info("💎 V196 THE PRESTIGE: Pürüzsüz Tipografi, Büyütülmüş Arayüz ve Premium Görünüm güncellemeleri aktif.")
 
 mevcut_ligler = ["TÜM DÜNYA (GLOBAL)"]
 if not db.empty and 'Div' in db.columns:
@@ -141,11 +154,11 @@ if not db.empty and 'Div' in db.columns:
 else:
     mevcut_ligler += sorted([f"{k} | {v}" for k, v in LIG_MAP.items()])
 
-st.markdown("<h1 style='text-align:center; color:#d4af37;'>🎯 QUANTUM APEX V195</h1>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align:center; color:#8b949e;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | İlk Yarı 1.5 Üst İhtimal Motoru</p>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#d4af37; font-size:48px; margin-bottom:0;'>💎 QUANTUM ORACLE V196</h1>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align:center; color:#8b949e; font-size:18px; margin-top:5px;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | Premium SaaS Arayüzü & İlk Yarı Radarı</p>", unsafe_allow_html=True)
 
 st.markdown("<div class='api-box'>", unsafe_allow_html=True)
-st.subheader("⚡ Canlı Oran Borsası (24 Saatlik Hedefler)")
+st.markdown("<h3 style='margin-top:0;'>⚡ Canlı Oran Borsası (24 Saatlik Hedefler)</h3>", unsafe_allow_html=True)
 
 api_c1, api_c2 = st.columns([2, 1])
 with api_c1:
@@ -262,20 +275,20 @@ st.markdown("</div>", unsafe_allow_html=True)
 
 c1, c2, c3, c4 = st.columns([1, 1, 1, 1.2])
 with c1:
-    st.subheader("📊 Taraf Bahisleri")
+    st.markdown("<h3>📊 Taraf Bahisleri</h3>", unsafe_allow_html=True)
     ms1 = st.number_input("MS 1", value=st.session_state.ms1, format="%.2f")
     msx = st.number_input("MS X", value=st.session_state.msx, format="%.2f")
     ms2 = st.number_input("MS 2", value=st.session_state.ms2, format="%.2f")
 with c2:
-    st.subheader("⚽ 2.5 Alt / Üst")
+    st.markdown("<h3>⚽ 2.5 Alt / Üst</h3>", unsafe_allow_html=True)
     u25 = st.number_input("2.5 ÜST", value=st.session_state.o25, format="%.2f")
     a25 = st.number_input("2.5 ALT", value=st.session_state.u25, format="%.2f")
 with c3:
-    st.subheader("🎯 KG Var / Yok")
+    st.markdown("<h3>🎯 KG Var / Yok</h3>", unsafe_allow_html=True)
     kgv = st.number_input("KG VAR", value=st.session_state.btts_y, format="%.2f")
     kgy = st.number_input("KG YOK", value=st.session_state.btts_n, format="%.2f")
 with c4:
-    st.subheader("🌍 Analiz Rotası")
+    st.markdown("<h3>🌍 Analiz Rotası</h3>", unsafe_allow_html=True)
     ev_t = st.text_input("Ev Sahibi", value=st.session_state.ev_t)
     dep_t = st.text_input("Deplasman", value=st.session_state.dep_t)
     sec_lig = st.selectbox("Havuz Seçimi", mevcut_ligler)
@@ -383,11 +396,11 @@ def build_seq_html(seq, align="left"):
     if not seq: return ""
     boxes = ""
     for res in seq:
-        if res == 'G': boxes += "<span style='background:#00ffcc; color:#000; padding:2px 6px; border-radius:3px; font-weight:bold; margin-right:4px;'>G</span>"
-        elif res == 'B': boxes += "<span style='background:#ffcc00; color:#000; padding:2px 6px; border-radius:3px; font-weight:bold; margin-right:4px;'>B</span>"
-        elif res == 'M': boxes += "<span style='background:#ff4b4b; color:#fff; padding:2px 6px; border-radius:3px; font-weight:bold; margin-right:4px;'>M</span>"
+        if res == 'G': boxes += "<span style='background:#00ffcc; color:#000; padding:4px 10px; border-radius:5px; font-weight:800; font-size:14px; margin-right:5px;'>G</span>"
+        elif res == 'B': boxes += "<span style='background:#ffcc00; color:#000; padding:4px 10px; border-radius:5px; font-weight:800; font-size:14px; margin-right:5px;'>B</span>"
+        elif res == 'M': boxes += "<span style='background:#ff4b4b; color:#fff; padding:4px 10px; border-radius:5px; font-weight:800; font-size:14px; margin-right:5px;'>M</span>"
     justify = "flex-start" if align == "left" else "flex-end"
-    return f"<div style='margin-top:10px; display:flex; align-items:center; justify-content:{justify}; font-size:12px;'>{boxes}<span style='color:#8b949e; font-style:italic; margin-left:4px;'>⬅️ Son Maç</span></div>"
+    return f"<div style='margin-top:12px; display:flex; align-items:center; justify-content:{justify};'>{boxes}<span style='color:#8b949e; font-style:italic; font-size:14px; margin-left:6px;'>⬅️ Son Maç</span></div>"
 
 @st.cache_resource(show_spinner=False)
 def train_ml_model(df, lig_kodu):
@@ -425,7 +438,7 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
         ev_gecmis, act_ev = get_team_df(ev_search_name, aktif_db)
         dep_gecmis, act_dep = get_team_df(dep_search_name, aktif_db)
 
-        with st.spinner("V195 HT SNIPER devrede: İlk yarı Poisson İhtimalleri hesaplanıyor..."):
+        with st.spinner("V196 PRESTIGE devrede: Yüksek çözünürlüklü algoritmalar işleniyor..."):
             
             rf_model = train_ml_model(aktif_db, lig_kodu)
             ml_preds = {'H': 0, 'D': 0, 'A': 0}
@@ -542,8 +555,8 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
             st.markdown(f"""
             <div class='dna-box'>
                 <div>
-                    <span style='color:#d4af37; font-weight:bold; font-size:16px;'>🧬 LİG DNA'SI: {dna['name']}</span><br>
-                    <span style='color:#8b949e;'>{dna['desc']}</span>
+                    <span style='color:#d4af37; font-weight:900; font-size:18px;'>🧬 LİG DNA'SI: {dna['name']}</span><br>
+                    <span style='color:#8b949e; font-size:16px;'>{dna['desc']}</span>
                 </div>
                 <div style='text-align:right;'>
                     <span class='syndicate-badge'>Kart Çarpanı: {dna['card_mod']}x</span>
@@ -553,27 +566,27 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
             """, unsafe_allow_html=True)
 
             form_radar_html = (
-                f"<div class='scout-box' style='margin-top:0;'>"
-                f"<div style='display:flex; align-items:center; margin-bottom:15px; border-bottom:1px solid #1e2530; padding-bottom:10px;'>"
-                f"<span style='font-size:20px; margin-right:10px;'>📡</span>"
-                f"<h4 style='color:#00ffcc; margin:0;'>PRO Form Radarı (Son {max(ev_gp, dep_gp, 5)} Maç İstatistiği)</h4>"
+                f"<div class='scout-box'>"
+                f"<div style='display:flex; align-items:center; margin-bottom:20px; border-bottom:1px solid #1e2530; padding-bottom:15px;'>"
+                f"<span style='font-size:24px; margin-right:12px;'>📡</span>"
+                f"<h3 style='color:#00ffcc; margin:0;'>PRO Form Radarı (Son {max(ev_gp, dep_gp, 5)} Maç İstatistiği)</h3>"
                 f"</div>"
                 f"<div class='team-form-container'>"
-                f"<div style='flex:1; padding-right:10px;'>"
-                f"<div style='font-size:18px; font-weight:bold; color:#ffffff; margin-bottom:5px;'>🔵 {ev_t} (Ev)</div>"
-                f"<div style='margin-bottom:8px;'><span class='badge-w'>{ev_w}G</span><span class='badge-d'>{ev_d}B</span><span class='badge-l'>{ev_l}M</span></div>"
-                f"<div style='color:#8b949e; font-size:13px; line-height:1.6; margin-bottom:10px;'>"
-                f"<b>Toplanan Puan:</b> <span style='color:#fff'>{ev_pts}</span><br><b>Gol (A/Y):</b> <span style='color:#00ffcc'>{ev_gs}</span> - <span style='color:#ff4b4b'>{ev_gc}</span><br><b>Momentum İvmesi:</b> <span style='color: {ev_color}; font-weight:bold;'>{ev_momentum:.1f}</span>"
+                f"<div style='flex:1; padding-right:15px;'>"
+                f"<div style='font-size:22px; font-weight:900; color:#ffffff; margin-bottom:10px;'>🔵 {ev_t} (Ev)</div>"
+                f"<div style='margin-bottom:12px;'><span class='badge-w'>{ev_w}G</span><span class='badge-d'>{ev_d}B</span><span class='badge-l'>{ev_l}M</span></div>"
+                f"<div style='color:#8b949e; font-size:16px; line-height:1.8; margin-bottom:15px;'>"
+                f"Toplanan Puan: <span style='color:#fff; font-weight:bold;'>{ev_pts}</span><br>Gol (A/Y): <span style='color:#00ffcc; font-weight:bold;'>{ev_gs}</span> - <span style='color:#ff4b4b; font-weight:bold;'>{ev_gc}</span><br>Momentum İvmesi: <span style='color: {ev_color}; font-weight:900; font-size:18px;'>{ev_momentum:.1f}</span>"
                 f"</div>"
                 f"<div><span class='syndicate-badge'>Zorluk: {ev_elo}</span><span class='syndicate-badge'>Durum: {ev_fatigue}</span><span class='syndicate-badge'>Bitiricilik: {ev_luck}</span></div>"
                 f"{ev_seq_html}"
                 f"</div>"
-                f"<div style='width:1px; background-color:#1e2530; margin:0 15px;'></div>"
-                f"<div style='flex:1; padding-left:10px; text-align:right;'>"
-                f"<div style='font-size:18px; font-weight:bold; color:#ffffff; margin-bottom:5px;'>🔴 {dep_t} (Dep)</div>"
-                f"<div style='margin-bottom:8px;'><span class='badge-w'>{dep_w}G</span><span class='badge-d'>{dep_d}B</span><span class='badge-l'>{dep_l}M</span></div>"
-                f"<div style='color:#8b949e; font-size:13px; line-height:1.6; margin-bottom:10px;'>"
-                f"<span style='color:#fff'>{dep_pts}</span> <b>:Toplanan Puan</b><br><span style='color:#00ffcc'>{dep_gs}</span> - <span style='color:#ff4b4b'>{dep_gc}</span> <b>:(A/Y) Gol</b><br><span style='color: {dep_color}; font-weight:bold;'>{dep_momentum:.1f}</span> <b>:Momentum İvmesi</b>"
+                f"<div style='width:2px; background-color:#1e2530; margin:0 20px;'></div>"
+                f"<div style='flex:1; padding-left:15px; text-align:right;'>"
+                f"<div style='font-size:22px; font-weight:900; color:#ffffff; margin-bottom:10px;'>🔴 {dep_t} (Dep)</div>"
+                f"<div style='margin-bottom:12px;'><span class='badge-w'>{dep_w}G</span><span class='badge-d'>{dep_d}B</span><span class='badge-l'>{dep_l}M</span></div>"
+                f"<div style='color:#8b949e; font-size:16px; line-height:1.8; margin-bottom:15px;'>"
+                f"<span style='color:#fff; font-weight:bold;'>{dep_pts}</span> :Toplanan Puan<br><span style='color:#00ffcc; font-weight:bold;'>{dep_gs}</span> - <span style='color:#ff4b4b; font-weight:bold;'>{dep_gc}</span> :(A/Y) Gol<br><span style='color: {dep_color}; font-weight:900; font-size:18px;'>{dep_momentum:.1f}</span> :Momentum İvmesi"
                 f"</div>"
                 f"<div><span class='syndicate-badge'>Zorluk: {dep_elo}</span><span class='syndicate-badge'>Durum: {dep_fatigue}</span><span class='syndicate-badge'>Bitiricilik: {dep_luck}</span></div>"
                 f"{dep_seq_html}"
@@ -583,24 +596,24 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
             )
             st.markdown(form_radar_html, unsafe_allow_html=True)
             
-            st.markdown("<h3 style='margin-bottom:15px; color:#ffffff;'>📊 Taraf & Skor İhtimalleri</h3>", unsafe_allow_html=True)
+            st.markdown("<h2 style='margin-bottom:20px; color:#ffffff;'>📊 Taraf & Skor İhtimalleri</h2>", unsafe_allow_html=True)
             r1_c1, r1_c2, r1_c3 = st.columns(3)
             p_ms1_c = get_color(p_ms1)
-            r1_c1.markdown(f"<div class='prob-card' style='border-top: 4px solid {p_ms1_c};'><div class='prob-title'>{ev_t} Kazanır</div><div class='prob-value' style='color:{p_ms1_c};'>%{int(p_ms1)}</div><div class='prob-odd'>Oran: {ms1}</div></div>", unsafe_allow_html=True)
+            r1_c1.markdown(f"<div class='prob-card' style='border-top: 5px solid {p_ms1_c};'><div class='prob-title'>{ev_t} Kazanır</div><div class='prob-value' style='color:{p_ms1_c};'>%{int(p_ms1)}</div><div class='prob-odd'>Oran: {ms1}</div></div>", unsafe_allow_html=True)
             p_msx_c = get_color(p_msx)
-            r1_c2.markdown(f"<div class='prob-card' style='border-top: 4px solid {p_msx_c};'><div class='prob-title'>Beraberlik</div><div class='prob-value' style='color:{p_msx_c};'>%{int(p_msx)}</div><div class='prob-odd'>Oran: {msx}</div></div>", unsafe_allow_html=True)
+            r1_c2.markdown(f"<div class='prob-card' style='border-top: 5px solid {p_msx_c};'><div class='prob-title'>Beraberlik</div><div class='prob-value' style='color:{p_msx_c};'>%{int(p_msx)}</div><div class='prob-odd'>Oran: {msx}</div></div>", unsafe_allow_html=True)
             p_ms2_c = get_color(p_ms2)
-            r1_c3.markdown(f"<div class='prob-card' style='border-top: 4px solid {p_ms2_c};'><div class='prob-title'>{dep_t} Kazanır</div><div class='prob-value' style='color:{p_ms2_c};'>%{int(p_ms2)}</div><div class='prob-odd'>Oran: {ms2}</div></div>", unsafe_allow_html=True)
+            r1_c3.markdown(f"<div class='prob-card' style='border-top: 5px solid {p_ms2_c};'><div class='prob-title'>{dep_t} Kazanır</div><div class='prob-value' style='color:{p_ms2_c};'>%{int(p_ms2)}</div><div class='prob-odd'>Oran: {ms2}</div></div>", unsafe_allow_html=True)
 
             r2_c1, r2_c2, r2_c3, r2_c4 = st.columns(4)
             p_u25_c = get_color(p_u25)
-            r2_c1.markdown(f"<div class='prob-card' style='border-top: 4px solid {p_u25_c};'><div class='prob-title'>2.5 ÜST</div><div class='prob-value' style='color:{p_u25_c};'>%{int(p_u25)}</div><div class='prob-odd'>Oran: {u25}</div></div>", unsafe_allow_html=True)
+            r2_c1.markdown(f"<div class='prob-card' style='border-top: 5px solid {p_u25_c};'><div class='prob-title'>2.5 ÜST</div><div class='prob-value' style='color:{p_u25_c};'>%{int(p_u25)}</div><div class='prob-odd'>Oran: {u25}</div></div>", unsafe_allow_html=True)
             p_a25_c = get_color(p_a25)
-            r2_c2.markdown(f"<div class='prob-card' style='border-top: 4px solid {p_a25_c};'><div class='prob-title'>2.5 ALT</div><div class='prob-value' style='color:{p_a25_c};'>%{int(p_a25)}</div><div class='prob-odd'>Oran: {a25}</div></div>", unsafe_allow_html=True)
+            r2_c2.markdown(f"<div class='prob-card' style='border-top: 5px solid {p_a25_c};'><div class='prob-title'>2.5 ALT</div><div class='prob-value' style='color:{p_a25_c};'>%{int(p_a25)}</div><div class='prob-odd'>Oran: {a25}</div></div>", unsafe_allow_html=True)
             p_kgv_c = get_color(p_kgv)
-            r2_c3.markdown(f"<div class='prob-card' style='border-top: 4px solid {p_kgv_c};'><div class='prob-title'>KG VAR</div><div class='prob-value' style='color:{p_kgv_c};'>%{int(p_kgv)}</div><div class='prob-odd'>Oran: {kgv}</div></div>", unsafe_allow_html=True)
+            r2_c3.markdown(f"<div class='prob-card' style='border-top: 5px solid {p_kgv_c};'><div class='prob-title'>KG VAR</div><div class='prob-value' style='color:{p_kgv_c};'>%{int(p_kgv)}</div><div class='prob-odd'>Oran: {kgv}</div></div>", unsafe_allow_html=True)
             p_kgy_c = get_color(p_kgy)
-            r2_c4.markdown(f"<div class='prob-card' style='border-top: 4px solid {p_kgy_c};'><div class='prob-title'>KG YOK</div><div class='prob-value' style='color:{p_kgy_c};'>%{int(p_kgy)}</div><div class='prob-odd'>Oran: {kgy}</div></div>", unsafe_allow_html=True)
+            r2_c4.markdown(f"<div class='prob-card' style='border-top: 5px solid {p_kgy_c};'><div class='prob-title'>KG YOK</div><div class='prob-value' style='color:{p_kgy_c};'>%{int(p_kgy)}</div><div class='prob-odd'>Oran: {kgy}</div></div>", unsafe_allow_html=True)
 
             st.divider()
             
@@ -612,7 +625,7 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
 
             det_l, det_r = st.columns(2)
             with det_l:
-                st.subheader("🧠 Tam Otonom Banko Tahmini")
+                st.markdown("<h2 style='color:#fff;'>🧠 Tam Otonom Banko Tahmini</h2>", unsafe_allow_html=True)
                 en_guvenilir_tahmin = None; en_yuksek_ihtimal = -1
                 for t in targets:
                     if t[1] > en_yuksek_ihtimal: en_yuksek_ihtimal = t[1]; en_guvenilir_tahmin = t
@@ -621,11 +634,11 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
 
                 st.markdown(f"""
                 <div class='ai-verdict-box'>
-                    <p style='color:#8b949e; font-size:14px; text-align:left; font-style:italic;'>Otonom karar motoru tüm istatistiksel faktörleri harmanladı. En güvenilir senaryo budur:</p>
-                    <h1 style='color:#d4af37; font-size: 40px; margin: 10px 0;'>🎯 {name} 🎯</h1>
-                    <div style='display: flex; justify-content: space-around; margin: 20px 0;'>
-                        <div><span style='color:#8b949e;'>Dinamik İhtimal:</span><br><b style='font-size:24px; color:#00ffcc;'>%{int(prob)}</b></div>
-                        <div><span style='color:#8b949e;'>Piyasa Oranı:</span><br><b style='font-size:24px;'>{odd:.2f}</b></div>
+                    <p style='color:#8b949e; font-size:16px; text-align:left; font-style:italic;'>Otonom karar motoru tüm istatistiksel faktörleri harmanladı. En güvenilir senaryo budur:</p>
+                    <h1 style='color:#d4af37; font-size: 54px; font-weight:900; margin: 15px 0;'>🎯 {name} 🎯</h1>
+                    <div style='display: flex; justify-content: space-around; margin: 30px 0;'>
+                        <div><span style='color:#8b949e; font-size:18px;'>Dinamik İhtimal:</span><br><b style='font-size:36px; color:#00ffcc;'>%{int(prob)}</b></div>
+                        <div><span style='color:#8b949e; font-size:18px;'>Piyasa Oranı:</span><br><b style='font-size:36px;'>{odd:.2f}</b></div>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -641,9 +654,9 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
                     alarm_text = "<br>".join([f"🔥 {a}" for a in value_alarms])
                     st.markdown(f"""
                     <div class='value-alarm'>
-                        <h3 style='margin:0; color:#fff;'>🚨 SİSTEM AÇIĞI (VALUE) TESPİT EDİLDİ!</h3>
-                        <p style='font-size:13px; color:#ddd; margin:5px 0;'>Bahis şirketinin oran hesaplamasında matematiksel hata bulundu. Bu oranlar büyük avantaj taşıyor:</p>
-                        <b style='color:#ffcc00; font-size:15px;'>{alarm_text}</b>
+                        <h2 style='margin:0; color:#fff; font-weight:900;'>🚨 SİSTEM AÇIĞI (VALUE) TESPİT EDİLDİ!</h2>
+                        <p style='font-size:16px; color:#ddd; margin:10px 0;'>Bahis şirketinin oran hesaplamasında matematiksel hata bulundu. Bu oranlar büyük avantaj taşıyor:</p>
+                        <b style='color:#ffcc00; font-size:20px; line-height:1.5;'>{alarm_text}</b>
                     </div>
                     """, unsafe_allow_html=True)
                 
@@ -651,7 +664,7 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
                     bg_class = 'trap-alarm' if anomaly_type == 'trap' else 'value-alarm'
                     st.markdown(f"""
                     <div class='{bg_class}'>
-                        {anomaly_alert}
+                        <span style='font-size:18px; font-weight:bold; color:#fff;'>{anomaly_alert}</span>
                     </div>
                     """, unsafe_allow_html=True)
 
@@ -659,21 +672,21 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
                 if rf_model:
                     st.markdown(f"""
                     <div class='ml-box'>
-                        <h4 style='margin:0; color:#00ffcc;'>🧠 Scikit-Learn Nöral Ağ Kararı</h4>
-                        <p style='font-size:12px; color:#8b949e;'>Yapay Zeka bu ligin son 2000 maçını canlı eğiterek şu saf olasılıkları buldu:</p>
-                        Ev Sahibi: <b>%{int(ml_preds.get('H', 0))}</b> | Beraberlik: <b>%{int(ml_preds.get('D', 0))}</b> | Deplasman: <b>%{int(ml_preds.get('A', 0))}</b>
+                        <h3 style='margin:0; color:#00ffcc;'>🧠 Scikit-Learn Nöral Ağ Kararı</h3>
+                        <p style='font-size:15px; color:#8b949e; margin-top:5px;'>Yapay Zeka bu ligin son 2000 maçını canlı eğiterek şu saf olasılıkları buldu:</p>
+                        <div style='font-size:18px; margin-top:10px;'>Ev Sahibi: <b style='color:#fff;'>%{int(ml_preds.get('H', 0))}</b> | Beraberlik: <b style='color:#fff;'>%{int(ml_preds.get('D', 0))}</b> | Deplasman: <b style='color:#fff;'>%{int(ml_preds.get('A', 0))}</b></div>
                     </div>
                     """, unsafe_allow_html=True)
 
                 st.divider()
-                st.subheader("🏆 İhtimal Hiyerarşisi")
+                st.markdown("<h3>🏆 İhtimal Hiyerarşisi</h3>", unsafe_allow_html=True)
                 sirali_ihtimaller = sorted(targets, key=lambda x: x[1], reverse=True)
                 for i, (isim, i_prob, i_odd) in enumerate(sirali_ihtimaller):
                     renk = "#00ffcc" if i_prob >= 60 else ("#d4af37" if i_prob >= 40 else "#ff4b4b")
-                    st.markdown(f"<div class='rank-row' style='border-left: 5px solid {renk}; margin-bottom: 5px;'><span style='font-size: 15px;'><b>{i+1}.</b> {isim}</span><span style='color:{renk}; font-weight:900; font-size:18px;'>%{int(i_prob)}</span></div>", unsafe_allow_html=True)
+                    st.markdown(f"<div class='rank-row' style='border-left: 6px solid {renk};'><span style='font-size: 18px;'><b>{i+1}.</b> {isim}</span><span style='color:{renk}; font-weight:900; font-size:24px;'>%{int(i_prob)}</span></div>", unsafe_allow_html=True)
 
             with det_r:
-                st.subheader("📈 Dinamik Skor Matrisi (Dixon-Coles)")
+                st.markdown("<h2>📈 Dinamik Skor Matrisi (Dixon-Coles)</h2>", unsafe_allow_html=True)
                 score_probs = {}
                 rho = -0.15 
                 for h in range(5):
@@ -687,56 +700,57 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
                         score_probs[f"{h} - {a}"] = base_prob * tau * 100
                         
                 sorted_scores = sorted(score_probs.items(), key=lambda x: x[1], reverse=True)[:6]
-                st.markdown("<p style='color:#8b949e; font-size:13px; margin-bottom:5px;'>Dixon-Coles Savunma Algoritmasına Göre En Olası Skorlar:</p>", unsafe_allow_html=True)
+                st.markdown("<p style='color:#8b949e; font-size:15px; margin-bottom:10px;'>Dixon-Coles Savunma Algoritmasına Göre En Olası Skorlar:</p>", unsafe_allow_html=True)
                 chart_data = pd.DataFrame({"Skorlar": [f"{i+1}. İhtimal ({s[0]})" for i, s in enumerate(sorted_scores)], "İhtimal (%)": [int(s[1]) for s in sorted_scores]}).set_index("Skorlar")
-                st.bar_chart(chart_data, color="#d4af37", height=200)
+                st.bar_chart(chart_data, color="#d4af37", height=250)
                 
-                # --- V195: İ.Y 1.5 ÜST POISSON HESAPLAMASI ---
                 prob_ht_0 = poisson.pmf(0, match_expected_ht_goals)
                 prob_ht_1 = poisson.pmf(1, match_expected_ht_goals)
                 prob_ht_o15 = (1.0 - (prob_ht_0 + prob_ht_1)) * 100
                 
                 ht_o15_color = "#00ffcc" if prob_ht_o15 >= 35 else ("#ffcc00" if prob_ht_o15 >= 25 else "#ff4b4b")
-                ht_text = "(İ.Y 1.5 ÜST KUVVETLİ)" if prob_ht_o15 >= 35 else ("(İ.Y 1.5 ÜST DENENEBİLİR)" if prob_ht_o15 >= 25 else "(İ.Y 1.5 ÜST ÇOK RİSKLİ)")
+                ht_text = "İ.Y 1.5 ÜST KUVVETLİ" if prob_ht_o15 >= 35 else ("İ.Y 1.5 ÜST DENENEBİLİR" if prob_ht_o15 >= 25 else "İ.Y 1.5 ÜST ÇOK RİSKLİ")
 
                 st.markdown(f"""
                 <div class='alt-market'>
-                    <h4 style='color:#00ffcc; margin-top:0;'>⏱️ Alternatif Marketler (İlk Yarı & Agresyon)</h4>
+                    <h3 style='color:#00ffcc; margin-top:0; margin-bottom:20px;'>⏱️ Alternatif Marketler (İlk Yarı & Agresyon)</h3>
                     <div style='display:flex; justify-content:space-between; align-items:center;'>
-                        <div>
-                            <span style='color:#8b949e; font-size:12px;'>İlk Yarı Beklenen Gol:</span><br>
-                            <b style='font-size:20px; color:#ffffff;'>{match_expected_ht_goals:.1f}</b><br>
-                            <span style='font-size:11px; color:#fff;'>İ.Y 1.5 Üst Şansı: <b style='color:{ht_o15_color};'>%{int(prob_ht_o15)}</b></span><br>
-                            <span style='font-size:10px; color:{ht_o15_color}; font-weight:bold;'>{ht_text}</span>
+                        <div style='flex:1;'>
+                            <span style='color:#8b949e; font-size:15px;'>İlk Yarı Beklenen Gol:</span><br>
+                            <b style='font-size:28px; color:#ffffff;'>{match_expected_ht_goals:.1f}</b><br>
+                            <span style='font-size:15px; color:#fff;'>İ.Y 1.5 Üst Şansı: <b style='color:{ht_o15_color};'>%{int(prob_ht_o15)}</b></span><br>
+                            <span style='font-size:13px; color:{ht_o15_color}; font-weight:800; background:rgba(255,255,255,0.05); padding:3px 8px; border-radius:5px; margin-top:5px; display:inline-block;'>{ht_text}</span>
                         </div>
-                        <div>
-                            <span style='color:#8b949e; font-size:12px;'>Beklenen Korner:</span><br>
-                            <b style='font-size:20px; color:#ffffff;'>{match_expected_corners:.1f}</b><br>
-                            <span style='font-size:10px; color:#d4af37;'>Toplam Korner Baskısı</span>
+                        <div style='width:1px; height:80px; background-color:#1e2530; margin:0 15px;'></div>
+                        <div style='flex:1;'>
+                            <span style='color:#8b949e; font-size:15px;'>Beklenen Korner:</span><br>
+                            <b style='font-size:32px; color:#ffffff;'>{match_expected_corners:.1f}</b><br>
+                            <span style='font-size:14px; color:#d4af37; font-weight:bold;'>Toplam Korner Baskısı</span>
                         </div>
-                        <div>
-                            <span style='color:#8b949e; font-size:12px;'>Agresyon (Kart) Endeksi:</span><br>
-                            <b style='font-size:20px; color:#ffffff;'>{match_expected_cards:.1f}</b><br>
-                            <span style='font-size:10px; color:{"#ff4b4b" if match_expected_cards>4.5 else "#00ffcc"};'>{"(KIZARABİLİR/SERT MAÇ)" if match_expected_cards>4.5 else "(DÜŞÜK TANSİYON)"}</span>
+                        <div style='width:1px; height:80px; background-color:#1e2530; margin:0 15px;'></div>
+                        <div style='flex:1;'>
+                            <span style='color:#8b949e; font-size:15px;'>Agresyon (Kart):</span><br>
+                            <b style='font-size:32px; color:#ffffff;'>{match_expected_cards:.1f}</b><br>
+                            <span style='font-size:13px; color:{"#ff4b4b" if match_expected_cards>4.5 else "#00ffcc"}; font-weight:800; background:rgba(255,255,255,0.05); padding:3px 8px; border-radius:5px; margin-top:5px; display:inline-block;'>{"KIZARABİLİR/SERT MAÇ" if match_expected_cards>4.5 else "DÜŞÜK TANSİYON"}</span>
                         </div>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
 
                 xg_html = (
-                    f"<div style='background:#121820; padding:20px; border-radius:10px; border-left:5px solid #8a2be2; border: 1px solid #1e2530;'>"
-                    f"<h4 style='color:#8a2be2; margin-top:0; margin-bottom:15px;'>⚽ Gerçek xG Çarpışması (İç Saha vs Dış Saha)</h4>"
+                    f"<div style='background:#121820; padding:30px; border-radius:15px; border-left:6px solid #8a2be2; border: 1px solid #1e2530; box-shadow: 0 4px 15px rgba(0,0,0,0.3);'>"
+                    f"<h3 style='color:#8a2be2; margin-top:0; margin-bottom:20px;'>⚽ Gerçek xG Çarpışması (İç Saha vs Dış Saha)</h3>"
                     f"<div style='display:flex; justify-content:space-between; align-items:center;'>"
-                    f"<div><span style='color:#8b949e; font-size:14px;'>{ev_t} (Ev) xG:</span><br><b style='font-size:24px; color:#ffffff;'>{ev_xg:.2f}</b></div>"
-                    f"<div><span style='color:#8b949e; font-size:14px;'>{dep_t} (Dep) xG:</span><br><b style='font-size:24px; color:#ffffff;'>{dep_xg:.2f}</b></div>"
-                    f"<div style='text-align:right;'><span style='color:#8b949e; font-size:14px;'>Maçın Toplam xG'si:</span><br><b style='font-size:26px; color:#00ffcc;'>{(ev_xg + dep_xg):.2f}</b></div>"
+                    f"<div><span style='color:#8b949e; font-size:16px;'>{ev_t} (Ev) xG:</span><br><b style='font-size:32px; color:#ffffff;'>{ev_xg:.2f}</b></div>"
+                    f"<div><span style='color:#8b949e; font-size:16px;'>{dep_t} (Dep) xG:</span><br><b style='font-size:32px; color:#ffffff;'>{dep_xg:.2f}</b></div>"
+                    f"<div style='text-align:right;'><span style='color:#8b949e; font-size:16px;'>Maçın Toplam xG'si:</span><br><b style='font-size:36px; color:#00ffcc;'>{(ev_xg + dep_xg):.2f}</b></div>"
                     f"</div></div>"
                 )
                 st.markdown(xg_html, unsafe_allow_html=True)
             
             st.divider()
             st.markdown("<h2 style='color:#d4af37;'>⏳ Zaman Makinesi (Simülasyon Motoru)</h2>", unsafe_allow_html=True)
-            st.markdown("<p style='color:#8b949e;'>Sistem, veritabanındaki <b>en çok benzeyen 50 geçmiş maça</b> o günün şartlarında 100'er TL yatırsaydınız kasanızın nasıl değişeceğini simüle etti.</p>", unsafe_allow_html=True)
+            st.markdown("<p style='color:#8b949e; font-size:16px;'>Sistem, veritabanındaki <b>en çok benzeyen 50 geçmiş maça</b> o günün şartlarında 100'er TL yatırsaydınız kasanızın nasıl değişeceğini simüle etti.</p>", unsafe_allow_html=True)
             
             if len(benzer) >= 10:
                 sim_df = benzer.head(50).sort_values('Date_Parsed').copy()
@@ -753,8 +767,8 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
                     kasa_gecmisi.append(kasa)
                 
                 chart_df = pd.DataFrame({"Maçlar": range(len(kasa_gecmisi)), "Kasa Büyümesi (TL)": kasa_gecmisi}).set_index("Maçlar")
-                st.line_chart(chart_df, color="#00ffcc", height=250)
-                st.markdown(f"<div style='text-align:center;'><span style='font-size:20px;'>50 Maç Sonu Net Kâr/Zarar: </span><b style='font-size:24px; color:{'#00ffcc' if kasa > 0 else '#ff4b4b'};'>{int(kasa)} TL</b></div>", unsafe_allow_html=True)
+                st.line_chart(chart_df, color="#00ffcc", height=300)
+                st.markdown(f"<div style='text-align:center; margin-top:20px;'><span style='font-size:24px;'>50 Maç Sonu Net Kâr/Zarar: </span><b style='font-size:32px; color:{'#00ffcc' if kasa > 0 else '#ff4b4b'};'>{int(kasa)} TL</b></div>", unsafe_allow_html=True)
 
         else:
             st.error("❌ Veritabanında hiçbir istatistiksel geçerliliği olan benzer maç bulunamadı.")
