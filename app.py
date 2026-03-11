@@ -153,45 +153,69 @@ with st.sidebar:
 st.markdown("<h1 style='text-align:center; color:#d4af37; font-size:54px; margin-bottom:0;'>🧿 QUANTUM ORACLE V202</h1>", unsafe_allow_html=True)
 st.markdown(f"<p style='text-align:center; color:#8b949e; font-size:18px; margin-top:5px;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | Yapay Zeka Sentezi & EV Filtresi</p>", unsafe_allow_html=True)
 
-# --- API İSTİHBARAT MERKEZİ ---
+# --- API İSTİHBARAT MERKEZİ (KESKİN NİŞANCI & MEGA LİGLER) ---
 st.markdown("<div class='api-box'>", unsafe_allow_html=True)
-st.markdown("<h3 style='margin-top:0; color:#8a2be2;'>🛰️ Canlı Oran İstihbarat Merkezi (24s)</h3>", unsafe_allow_html=True)
+st.markdown("<h3 style='margin-top:0; color:#8a2be2;'>🛰️ Keskin Nişancı İstihbarat Merkezi (Tam Kapsamlı)</h3>", unsafe_allow_html=True)
 
-api_c1, api_c2 = st.columns([2, 1])
+API_LEAGUES = {
+    "🏆 Şampiyonlar Ligi": "soccer_uefa_champs_league",
+    "🏆 Avrupa Ligi": "soccer_uefa_europa_league",
+    "🏆 Konferans Ligi": "soccer_uefa_europa_conference_league",
+    "🇹🇷 Türkiye Süper Lig": "soccer_turkey_super_league",
+    "🇬🇧 İngiltere Premier Lig": "soccer_epl",
+    "🇬🇧 İngiltere Championship": "soccer_efl_champ",
+    "🇪🇸 İspanya La Liga": "soccer_spain_la_liga",
+    "🇮🇹 İtalya Serie A": "soccer_italy_serie_a",
+    "🇩🇪 Almanya Bundesliga": "soccer_germany_bundesliga",
+    "🇫🇷 Fransa Ligue 1": "soccer_france_ligue_one",
+    "🇳🇱 Hollanda Eredivisie": "soccer_netherlands_eredivisie",
+    "🇵🇹 Portekiz Primeira Liga": "soccer_portugal_primeira_liga"
+}
+
+api_c1, api_c2, api_c3 = st.columns([1.2, 1.8, 1])
 with api_c1:
     gizli_api = st.secrets.get("API_KEY", "") if "API_KEY" in st.secrets else ""
-    api_key = st.text_input("The-Odds-API Anahtarı (Bulut Kasasına Kilitli):", value=gizli_api, type="password")
-with api_c2: fetch_btn = st.button("🔄 YAKLAŞAN MAÇLARI BUL")
+    api_key = st.text_input("The-Odds-API Anahtarı:", value=gizli_api, type="password")
+with api_c2:
+    secili_api_lig = st.selectbox("Hedef Ligi Seç (Sadece 4 Kredi Harcar):", list(API_LEAGUES.keys()))
+with api_c3: 
+    st.markdown("<br>", unsafe_allow_html=True)
+    fetch_btn = st.button("🔄 MAÇLARI BUL")
 
 if fetch_btn and api_key:
-    with st.spinner("Küresel bahis borsaları taranıyor..."):
+    with st.spinner(f"{secili_api_lig} taranıyor..."):
         try:
             clean_key = api_key.strip()
-            target_leagues = ['soccer_turkey_super_league', 'soccer_epl', 'soccer_spain_la_liga', 'soccer_italy_serie_a', 'soccer_germany_bundesliga', 'soccer_france_ligue_one', 'soccer_uefa_champs_league', 'soccer_uefa_europa_league', 'soccer_netherlands_eredivisie']
+            target_league_code = API_LEAGUES[secili_api_lig]
+            
             soccer_count = 0
             current_time_utc = datetime.datetime.now(datetime.timezone.utc)
-            horizon_time_utc = current_time_utc + datetime.timedelta(hours=24)
+            horizon_time_utc = current_time_utc + datetime.timedelta(hours=48) # Önümüzdeki 48 saati tarar
             st.session_state.live_matches.clear()
             
-            for league in target_leagues:
-                url = f"https://api.the-odds-api.com/v4/sports/{league}/odds/?apiKey={clean_key}&regions=eu&markets=h2h,totals&oddsFormat=decimal"
-                response = requests.get(url)
-                if response.status_code == 200:
-                    for m in response.json():
-                        try:
-                            match_time_utc = datetime.datetime.fromisoformat(m['commence_time'].replace('Z', '+00:00'))
-                            local_time = match_time_utc + datetime.timedelta(hours=3)
-                            if current_time_utc < match_time_utc < horizon_time_utc:
-                                time_str = local_time.strftime('%d.%m %H:%M')
-                                baslik = f"[{time_str}] {m['home_team']} - {m['away_team']} | ({m.get('sport_title', 'Lig')})"
-                                m['_sort_time'] = match_time_utc.timestamp()
-                                m['_match_date'] = match_time_utc 
-                                st.session_state.live_matches[baslik] = m
-                                soccer_count += 1
-                        except Exception: pass
-            if soccer_count > 0: st.success(f"✅ {soccer_count} adet maç bulundu!")
-            else: st.warning("⚠️ Seçili liglerde 24 saat içinde maç bulunamadı.")
-        except Exception as e: st.error(f"❌ API Hatası: {str(e)}")
+            # YENİ EKSİKSİZ PAZARLAR: h2h, totals, alternate_totals, btts
+            url = f"https://api.the-odds-api.com/v4/sports/{target_league_code}/odds/?apiKey={clean_key}&regions=eu&markets=h2h,totals,alternate_totals,btts&oddsFormat=decimal"
+            response = requests.get(url)
+            
+            if response.status_code == 200:
+                for m in response.json():
+                    try:
+                        match_time_utc = datetime.datetime.fromisoformat(m['commence_time'].replace('Z', '+00:00'))
+                        local_time = match_time_utc + datetime.timedelta(hours=3)
+                        if current_time_utc < match_time_utc < horizon_time_utc:
+                            time_str = local_time.strftime('%d.%m %H:%M')
+                            baslik = f"[{time_str}] {m['home_team']} - {m['away_team']}"
+                            m['_sort_time'] = match_time_utc.timestamp()
+                            m['_match_date'] = match_time_utc 
+                            st.session_state.live_matches[baslik] = m
+                            soccer_count += 1
+                    except Exception: pass
+                if soccer_count > 0: st.success(f"✅ {soccer_count} adet maç bulundu!")
+                else: st.warning("⚠️ Bu ligde önümüzdeki 48 saat içinde oranları açılmış maç bulunamadı.")
+            elif response.status_code == 429: st.error("🚨 Kota Doldu!")
+            elif response.status_code == 401: st.error("🚨 Hatalı API Anahtarı!")
+            else: st.error(f"❌ API Hatası: {response.status_code}")
+        except Exception as e: st.error(f"❌ Sistemsel Hata: {str(e)}")
 
 if st.session_state.live_matches:
     sel_c1, sel_c2 = st.columns([3, 1])
@@ -199,14 +223,17 @@ if st.session_state.live_matches:
         sorted_matches = sorted(list(st.session_state.live_matches.keys()), key=lambda x: st.session_state.live_matches[x]['_sort_time'])
         secilen_mac = st.selectbox("Analiz Edilecek Maçı Seçin:", ["Listeden Seçiniz..."] + sorted_matches)
     with sel_c2:
-        if st.button("🚀 ORANLARI KUTULARA AKTAR"):
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("🚀 ORANLARI AKTAR"):
             if secilen_mac != "Listeden Seçiniz...":
                 m_data = st.session_state.live_matches[secilen_mac]
                 st.session_state.ev_t = m_data['home_team']
                 st.session_state.dep_t = m_data['away_team']
                 st.session_state.match_date_utc = m_data.get('_match_date', datetime.datetime.now(datetime.timezone.utc))
+                
                 ms1_list, msx_list, ms2_list = [], [], []
                 o15_list, u15_list, o25_list, u25_list, o35_list, u35_list = [], [], [], [], [], []
+                btts_y_list, btts_n_list = [], []
                 
                 for bookmaker in m_data.get('bookmakers', []):
                     for market in bookmaker.get('markets', []):
@@ -215,7 +242,7 @@ if st.session_state.live_matches:
                                 if out['name'] == st.session_state.ev_t: ms1_list.append(float(out['price']))
                                 elif out['name'] == st.session_state.dep_t: ms2_list.append(float(out['price']))
                                 elif out['name'] == 'Draw': msx_list.append(float(out['price']))
-                        elif market['key'] == 'totals':
+                        elif market['key'] in ['totals', 'alternate_totals']:
                             for out in market.get('outcomes', []):
                                 pt = out.get('point')
                                 if pt == 1.5:
@@ -227,6 +254,10 @@ if st.session_state.live_matches:
                                 elif pt == 3.5:
                                     if out['name'] == 'Over': o35_list.append(float(out['price']))
                                     elif out['name'] == 'Under': u35_list.append(float(out['price']))
+                        elif market['key'] == 'btts':
+                            for out in market.get('outcomes', []):
+                                if out['name'] == 'Yes': btts_y_list.append(float(out['price']))
+                                elif out['name'] == 'No': btts_n_list.append(float(out['price']))
                 
                 if ms1_list: st.session_state.ms1 = round(sum(ms1_list)/len(ms1_list), 2)
                 if msx_list: st.session_state.msx = round(sum(msx_list)/len(msx_list), 2)
@@ -237,6 +268,8 @@ if st.session_state.live_matches:
                 if u25_list: st.session_state.u25 = round(sum(u25_list)/len(u25_list), 2)
                 if o35_list: st.session_state.o35 = round(sum(o35_list)/len(o35_list), 2)
                 if u35_list: st.session_state.u35 = round(sum(u35_list)/len(u35_list), 2)
+                if btts_y_list: st.session_state.btts_y = round(sum(btts_y_list)/len(btts_y_list), 2)
+                if btts_n_list: st.session_state.btts_n = round(sum(btts_n_list)/len(btts_n_list), 2)
                 st.rerun() 
 st.markdown("</div>", unsafe_allow_html=True)
 
