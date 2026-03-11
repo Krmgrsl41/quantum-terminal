@@ -1,6 +1,6 @@
+streamlit
 pandas
 numpy
 scipy
-scikit-learn
-scikit-learn
 requests
+scikit-learn
