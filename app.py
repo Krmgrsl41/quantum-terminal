@@ -632,22 +632,21 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
                 if is_survival:
                     hikaye += " Ayrıca sezon sonundayız ve düşme hattında yaşanan 'Can Havli (Survival)' motivasyonu sahadaki mücadeleyi ve bu tercihi ekstra olarak destekliyor."
 
-                st.markdown(f"""
-                <div class='ai-verdict-box'>
-                    <p style='color:#8b949e; font-size:15px; text-align:left; font-style:italic;'>Yapay zeka salt kazanma ihtimallerini değil; pazar riskini ve oran değerlerini (EV) sentezleyerek seni kâr marjı tatmin edici olan bu limana yönlendirdi:</p>
-                    <h1 style='color:#d4af37; font-size: 54px; font-weight:900; margin: 15px 0;'>🎯 {name} 🎯</h1>
-                    
-                    <div style='background:rgba(255,255,255,0.05); padding:20px; border-radius:12px; border-left:4px solid #00ffcc; text-align:left; margin:20px 0;'>
-                        <span style='color:#00ffcc; font-weight:900; font-size:16px;'>📝 MAÇIN HİKAYESİ & ANALİZİ:</span><br>
-                        <span style='color:#ddd; font-size:15px; line-height:1.6;'>{hikaye}</span>
-                    </div>
-
-                    <div style='display: flex; justify-content: space-around; margin-top: 25px;'>
-                        <div><span style='color:#8b949e; font-size:18px;'>Gerçek İhtimal:</span><br><b style='font-size:36px; color:#00ffcc;'>%{int(prob)}</b></div>
-                        <div><span style='color:#8b949e; font-size:18px;'>Piyasa Oranı:</span><br><b style='font-size:36px;'>{odd:.2f}</b></div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+               st.markdown(
+                    f"<div class='ai-verdict-box'>"
+                    f"<p style='color:#8b949e; font-size:15px; text-align:left; font-style:italic;'>Yapay zeka salt kazanma ihtimallerini değil; pazar riskini ve oran değerlerini (EV) sentezleyerek seni kâr marjı tatmin edici olan bu limana yönlendirdi:</p>"
+                    f"<h1 style='color:#d4af37; font-size: 54px; font-weight:900; margin: 15px 0;'>🎯 {name} 🎯</h1>"
+                    f"<div style='background:rgba(255,255,255,0.05); padding:20px; border-radius:12px; border-left:4px solid #00ffcc; text-align:left; margin:20px 0;'>"
+                    f"<span style='color:#00ffcc; font-weight:900; font-size:16px;'>📝 MAÇIN HİKAYESİ & ANALİZİ:</span><br>"
+                    f"<span style='color:#ddd; font-size:15px; line-height:1.6;'>{hikaye}</span>"
+                    f"</div>"
+                    f"<div style='display: flex; justify-content: space-around; margin-top: 25px;'>"
+                    f"<div><span style='color:#8b949e; font-size:18px;'>Gerçek İhtimal:</span><br><b style='font-size:36px; color:#00ffcc;'>%{int(prob)}</b></div>"
+                    f"<div><span style='color:#8b949e; font-size:18px;'>Piyasa Oranı:</span><br><b style='font-size:36px;'>{odd:.2f}</b></div>"
+                    f"</div>"
+                    f"</div>",
+                    unsafe_allow_html=True
+                )
                 
                 value_alarms = []
                 for t in targets:
@@ -767,3 +766,4 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
 
         else:
             st.error("❌ Veritabanında hiçbir istatistiksel geçerliliği olan benzer maç bulunamadı.")
+
