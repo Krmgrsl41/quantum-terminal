@@ -9,8 +9,8 @@ import io
 import re
 from sklearn.ensemble import RandomForestClassifier
 
-# --- QUANTUM DESIGN: V205 THE PERFECT (BUG-FREE & FULL AI RENDER) ---
-st.set_page_config(page_title="V205 | QUANTUM APEX", layout="wide", page_icon="🏆")
+# --- QUANTUM DESIGN: V206 THE PINNACLE (REALISTIC xG & FLAWLESS UI) ---
+st.set_page_config(page_title="V206 | QUANTUM APEX", layout="wide", page_icon="💎")
 
 st.markdown("""
     <style>
@@ -143,17 +143,14 @@ with st.sidebar:
     st.divider()
     st.markdown(f"<div style='background:#0c1015; padding:15px; border-radius:10px; border:1px solid #1e2530; font-size:16px;'><b>Aktif Veri Havuzu:</b><br><span style='font-size:20px; color:#d4af37;'>{len(db):,} Maç</span></div>", unsafe_allow_html=True)
     if len(db) == 0:
-        st.markdown("<div style='background:rgba(255, 75, 75, 0.1); border:1px solid #ff4b4b; padding:15px; border-radius:10px; margin-top:15px;'><span style='color:#ff4b4b; font-size:15px; font-weight:bold;'>⚠️ Veri İndirme Başarısız!</span><br><span style='color:#8b949e; font-size:14px;'>Güvenlik duvarını aşmak için klavyeden 'C' tuşuna basıp önbelleği temizleyin.</span></div>", unsafe_allow_html=True)
-        if st.button("🔄 Hayalet Modu ile Yeniden İndir"):
-            st.cache_data.clear()
-            st.rerun()
+        st.markdown("<div style='background:rgba(255, 75, 75, 0.1); border:1px solid #ff4b4b; padding:15px; border-radius:10px; margin-top:15px;'><span style='color:#ff4b4b; font-size:15px; font-weight:bold;'>⚠️ Veri İndirme Başarısız!</span></div>", unsafe_allow_html=True)
     st.divider()
-    st.info("🏆 V205 THE PERFECT: API 422 Hatası düzeltildi. Yapay Zeka Render hataları giderildi.")
+    st.info("💎 V206 THE PINNACLE: İlk Yarı Algoritmaları gerçekçilik filtresinden geçirildi. Render hataları yokedildi.")
 
-st.markdown("<h1 style='text-align:center; color:#d4af37; font-size:54px; margin-bottom:0;'>🏆 QUANTUM ORACLE V205</h1>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align:center; color:#8b949e; font-size:18px; margin-top:5px;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | The Perfect: Hatasız Analiz Motoru</p>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#d4af37; font-size:54px; margin-bottom:0;'>💎 QUANTUM ORACLE V206</h1>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align:center; color:#8b949e; font-size:18px; margin-top:5px;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | The Pinnacle: Zirve Analiz Motoru</p>", unsafe_allow_html=True)
 
-# --- API İSTİHBARAT MERKEZİ (GÜVENLİ) ---
+# --- API İSTİHBARAT MERKEZİ ---
 st.markdown("<div class='api-box'>", unsafe_allow_html=True)
 st.markdown("<h3 style='margin-top:0; color:#8a2be2;'>🛰️ Keskin Nişancı İstihbarat Merkezi</h3>", unsafe_allow_html=True)
 
@@ -200,7 +197,6 @@ if fetch_btn and api_key:
             horizon_time_utc = current_time_utc + datetime.timedelta(hours=48)
             st.session_state.live_matches.clear()
             
-            # SADECE h2h VE totals CEKILIR (422 HATASI ALMAMAK IÇIN)
             url = f"https://api.the-odds-api.com/v4/sports/{target_league_code}/odds/?apiKey={clean_key}&regions=eu&markets=h2h,totals&oddsFormat=decimal"
             response = requests.get(url)
             
@@ -237,7 +233,6 @@ if st.session_state.live_matches:
                 m_data = st.session_state.live_matches[secilen_mac]
                 st.session_state.ev_t = m_data['home_team']
                 st.session_state.dep_t = m_data['away_team']
-                st.session_state.match_date_utc = m_data.get('_match_date', datetime.datetime.now(datetime.timezone.utc))
                 
                 ms1_list, msx_list, ms2_list, o25_list, u25_list = [], [], [], [], []
                 
@@ -403,7 +398,7 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
         ev_gecmis, act_ev = get_team_df(ev_search_name, aktif_db)
         dep_gecmis, act_dep = get_team_df(dep_search_name, aktif_db)
 
-        with st.spinner("V205 PERFECT devrede: Risk, Değer ve Senaryo Analizi yapılıyor..."):
+        with st.spinner("V206 PINNACLE devrede: Kusursuz Sentez yapılıyor..."):
             is_survival, survival_boost = False, 1.0
             def get_ppg(team_name, param_df):
                 m = param_df[(param_df['HomeTeam'].str.contains(team_name, case=False, na=False)) | (param_df['AwayTeam'].str.contains(team_name, case=False, na=False))]
@@ -632,22 +627,22 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
                 if is_survival:
                     hikaye += " Ayrıca sezon sonundayız ve düşme hattında yaşanan 'Can Havli (Survival)' motivasyonu sahadaki mücadeleyi ve bu tercihi ekstra olarak destekliyor."
 
-                # HTML RENDER FIX
-                box_html = (
-                    "<div class='ai-verdict-box'>"
-                    "<p style='color:#8b949e; font-size:15px; text-align:left; font-style:italic;'>Yapay zeka salt kazanma ihtimallerini değil; pazar riskini ve oran değerlerini (EV) sentezleyerek seni kâr marjı tatmin edici olan bu limana yönlendirdi:</p>"
-                    f"<h1 style='color:#d4af37; font-size: 54px; font-weight:900; margin: 15px 0;'>🎯 {name} 🎯</h1>"
-                    "<div style='background:rgba(255,255,255,0.05); padding:20px; border-radius:12px; border-left:4px solid #00ffcc; text-align:left; margin:20px 0;'>"
-                    "<span style='color:#00ffcc; font-weight:900; font-size:16px;'>📝 MAÇIN HİKAYESİ & ANALİZİ:</span><br>"
+                # RENDER HATASI ÇÖZÜLDÜ VE FONT BÜYÜTÜLDÜ
+                html_box = (
+                    f"<div class='ai-verdict-box'>"
+                    f"<p style='color:#8b949e; font-size:15px; text-align:left; font-style:italic;'>Yapay zeka salt kazanma ihtimallerini değil; pazar riskini ve oran değerlerini (EV) sentezleyerek seni kâr marjı tatmin edici olan bu limana yönlendirdi:</p>"
+                    f"<div style='font-size: 54px !important; font-weight: 900 !important; color: #d4af37 !important; margin: 20px 0;'>🎯 {name} 🎯</div>"
+                    f"<div style='background:rgba(255,255,255,0.05); padding:20px; border-radius:12px; border-left:4px solid #00ffcc; text-align:left; margin:20px 0;'>"
+                    f"<span style='color:#00ffcc; font-weight:900; font-size:16px;'>📝 MAÇIN HİKAYESİ & ANALİZİ:</span><br>"
                     f"<span style='color:#ddd; font-size:15px; line-height:1.6;'>{hikaye}</span>"
-                    "</div>"
-                    "<div style='display: flex; justify-content: space-around; margin-top: 25px;'>"
+                    f"</div>"
+                    f"<div style='display: flex; justify-content: space-around; margin-top: 25px;'>"
                     f"<div><span style='color:#8b949e; font-size:18px;'>Gerçek İhtimal:</span><br><b style='font-size:36px; color:#00ffcc;'>%{int(prob)}</b></div>"
                     f"<div><span style='color:#8b949e; font-size:18px;'>Piyasa Oranı:</span><br><b style='font-size:36px;'>{odd:.2f}</b></div>"
-                    "</div>"
-                    "</div>"
+                    f"</div>"
+                    f"</div>"
                 )
-                st.markdown(box_html, unsafe_allow_html=True)
+                st.markdown(html_box, unsafe_allow_html=True)
                 
                 value_alarms = []
                 for t in targets:
@@ -698,13 +693,15 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
                 chart_data = pd.DataFrame({"Skorlar": [f"{i+1}. İhtimal ({s[0]})" for i, s in enumerate(sorted_scores)], "İhtimal (%)": [int(s[1]) for s in sorted_scores]}).set_index("Skorlar")
                 st.bar_chart(chart_data, color="#d4af37", height=250)
                 
-                match_expected_ht_goals = (ev_xg + dep_xg) * 0.44 
+                # --- YENİ GERÇEKÇİ İLK YARI (HT) FİLTRESİ ---
+                # Çarpan %38'e düşürüldü ve sonuca pazar gerçekliği cezası (%15) uygulandı.
+                match_expected_ht_goals = (ev_xg + dep_xg) * 0.38 
                 prob_ht_0 = poisson.pmf(0, match_expected_ht_goals)
                 prob_ht_1 = poisson.pmf(1, match_expected_ht_goals)
-                prob_ht_o15 = (1.0 - (prob_ht_0 + prob_ht_1)) * 100
+                prob_ht_o15 = ((1.0 - (prob_ht_0 + prob_ht_1)) * 100) * 0.85
                 
                 ht_o15_color = "#00ffcc" if prob_ht_o15 >= 35 else ("#ffcc00" if prob_ht_o15 >= 25 else "#ff4b4b")
-                ht_text = "İ.Y 1.5 ÜST KUVVETLİ" if prob_ht_o15 >= 35 else ("İ.Y 1.5 ÜST DENENEBİLİR" if prob_ht_o15 >= 25 else "İ.Y 1.5 ÜST ÇOK RİSKLİ")
+                ht_text = "İ.Y 1.5 ÜST DENENEBİLİR" if prob_ht_o15 >= 35 else ("İ.Y 1.5 ÜST RİSKLİ" if prob_ht_o15 >= 25 else "İ.Y 1.5 ÜST ÇOK RİSKLİ")
 
                 st.markdown(f"""
                 <div class='alt-market'>
