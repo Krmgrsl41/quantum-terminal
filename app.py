@@ -201,7 +201,7 @@ if fetch_btn and api_key:
             horizon_time_utc = current_time_utc + datetime.timedelta(hours=48)
             st.session_state.live_matches.clear()
             
-            url = f"https://api.the-odds-api.com/v4/sports/{target_league_code}/odds/?apiKey={clean_key}&regions=eu&markets=h2h,totals,alternate_totals,btts&oddsFormat=decimal"
+            url = f"https://api.the-odds-api.com/v4/sports/{target_league_code}/odds/?apiKey={clean_key}&regions=eu&markets=h2h,totals&oddsFormat=decimal"
             response = requests.get(url)
             
             if response.status_code == 200:
