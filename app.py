@@ -9,8 +9,8 @@ import io
 import re
 from sklearn.ensemble import RandomForestClassifier
 
-# --- QUANTUM DESIGN: V202 THE VISIONARY (AI STORY, EV FILTER & FULL DB) ---
-st.set_page_config(page_title="V202 | QUANTUM APEX", layout="wide", page_icon="🧿")
+# --- QUANTUM DESIGN: V203 THE FLAWLESS (CLEAN CODE, FULL LEAGUES & AI) ---
+st.set_page_config(page_title="V203 | QUANTUM APEX", layout="wide", page_icon="💎")
 
 st.markdown("""
     <style>
@@ -148,12 +148,12 @@ with st.sidebar:
             st.cache_data.clear()
             st.rerun()
     st.divider()
-    st.info("🧿 V202 THE VISIONARY: EV (Beklenen Değer) Filtresi, Açıklamalı Maç Hikayesi ve Eğitici Value Radarı devrededir.")
+    st.info("💎 V203 THE FLAWLESS: Tertemiz Kod Yapısı, Full Ligler, EV Filtresi ve Maç Hikayesi devrededir.")
 
-st.markdown("<h1 style='text-align:center; color:#d4af37; font-size:54px; margin-bottom:0;'>🧿 QUANTUM ORACLE V202</h1>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align:center; color:#8b949e; font-size:18px; margin-top:5px;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | Yapay Zeka Sentezi & EV Filtresi</p>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#d4af37; font-size:54px; margin-bottom:0;'>💎 QUANTUM ORACLE V203</h1>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align:center; color:#8b949e; font-size:18px; margin-top:5px;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | The Flawless: Kusursuz Mimari</p>", unsafe_allow_html=True)
 
-# --- API İSTİHBARAT MERKEZİ (KESKİN NİŞANCI & MEGA LİGLER) ---
+# --- API İSTİHBARAT MERKEZİ ---
 st.markdown("<div class='api-box'>", unsafe_allow_html=True)
 st.markdown("<h3 style='margin-top:0; color:#8a2be2;'>🛰️ Keskin Nişancı İstihbarat Merkezi (Tam Kapsamlı)</h3>", unsafe_allow_html=True)
 
@@ -198,10 +198,9 @@ if fetch_btn and api_key:
             
             soccer_count = 0
             current_time_utc = datetime.datetime.now(datetime.timezone.utc)
-            horizon_time_utc = current_time_utc + datetime.timedelta(hours=48) # Önümüzdeki 48 saati tarar
+            horizon_time_utc = current_time_utc + datetime.timedelta(hours=48)
             st.session_state.live_matches.clear()
             
-            # YENİ EKSİKSİZ PAZARLAR: h2h, totals, alternate_totals, btts
             url = f"https://api.the-odds-api.com/v4/sports/{target_league_code}/odds/?apiKey={clean_key}&regions=eu&markets=h2h,totals,alternate_totals,btts&oddsFormat=decimal"
             response = requests.get(url)
             
@@ -422,7 +421,7 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
         ev_gecmis, act_ev = get_team_df(ev_search_name, aktif_db)
         dep_gecmis, act_dep = get_team_df(dep_search_name, aktif_db)
 
-        with st.spinner("V202 VISIONARY devrede: Risk ve Değer Analizi yapılıyor..."):
+        with st.spinner("V203 FLAWLESS devrede: Risk ve Değer Analizi yapılıyor..."):
             is_survival, survival_boost = False, 1.0
             def get_ppg(team_name, param_df):
                 m = param_df[(param_df['HomeTeam'].str.contains(team_name, case=False, na=False)) | (param_df['AwayTeam'].str.contains(team_name, case=False, na=False))]
@@ -693,6 +692,16 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
                 if anomaly_alert:
                     bg_class = 'trap-alarm' if anomaly_type == 'trap' else 'value-alarm'
                     st.markdown(f"<div class='{bg_class}'><span style='font-size:18px; font-weight:bold; color:#fff;'>{anomaly_alert}</span></div>", unsafe_allow_html=True)
+
+                st.divider()
+                if rf_model:
+                    st.markdown(f"""
+                    <div class='ml-box'>
+                        <h3 style='margin:0; color:#00ffcc;'>🧠 Scikit-Learn Nöral Ağ Kararı</h3>
+                        <p style='font-size:15px; color:#8b949e; margin-top:5px;'>Yapay Zeka bu ligin son 2000 maçını canlı eğiterek şu saf olasılıkları buldu:</p>
+                        <div style='font-size:18px; margin-top:10px;'>Ev Sahibi: <b style='color:#fff;'>%{int(ml_preds.get('H', 0))}</b> | Beraberlik: <b style='color:#fff;'>%{int(ml_preds.get('D', 0))}</b> | Deplasman: <b style='color:#fff;'>%{int(ml_preds.get('A', 0))}</b></div>
+                    </div>
+                    """, unsafe_allow_html=True)
 
                 st.divider()
                 st.markdown("<h3>🏆 İhtimal Hiyerarşisi (Tüm Pazarlar)</h3>", unsafe_allow_html=True)
