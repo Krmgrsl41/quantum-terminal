@@ -256,43 +256,62 @@ if st.session_state.live_matches:
                 if u25_list: st.session_state.u25 = round(sum(u25_list)/len(u25_list), 2)
                 st.rerun() 
 st.markdown("</div>", unsafe_allow_html=True)
-# --- AKILLI KOPYALAMA (SMART PASTE) MOTORU - SUPER FLEX SÜRÜM ---
+# --- AKILLI KOPYALAMA (SMART PASTE) MOTORU - EVRENSEL ZEKA SÜRÜMÜ ---
 with st.expander("✂️ GİZLİ SİLAH: Siteden Oran Kopyala / Yapıştır (Smart Paste)"):
-    st.markdown("<p style='color:#8b949e; font-size:14px;'>Bahis sitesinden maçı ve oranları fareyle tarayıp (Ctrl+C) buraya yapıştırın (Ctrl+V). Sayı formatı ne olursa olsun sistem akıllıca çeker.</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color:#8b949e; font-size:14px;'>İster sadece 2.5 Alt/Üst'ü, ister tüm bülteni kopyalayın. Sistem sayı adedine göre kutuları otomatik seçer.</p>", unsafe_allow_html=True)
     
-    paste_text = st.text_area("Kopyalanan Metni Buraya Bırakın:", height=100, help="Örn: FB-GS MS1: 1.5 MSX: 3.40 MS2: 4")
+    paste_text = st.text_area("Kopyalanan Metni Buraya Bırakın:", height=100)
     
-    if st.button("🪄 ORANLARI CIMBIZLA ÇEK"):
+    if st.button("🪄 ORANLARI AKILLI DAĞIT"):
         if paste_text:
-            # Metin içindeki tüm tam sayı ve ondalıklı sayıları bul (1, 1.5, 2.10, 3,40 hepsini kapsar)
-            # Sadece 1.0 ile 50.0 arasındaki sayıları alıyoruz ki tarih veya oyuncu sayısı karışmasın
+            # Sayıları bul ve 1.01 - 30.0 arasına filtrele
             raw_finds = re.findall(r'[0-9]+(?:[\.,][0-9]+)?', paste_text)
             floats = []
             for x in raw_finds:
                 try:
                     val = float(x.replace(',', '.'))
-                    if 1.01 <= val <= 30.0: # Mantıklı oran aralığı
-                        floats.append(val)
+                    if 1.01 <= val <= 30.0: floats.append(val)
                 except: continue
             
-            if len(floats) >= 3:
-                # Dağıtım mantığı: Bulunan ilk 3 sayı her zaman MS1, X, 2'dir.
+            adet = len(floats)
+            
+            if adet == 2:
+                # Sadece 2 sayı varsa: Alt ve Üst'tür
+                st.session_state.u25 = floats[0]
+                st.session_state.o25 = floats[1]
+                st.success("⚽ Alt / Üst oranları başarıyla güncellendi!")
+            
+            elif adet == 3:
+                # 3 sayı varsa: MS 1 - 0 - 2'dir
                 st.session_state.ms1 = floats[0]
                 st.session_state.msx = floats[1]
                 st.session_state.ms2 = floats[2]
+                st.success("📊 Taraf oranları başarıyla güncellendi!")
                 
-                # Eğer daha fazla sayı varsa sırasıyla Alt, Üst ve KG Var, Yok olarak ata
-                if len(floats) >= 5:
-                    st.session_state.u25 = floats[3]
-                    st.session_state.o25 = floats[4]
-                if len(floats) >= 7:
-                    st.session_state.btts_y = floats[5]
-                    st.session_state.btts_n = floats[6]
+            elif adet == 5 or adet == 6:
+                # 5-6 sayı varsa: MS 1-0-2 ve Alt-Üst'tür
+                st.session_state.ms1 = floats[0]
+                st.session_state.msx = floats[1]
+                st.session_state.ms2 = floats[2]
+                st.session_state.u25 = floats[3]
+                st.session_state.o25 = floats[4]
+                st.success("💎 Taraf ve Alt/Üst oranları birlikte güncellendi!")
                 
-                st.success(f"✅ {len(floats)} adet oran başarıyla ayıklandı!")
-                st.rerun()
+            elif adet >= 7:
+                # 7 ve üzeri sayı varsa: Tüm bülten (MS, Alt-Üst, KG)
+                st.session_state.ms1 = floats[0]
+                st.session_state.msx = floats[1]
+                st.session_state.ms2 = floats[2]
+                st.session_state.u25 = floats[3]
+                st.session_state.o25 = floats[4]
+                st.session_state.btts_y = floats[5]
+                st.session_state.btts_n = floats[6]
+                st.success("👑 Tüm oranlar (MS, Alt/Üst, KG) eksiksiz güncellendi!")
+                
             else:
-                st.error(f"❌ Metin içinde sadece {len(floats)} sayı bulundu. En az 3 oran (MS 1-X-2) gerekiyor!")
+                st.warning(f"⚠️ Metin içinde {adet} adet sayı bulundu. Dağıtım yapılamadı. En az 2 sayı (Alt/Üst için) gereklidir.")
+            
+            if adet >= 2: st.rerun()
 # --- ARAYÜZ (GÜNCEL GRID) ---
 st.markdown("<div class='input-container'>", unsafe_allow_html=True)
 top_c1, top_c2, top_c3 = st.columns([1.5, 1.5, 1.5])
@@ -800,5 +819,6 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
 
         else:
             st.error("❌ Veritabanında hiçbir istatistiksel geçerliliği olan benzer maç bulunamadı.")
+
 
 
