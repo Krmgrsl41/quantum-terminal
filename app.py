@@ -9,8 +9,8 @@ import io
 import re
 from sklearn.ensemble import RandomForestClassifier
 
-# --- QUANTUM DESIGN: V201 THE MASTERMIND (FIXED POOL, REALISTIC xG & AI SYNTHESIS) ---
-st.set_page_config(page_title="V201 | QUANTUM APEX", layout="wide", page_icon="👑")
+# --- QUANTUM DESIGN: V202 THE VISIONARY (AI STORY, EV FILTER & FULL DB) ---
+st.set_page_config(page_title="V202 | QUANTUM APEX", layout="wide", page_icon="🧿")
 
 st.markdown("""
     <style>
@@ -53,11 +53,11 @@ st.markdown("""
     
     .syndicate-badge { background: #1a1500; border: 1px solid #d4af37; color: #d4af37; padding: 5px 10px; border-radius: 6px; font-size: 13px; font-weight: 800; margin-right: 6px; display:inline-block; margin-bottom:8px;}
     
-    .value-alarm { background: linear-gradient(90deg, #ff0000, #800000); padding: 25px; border-radius: 15px; margin-top: 20px; text-align: center; border: 2px solid #ff4b4b; box-shadow: 0 0 25px rgba(255,0,0,0.5); animation: pulse 2s infinite; }
+    .value-alarm { background: linear-gradient(145deg, #2a0808, #1a0505); padding: 25px; border-radius: 15px; margin-top: 20px; border: 2px solid #ff4b4b; box-shadow: 0 0 20px rgba(255,0,0,0.3); animation: pulse 2s infinite; }
     .trap-alarm { background: linear-gradient(90deg, #8a2be2, #4b0082); padding: 25px; border-radius: 15px; margin-top: 20px; text-align: center; border: 2px solid #d4af37; box-shadow: 0 0 25px rgba(138,43,226,0.5); }
     .survival-mode { background: linear-gradient(90deg, #ff4b4b, #800000); padding: 20px; border-radius: 15px; text-align: center; border: 2px solid #fff; font-size: 20px !important; font-weight: 900 !important; margin-bottom:25px; box-shadow: 0 0 20px rgba(255,75,75,0.6); animation: pulse 2s infinite; }
     
-    @keyframes pulse { 0% { box-shadow: 0 0 15px rgba(255,0,0,0.5); } 50% { box-shadow: 0 0 35px rgba(255,0,0,0.8); } 100% { box-shadow: 0 0 15px rgba(255,0,0,0.5); } }
+    @keyframes pulse { 0% { box-shadow: 0 0 15px rgba(255,0,0,0.3); } 50% { box-shadow: 0 0 30px rgba(255,0,0,0.6); } 100% { box-shadow: 0 0 15px rgba(255,0,0,0.3); } }
     
     .dna-box { background: #121820; padding: 20px; border-radius: 15px; border-left: 6px solid #8a2be2; margin-bottom: 20px; font-size: 16px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.2);}
     .alt-market { background: #0c1015; padding: 25px; border-radius: 15px; border: 1px solid #1e2530; margin-bottom: 20px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
@@ -75,7 +75,7 @@ for k, v in default_vals.items():
     if k not in st.session_state: st.session_state[k] = v
 if 'live_matches' not in st.session_state: st.session_state.live_matches = {}
 
-# --- VERİ TABANI (FULL 25 YIL GERİ GELDİ) ---
+# --- VERİ TABANI ---
 LIG_MAP = {
     'T1': 'Türkiye Süper Lig', 'E0': 'İngiltere Premier Lig', 'E1': 'İngiltere Championship',
     'E2': 'İngiltere League 1', 'E3': 'İngiltere League 2', 'EC': 'İngiltere National League',
@@ -97,7 +97,6 @@ LEAGUE_WEIGHTS = { 'E0': 1.5, 'SP1': 1.5, 'I1': 1.5, 'D1': 1.5, 'F1': 1.5, 'T1':
 
 @st.cache_data(ttl=3600)
 def load_quantum_data():
-    # 26 BİN HATASI DÜZELTİLDİ: TÜM YILLAR GERİ EKLENDİ!
     seasons = [
         '2526', '2425', '2324', '2223', '2122', '2021', '1920', '1819', '1718', '1617', 
         '1516', '1415', '1314', '1213', '1112', '1011', '0910', '0809', '0708', '0607', 
@@ -144,16 +143,17 @@ with st.sidebar:
     st.divider()
     st.markdown(f"<div style='background:#0c1015; padding:15px; border-radius:10px; border:1px solid #1e2530; font-size:16px;'><b>Aktif Veri Havuzu:</b><br><span style='font-size:20px; color:#d4af37;'>{len(db):,} Maç</span></div>", unsafe_allow_html=True)
     if len(db) == 0:
-        st.markdown("<div style='background:rgba(255, 75, 75, 0.1); border:1px solid #ff4b4b; padding:15px; border-radius:10px; margin-top:15px;'><span style='color:#ff4b4b; font-size:15px; font-weight:bold;'>⚠️ Veri İndirme Başarısız!</span><br><span style='color:#8b949e; font-size:14px;'>Güvenlik duvarını aşmak için Hayalet Modu'nu kullanın.</span></div>", unsafe_allow_html=True)
+        st.markdown("<div style='background:rgba(255, 75, 75, 0.1); border:1px solid #ff4b4b; padding:15px; border-radius:10px; margin-top:15px;'><span style='color:#ff4b4b; font-size:15px; font-weight:bold;'>⚠️ Veri İndirme Başarısız!</span><br><span style='color:#8b949e; font-size:14px;'>Güvenlik duvarını aşmak için klavyeden 'C' tuşuna basıp önbelleği temizleyin.</span></div>", unsafe_allow_html=True)
         if st.button("🔄 Hayalet Modu ile Yeniden İndir"):
             st.cache_data.clear()
             st.rerun()
     st.divider()
-    st.info("🧠 V201 THE MASTERMIND: Otonom Zeka Karar Motoru tüm verileri sentezleyecek şekilde yeniden yazıldı. İ.Y %44 xG limiti aktiftir.")
+    st.info("🧿 V202 THE VISIONARY: EV (Beklenen Değer) Filtresi, Açıklamalı Maç Hikayesi ve Eğitici Value Radarı devrededir.")
 
-st.markdown("<h1 style='text-align:center; color:#d4af37; font-size:54px; margin-bottom:0;'>👑 QUANTUM ORACLE V201</h1>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align:center; color:#8b949e; font-size:18px; margin-top:5px;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | The Mastermind: Yapay Zeka Sentez Motoru</p>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#d4af37; font-size:54px; margin-bottom:0;'>🧿 QUANTUM ORACLE V202</h1>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align:center; color:#8b949e; font-size:18px; margin-top:5px;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | Yapay Zeka Sentezi & EV Filtresi</p>", unsafe_allow_html=True)
 
+# --- API İSTİHBARAT MERKEZİ ---
 st.markdown("<div class='api-box'>", unsafe_allow_html=True)
 st.markdown("<h3 style='margin-top:0; color:#8a2be2;'>🛰️ Canlı Oran İstihbarat Merkezi (24s)</h3>", unsafe_allow_html=True)
 
@@ -240,6 +240,7 @@ if st.session_state.live_matches:
                 st.rerun() 
 st.markdown("</div>", unsafe_allow_html=True)
 
+# --- ARAYÜZ (GRID) ---
 st.markdown("<div class='input-container'>", unsafe_allow_html=True)
 top_c1, top_c2, top_c3 = st.columns([1.5, 1.5, 1.5])
 with top_c1: ev_t = st.text_input("🏠 EV SAHİBİ TAKIM", value=st.session_state.ev_t)
@@ -252,7 +253,7 @@ col_ms, col_uo, col_kg = st.columns([1, 2.2, 1])
 with col_ms:
     st.markdown("<h3 style='color:#00ffcc; text-align:center; margin-bottom:20px;'>📊 TARAF</h3>", unsafe_allow_html=True)
     ms1 = st.number_input("MS 1", value=st.session_state.ms1, format="%.2f")
-    msx = st.number_input("MS X (0)", value=st.session_state.msx, format="%.2f")
+    msx = st.number_input("MS 0 (Beraberlik)", value=st.session_state.msx, format="%.2f")
     ms2 = st.number_input("MS 2", value=st.session_state.ms2, format="%.2f")
 
 with col_uo:
@@ -368,7 +369,7 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
     target_dt = st.session_state.get('match_date_utc', datetime.datetime.now(datetime.timezone.utc))
     
     if len(aktif_db) == 0 or 'Div' not in aktif_db.columns:
-        st.error("❌ Veritabanı bozuk veya boş! Lütfen sol menüdeki '🔄 Hayalet Modu ile Yeniden İndir' butonuna basın.")
+        st.error("❌ Veritabanı bozuk veya boş! Lütfen klavyeden 'C' tuşuna basıp Clear Cache yapın.")
     else:
         for col in ['B365O', 'B365U', 'HTHG', 'HTAG']:
             if col not in aktif_db.columns: aktif_db[col] = np.nan
@@ -380,7 +381,7 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
         ev_gecmis, act_ev = get_team_df(ev_search_name, aktif_db)
         dep_gecmis, act_dep = get_team_df(dep_search_name, aktif_db)
 
-        with st.spinner("V201 MASTERMIND devrede: Sentez Motoru çalışıyor..."):
+        with st.spinner("V202 VISIONARY devrede: Risk ve Değer Analizi yapılıyor..."):
             is_survival, survival_boost = False, 1.0
             def get_ppg(team_name, param_df):
                 m = param_df[(param_df['HomeTeam'].str.contains(team_name, case=False, na=False)) | (param_df['AwayTeam'].str.contains(team_name, case=False, na=False))]
@@ -570,50 +571,46 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
 
             det_l, det_r = st.columns(2)
             with det_l:
-               st.markdown("<h2 style='color:#fff;'>🧠 Tam Otonom Banko Tahmini</h2>", unsafe_allow_html=True)
+                st.markdown("<h2 style='color:#fff;'>🧠 Tam Otonom Banko Tahmini</h2>", unsafe_allow_html=True)
                 
-                # --- 3. YENİ YAPAY ZEKA GÜVEN VE SENTEZ MOTORU (DENGELİ KAR MARJI) ---
+                # --- YAPAY ZEKA GÜVEN VE SENTEZ MOTORU (EV FİLTRELİ) ---
                 ai_candidates = []
                 for t_name, t_prob, t_odd in targets:
-                    # FİLTRE: 1.25 ve altındaki oranlar kârlı yatırım değildir, yapay zeka bunları ana banko yapmaktan kaçınır.
-                    if t_odd <= 1.25: continue 
+                    if t_odd <= 1.25: continue # Kâr marjı düşük çöp oranları banko yapma!
                     
                     risk_mod = 1.0
                     if "1.5" in t_name: risk_mod = 1.15
                     elif "2.5" in t_name or "KG" in t_name: risk_mod = 1.05
                     elif "MS" in t_name: risk_mod = 0.85 
                     
-                    implied_prob = (1 / t_odd) * 100
-                    
-                    # YENİ DENGE: Beklenen Değer (Expected Value - EV)
                     expected_value = (t_prob / 100) * t_odd
-                    # Sadece ihtimale değil, kâr marjına da (EV) odaklanan yeni formül
                     guven_skoru = (t_prob * risk_mod) * expected_value
                     
+                    implied_prob = (1 / t_odd) * 100 if t_odd > 0 else 100
                     ai_candidates.append((t_name, t_prob, t_odd, guven_skoru, implied_prob))
 
-                if not ai_candidates: # Eğer bültende her şey 1.25 altındaysa mecburen en iyiyi al
+                if not ai_candidates: 
                     ai_candidates.append((targets[0][0], targets[0][1], targets[0][2], 0, 100))
 
                 ai_candidates.sort(key=lambda x: x[3], reverse=True)
                 best_target = ai_candidates[0]
                 name, prob, odd, _, imp_p = best_target
 
-                # --- 4. DİNAMİK MAÇ HİKAYESİ OLUŞTURUCU ---
+                # --- MAÇIN HİKAYESİ OLUŞTURUCU ---
                 hikaye = ""
                 if "Üst" in name or "KG Var" in name:
-                    hikaye = f"Bu maçta hücum hatları savunmalara göre ağır basıyor (Toplam Beklenen Gol: {(ev_xg+dep_xg):.2f}). Şirketler oranı {odd:.2f} seviyesinde tutarak riski dengelemeye çalışmış ancak istatistikler ve momentum maçın {name} senaryosuna gideceğini gösteriyor. Kâr/Risk dengesi açısından en optimal yatırım budur."
+                    hikaye = f"Bu maçta hücum hatları savunmalara göre bariz şekilde ağır basıyor (Toplam xG: {(ev_xg+dep_xg):.2f}). Şirketler oranı {odd:.2f} seviyesinde tutarak riski dengelemeye çalışmış ancak istatistikler, hücum momentumu ve lig DNA'sı maçın '{name}' senaryosuna gideceğini kanıtlıyor. Kâr/Risk dengesi (EV) açısından en mantıklı yatırım budur."
                 elif "Alt" in name or "KG Yok" in name:
-                    hikaye = f"Kısır bir mücadele bekleniyor. Savunma kurguları ve takım DNA'ları maçın temposunu düşürecektir. {odd:.2f} oranlık {name} tercihi, bu taktik savaşında paranızı korumak için en kârlı sığınaktır."
+                    hikaye = f"Sahada son derece kısır ve taktiksel bir mücadele bekleniyor. İki takımın da savunma kurguları maçın temposunu düşürecektir. {odd:.2f} oranlık '{name}' tercihi, bu kapalı taktik savaşında paranızı korumak ve kasayı büyütmek için en kârlı sığınaktır."
                 elif "MS 1" in name:
-                    hikaye = f"Ev sahibi avantajı, {ev_momentum:.1f} puanlık momentum ivmesi ve {ev_xg:.2f} xG (Gol Beklentisi) ile ibreyi tamamen kendine çevirmiş durumda. {odd:.2f} oran, bu senaryo için sistemdeki en değerli (Value) tercihtir."
+                    hikaye = f"Ev sahibi {ev_t}, saha avantajını {ev_momentum:.1f} puanlık momentum ivmesi ve yüksek gol beklentisi ({ev_xg:.2f}) ile birleştirmiş durumda. {odd:.2f} oran, rakibin zayıf deplasman formu da göz önüne alındığında sistemdeki en değerli (Value) ve güvenilir tercihtir."
                 elif "MS 2" in name:
-                    hikaye = f"Deplasman ekibi zorlu bir fikstürde olmasına rağmen {dep_xg:.2f} gol beklentisi ve dominant formuyla ağır basıyor. Şirketler deplasman faktörü yüzünden oranı ({odd:.2f}) yüksek tutarak tuzak kurmuş olabilir, veri bilimi tamamen Deplasman galibiyetini işaret ediyor."
+                    hikaye = f"Deplasman ekibi {dep_t} zorlu bir fikstürde olmasına rağmen {dep_xg:.2f} gol beklentisi ve dominant formuyla sahada ağır basıyor. Şirketler deplasman faktörü yüzünden oranı ({odd:.2f}) yüksek tutarak bir yanılsama yaratmış olabilir, ancak yapay zeka ve veri bilimi tamamen Deplasman galibiyetini işaret ediyor."
                 else:
-                    hikaye = f"İki takımın da sahadaki momentumu ve ELO güçleri kilitlenmiş durumda. Matematiksel olarak en çok değer barındıran (Value) ve mantıklı tercih {name} olacaktır."
+                    hikaye = f"İki takımın da sahadaki momentumu, puanları ve güçleri tamamen kilitlenmiş durumda. Matematiksel olarak şirket oranları ile gerçek ihtimaller karşılaştırıldığında en çok 'Değer (Value)' barındıran ve oynanması en mantıklı tercih '{name}' olacaktır."
 
                 if is_survival:
-                    hikaye += " Ayrıca ligin sonlarındayız ve düşme hattında yaşanan 'Can Havli (Survival)' motivasyonu sahadaki mücadeleyi ve bu tercihi ekstra destekliyor."
+                    hikaye += " Ayrıca sezon sonundayız ve düşme hattında yaşanan 'Can Havli (Survival)' motivasyonu sahadaki mücadeleyi ve bu tercihi ekstra olarak destekliyor."
 
                 st.markdown(f"""
                 <div class='ai-verdict-box'>
@@ -638,19 +635,20 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
                     if t_odd > 1.05:
                         implied_prob = (1 / t_odd) * 100
                         if (t_prob - implied_prob) >= value_threshold: 
-                            value_alarms.append(f"🔥 <span style='font-size:18px;'><b>{t_name}</b> (Açılan Oran: {t_odd:.2f})</span><br><span style='font-size:14px; font-weight:normal; color:#fff;'>Bahis şirketi bu sonuca sadece <b>%{int(implied_prob)}</b> ihtimal vererek oranı şişirmiş. Ancak yapay zekamız maçın dinamiklerinde bu ihtimalin <b>%{int(t_prob)}</b> olduğunu tespit etti. Bu <b>%{int(t_prob - implied_prob)}</b> oranında devasa bir hata ve değer (Value) fırsatıdır!</span>")
+                            value_alarms.append(f"🔥 <span style='font-size:18px;'><b>{t_name}</b> (Açılan Oran: {t_odd:.2f})</span><br><span style='font-size:14px; font-weight:normal; color:#fff;'>Bahis şirketi bu sonuca sadece <b>%{int(implied_prob)}</b> ihtimal vererek oranı şişirmiş. Ancak yapay zeka, maçın dinamiklerinde bu ihtimalin <b>%{int(t_prob)}</b> olduğunu tespit etti. Bu, yatırım yapıldığında kasanızı uzun vadede büyütecek büyük bir matematiksel hatadır!</span>")
                 
                 if value_alarms:
                     alarm_text = "<br><hr style='border-color:#555; margin:10px 0;'><br>".join(value_alarms)
                     st.markdown(f"""
                     <div class='value-alarm' style='text-align:left;'>
-                        <h2 style='margin:0 0 10px 0; color:#fff; font-weight:900; text-align:center;'>🚨 SİSTEM AÇIĞI (VALUE) TESPİT EDİLDİ!</h2>
-                        <p style='font-size:15px; color:#ddd; margin-bottom:15px; text-align:center;'>Aşağıdaki seçeneklerde bahis şirketinin matematiksel hesaplama hatası tespit edilmiştir. Bu oranlara yatırım yapmak uzun vadeli kasanızı büyütür:</p>
-                        <div style='background:rgba(0,0,0,0.3); padding:20px; border-radius:10px; border-left:5px solid #ffcc00;'>
+                        <h2 style='margin:0 0 10px 0; color:#ff4b4b; font-weight:900; text-align:center;'>🚨 SİSTEM AÇIĞI (VALUE) TESPİT EDİLDİ!</h2>
+                        <p style='font-size:15px; color:#ddd; margin-bottom:15px; text-align:center;'>Aşağıdaki seçeneklerde bahis şirketinin hesaplama hatası tespit edilmiştir. Değer (Value) barındıran bu oranları kaçırmayın:</p>
+                        <div style='background:rgba(0,0,0,0.5); padding:20px; border-radius:10px; border-left:5px solid #ffcc00;'>
                             {alarm_text}
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
+                
                 if anomaly_alert:
                     bg_class = 'trap-alarm' if anomaly_type == 'trap' else 'value-alarm'
                     st.markdown(f"<div class='{bg_class}'><span style='font-size:18px; font-weight:bold; color:#fff;'>{anomaly_alert}</span></div>", unsafe_allow_html=True)
@@ -680,8 +678,7 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
                 chart_data = pd.DataFrame({"Skorlar": [f"{i+1}. İhtimal ({s[0]})" for i, s in enumerate(sorted_scores)], "İhtimal (%)": [int(s[1]) for s in sorted_scores]}).set_index("Skorlar")
                 st.bar_chart(chart_data, color="#d4af37", height=250)
                 
-                # --- 2. GERÇEKÇİ İLK YARI (HT) xG FİLTRESİ ---
-                # İstatistiksel gerçek: İlk yarıda toplam maç xG'sinin ortalama %44'ü gerçekleşir.
+                # GERÇEKÇİ İLK YARI (HT) xG FİLTRESİ
                 match_expected_ht_goals = (ev_xg + dep_xg) * 0.44 
                 prob_ht_0 = poisson.pmf(0, match_expected_ht_goals)
                 prob_ht_1 = poisson.pmf(1, match_expected_ht_goals)
