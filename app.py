@@ -78,8 +78,12 @@ if 'live_matches' not in st.session_state: st.session_state.live_matches = {}
 # --- VERİ TABANI (FULL 25 YIL GERİ GELDİ) ---
 LIG_MAP = {
     'T1': 'Türkiye Süper Lig', 'E0': 'İngiltere Premier Lig', 'E1': 'İngiltere Championship',
+    'E2': 'İngiltere League 1', 'E3': 'İngiltere League 2', 'EC': 'İngiltere National League',
     'SP1': 'İspanya La Liga 1', 'SP2': 'İspanya La Liga 2', 'I1': 'İtalya Serie A',
-    'D1': 'Almanya Bundesliga 1', 'F1': 'Fransa Ligue 1', 'N1': 'Hollanda Eredivisie'
+    'I2': 'İtalya Serie B', 'D1': 'Almanya Bundesliga 1', 'D2': 'Almanya Bundesliga 2',
+    'F1': 'Fransa Ligue 1', 'F2': 'Fransa Ligue 2', 'N1': 'Hollanda Eredivisie',
+    'B1': 'Belçika Pro League', 'P1': 'Portekiz Primeira Liga', 'G1': 'Yunanistan Süper Lig',
+    'SC0': 'İskoçya Premiership', 'SC1': 'İskoçya Championship'
 }
 
 LEAGUE_DNA = {
