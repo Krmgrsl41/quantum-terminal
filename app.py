@@ -164,12 +164,20 @@ API_LEAGUES = {
     "🇹🇷 Türkiye Süper Lig": "soccer_turkey_super_league",
     "🇬🇧 İngiltere Premier Lig": "soccer_epl",
     "🇬🇧 İngiltere Championship": "soccer_efl_champ",
-    "🇪🇸 İspanya La Liga": "soccer_spain_la_liga",
+    "🇬🇧 İngiltere League 1": "soccer_england_league1",
+    "🇬🇧 İngiltere League 2": "soccer_england_league2",
+    "🇪🇸 İspanya La Liga 1": "soccer_spain_la_liga",
+    "🇪🇸 İspanya La Liga 2": "soccer_spain_segunda_division",
     "🇮🇹 İtalya Serie A": "soccer_italy_serie_a",
-    "🇩🇪 Almanya Bundesliga": "soccer_germany_bundesliga",
+    "🇮🇹 İtalya Serie B": "soccer_italy_serie_b",
+    "🇩🇪 Almanya Bundesliga 1": "soccer_germany_bundesliga",
+    "🇩🇪 Almanya Bundesliga 2": "soccer_germany_liga2",
     "🇫🇷 Fransa Ligue 1": "soccer_france_ligue_one",
+    "🇫🇷 Fransa Ligue 2": "soccer_france_ligue_two",
     "🇳🇱 Hollanda Eredivisie": "soccer_netherlands_eredivisie",
-    "🇵🇹 Portekiz Primeira Liga": "soccer_portugal_primeira_liga"
+    "🇵🇹 Portekiz Primeira Liga": "soccer_portugal_primeira_liga",
+    "🇧🇪 Belçika Pro League": "soccer_belgium_first_div",
+    "🏴󠁧󠁢󠁳󠁣󠁴󠁿 İskoçya Premiership": "soccer_spl"
 }
 
 api_c1, api_c2, api_c3 = st.columns([1.2, 1.8, 1])
