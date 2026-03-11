@@ -8,8 +8,8 @@ import requests
 import io
 import re
 
-# --- QUANTUM DESIGN: V190 THE MASTERMIND (LİG DNA, VALUE ALARM, KART/KORNER & HT MOTORU) ---
-st.set_page_config(page_title="V190 | QUANTUM MASTERMIND", layout="wide", page_icon="🧠")
+# --- QUANTUM DESIGN: V191 CALIBRATOR (DİNAMİK VALUE ALARMI & HASSASİYET KONTROLÜ) ---
+st.set_page_config(page_title="V191 | QUANTUM APEX", layout="wide", page_icon="🎛️")
 
 st.markdown("""
     <style>
@@ -35,8 +35,6 @@ st.markdown("""
     .prob-value { font-size: 32px; font-weight: 900; margin: 5px 0; text-shadow: 0 0 10px rgba(255,255,255,0.1); }
     .prob-odd { color: #ffffff; font-size: 14px; background: #121820; padding: 3px 10px; border-radius: 15px; display: inline-block; border: 1px solid #333; }
     .syndicate-badge { background: #1a1500; border: 1px solid #d4af37; color: #d4af37; padding: 3px 8px; border-radius: 5px; font-size: 11px; font-weight: bold; margin-right: 5px; }
-    
-    /* V190 YENİ STİLLER */
     .value-alarm { background: linear-gradient(90deg, #ff0000, #800000); padding: 15px; border-radius: 10px; margin-top: 15px; text-align: center; border: 2px solid #ff4b4b; box-shadow: 0 0 20px rgba(255,0,0,0.5); animation: pulse 2s infinite; }
     @keyframes pulse { 0% { box-shadow: 0 0 10px rgba(255,0,0,0.5); } 50% { box-shadow: 0 0 25px rgba(255,0,0,1); } 100% { box-shadow: 0 0 10px rgba(255,0,0,0.5); } }
     .dna-box { background: #121820; padding: 15px; border-radius: 10px; border-left: 5px solid #8a2be2; margin-bottom: 15px; font-size: 14px; display: flex; justify-content: space-between; align-items: center;}
@@ -59,7 +57,6 @@ LIG_MAP = {
     'SC0': 'İskoçya Premiership', 'SC1': 'İskoçya Championship'
 }
 
-# --- V190: KÜLTÜREL LİG DNA SÖZLÜĞÜ ---
 LEAGUE_DNA = {
     'T1': {'name': 'Kaos ve Agresyon (Süper Lig)', 'card_mod': 1.3, 'xg_mod': 1.05, 'corner_mod': 1.0, 'desc': 'Hakemler çok kart çıkarır, momentum dalgalanması yüksektir.'},
     'D1': {'name': 'Açık Alan / Yüksek Tempo (Bundesliga)', 'card_mod': 0.8, 'xg_mod': 1.20, 'corner_mod': 1.1, 'desc': 'Geçiş oyunları ve bol pozisyon. 2.5 Üst ve KG VAR oranları yüksektir.'},
@@ -89,8 +86,6 @@ def load_quantum_data():
             if response.status_code != 200: return pd.DataFrame()
             df = pd.read_csv(io.StringIO(response.text))
             if 'B365>2.5' in df.columns: df.rename(columns={'B365>2.5': 'B365O', 'B365<2.5': 'B365U'}, inplace=True)
-            
-            # V190: İLK YARI (HT), KORNER (C) VE KART (Y,R) VERİLERİ ÇEKİLİYOR
             cols = ['Div', 'Date', 'HomeTeam', 'AwayTeam', 'B365H', 'B365D', 'B365A', 'B365O', 'B365U', 'FTR', 'FTHG', 'FTAG', 'HTHG', 'HTAG', 'HC', 'AC', 'HST', 'AST', 'HY', 'AY', 'HR', 'AR']
             df = df[[c for c in cols if c in df.columns]].dropna(subset=['B365H', 'B365D', 'B365A']).copy()
             valid_mask = (df['B365H'] > 1.0) & (df['B365D'] > 1.0) & (df['B365A'] > 1.0)
@@ -118,6 +113,13 @@ db = load_quantum_data()
 with st.sidebar:
     st.markdown("<h2 style='color:#d4af37;'>👑 Kasa & Finans Yönetimi</h2>", unsafe_allow_html=True)
     kasa_miktari = st.number_input("Güncel Toplam Kasa (TL)", value=10000, step=500)
+    
+    # --- V191: HASSASİYET KONTROLÜ EKLENDİ ---
+    st.divider()
+    st.markdown("<h3 style='color:#00ffcc;'>🎛️ Radar Kalibrasyonu</h3>", unsafe_allow_html=True)
+    value_threshold = st.slider("🚨 Value Alarm Hassasiyeti (%)", min_value=3, max_value=25, value=10, step=1, help="Yapay Zeka tahmini ile bahis şirketinin gizli yüzdesi arasında kaç puanlık bir uçurum olduğunda kırmızı alarm çalsın? Düşük yüzde = Çok alarm (Profesyonel). Yüksek yüzde = Sadece devasa hatalarda alarm.")
+    
+    st.divider()
     st.markdown(f"<div style='background:#0c1015; padding:10px; border-radius:8px; border:1px solid #1e2530;'><b>Aktif Veri Havuzu:</b> {len(db):,} Maç</div>", unsafe_allow_html=True)
     
     if len(db) == 0:
@@ -132,7 +134,7 @@ with st.sidebar:
             st.rerun()
             
     st.divider()
-    st.info("🧠 V190 THE MASTERMIND: Deha Motoru Devrede. Value (Değer) Alarmları, Kültürel Lig DNA'sı, Korner/Kart Analizi ve İlk Yarı Canavarı eklendi.")
+    st.info("🎛️ V191 CALIBRATOR: Sistem açığı (Value) alarmının tetiklenme hassasiyetini sol menüden kendiniz belirleyebilirsiniz.")
 
 mevcut_ligler = ["TÜM DÜNYA (GLOBAL)"]
 if not db.empty and 'Div' in db.columns:
@@ -140,8 +142,8 @@ if not db.empty and 'Div' in db.columns:
 else:
     mevcut_ligler += sorted([f"{k} | {v}" for k, v in LIG_MAP.items()])
 
-st.markdown("<h1 style='text-align:center; color:#d4af37;'>🧠 QUANTUM APEX V190</h1>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align:center; color:#8b949e;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | The Mastermind: Değer Avcısı & Kültürel xG</p>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#d4af37;'>🎛️ QUANTUM APEX V191</h1>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align:center; color:#8b949e;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | Dinamik Value Radarı & Kalibrasyon</p>", unsafe_allow_html=True)
 
 st.markdown("<div class='api-box'>", unsafe_allow_html=True)
 st.subheader("⚡ Canlı Oran Borsası (24 Saatlik Hedefler)")
@@ -419,7 +421,6 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
             lig_kodu = sec_lig.split(" | ")[0]
             aktif_db = aktif_db[aktif_db['Div'] == lig_kodu]
 
-        # --- V190: LİG DNA'SI ÇARPANLARI ---
         dna = LEAGUE_DNA.get(lig_kodu, {'name': 'Standart Mod', 'card_mod': 1.0, 'xg_mod': 1.0, 'corner_mod': 1.0, 'desc': 'Kültürel DNA saptanamadı, global algoritmalar devrede.'})
 
         ev_search_name = get_clean_team_name(ev_t)
@@ -428,7 +429,7 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
         ev_gecmis, act_ev = get_team_df(ev_search_name, aktif_db)
         dep_gecmis, act_dep = get_team_df(dep_search_name, aktif_db)
 
-        with st.spinner("V190 THE MASTERMIND devrede: Lig DNA'sı okunuyor, Değer(Value) analizi yapılıyor..."):
+        with st.spinner("V191 CALIBRATOR devrede: Değer radarı ayarladığınız hassasiyete göre taranıyor..."):
             
             ev_home_matches = ev_gecmis[ev_gecmis['HomeTeam'].str.contains(act_ev, case=False, na=False)].tail(5)
             dep_away_matches = dep_gecmis[dep_gecmis['AwayTeam'].str.contains(act_dep, case=False, na=False)].tail(5)
@@ -461,7 +462,6 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
             else:
                 h2h_advantage = 0.0
 
-            # V190: Ekstra Kart/Korner verilerini alıyoruz
             ev_res = get_syndicate_form(ev_search_name, db, target_dt)
             dep_res = get_syndicate_form(dep_search_name, db, target_dt)
             ev_pts, ev_gs, ev_gc, ev_gp, ev_w, ev_d, ev_l, ev_seq, ev_momentum, ev_fatigue, ev_elo, ev_luck, ev_corn, ev_card, ev_htg = ev_res
@@ -520,7 +520,6 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
             ev_seq_html = build_seq_html(ev_seq, "left")
             dep_seq_html = build_seq_html(dep_seq, "right")
 
-            # --- V190: LİG DNA PANOSU ---
             st.markdown(f"""
             <div class='dna-box'>
                 <div>
@@ -633,12 +632,12 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # --- V190: SİSTEM AÇIĞI (VALUE) ALARMI ---
+                # --- V191: DİNAMİK VALUE (HATA PAYI) ALARMI KULLANICININ SEÇTİĞİ YÜZDEYE GÖRE TETİKLENİR ---
                 value_alarms = []
                 for t in targets:
                     t_name, t_prob, t_odd = t
                     implied_prob = (1 / t_odd) * 100
-                    if (t_prob - implied_prob) >= 15: # %15'lik Devasa Hata Payı
+                    if (t_prob - implied_prob) >= value_threshold: 
                         value_alarms.append(f"{t_name} (Bulunan: %{int(t_prob)} / Şirketin Açtığı: %{int(implied_prob)})")
                 
                 if value_alarms:
@@ -677,7 +676,6 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
                 chart_data = pd.DataFrame({"Skorlar": [f"{i+1}. İhtimal ({s[0]})" for i, s in enumerate(sorted_scores)], "İhtimal (%)": [int(s[1]) for s in sorted_scores]}).set_index("Skorlar")
                 st.bar_chart(chart_data, color="#d4af37", height=200)
                 
-                # --- V190: İLK YARI VE ALTERNATİF MARKETLER PANELİ ---
                 st.markdown(f"""
                 <div class='alt-market'>
                     <h4 style='color:#00ffcc; margin-top:0;'>⏱️ Alternatif Marketler (İlk Yarı & Agresyon)</h4>
