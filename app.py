@@ -9,8 +9,8 @@ import io
 import re
 from sklearn.ensemble import RandomForestClassifier
 
-# --- QUANTUM DESIGN: V200 THE APEX (FULL GRID, SURVIVAL MODE & EXTREME MARKETS) ---
-st.set_page_config(page_title="V200 | QUANTUM APEX", layout="wide", page_icon="👑")
+# --- QUANTUM DESIGN: V201 THE MASTERMIND (FIXED POOL, REALISTIC xG & AI SYNTHESIS) ---
+st.set_page_config(page_title="V201 | QUANTUM APEX", layout="wide", page_icon="👑")
 
 st.markdown("""
     <style>
@@ -18,7 +18,6 @@ st.markdown("""
     
     .stApp { background-color: #05070a; color: #ffffff; font-family: 'Inter', sans-serif; }
     
-    /* Font Büyütme Operasyonu */
     p, span, label { font-size: 16px !important; font-weight: 600 !important; }
     .stNumberInput label { font-size: 16px !important; color: #8b949e !important; }
     
@@ -66,19 +65,17 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 1. SESSION STATE DEFAULTS (EKSTREM PAZARLAR EKLENDİ) ---
+# --- SESSION STATE ---
 default_vals = {
     'ms1': 2.10, 'msx': 3.30, 'ms2': 3.40, 
     'o15': 1.25, 'u15': 3.50, 'o25': 1.90, 'u25': 1.90, 'o35': 3.20, 'u35': 1.30, 
     'btts_y': 1.70, 'btts_n': 2.00, 'ev_t': 'Ev Sahibi', 'dep_t': 'Deplasman'
 }
 for k, v in default_vals.items():
-    if k not in st.session_state:
-        st.session_state[k] = v
-if 'live_matches' not in st.session_state:
-    st.session_state.live_matches = {}
+    if k not in st.session_state: st.session_state[k] = v
+if 'live_matches' not in st.session_state: st.session_state.live_matches = {}
 
-# --- 2. VERİ TABANI HAZIRLIĞI ---
+# --- VERİ TABANI (FULL 25 YIL GERİ GELDİ) ---
 LIG_MAP = {
     'T1': 'Türkiye Süper Lig', 'E0': 'İngiltere Premier Lig', 'E1': 'İngiltere Championship',
     'SP1': 'İspanya La Liga 1', 'SP2': 'İspanya La Liga 2', 'I1': 'İtalya Serie A',
@@ -92,12 +89,16 @@ LEAGUE_DNA = {
     'I1': {'name': 'Taktik Savaş (Serie A)', 'card_mod': 1.15, 'xg_mod': 0.95, 'corner_mod': 0.95, 'desc': 'Katı taktik disiplin, düşük şut yüzdesi ama yüksek bitiricilik.'},
     'SP1': {'name': 'Teknik & Pas (La Liga)', 'card_mod': 1.25, 'xg_mod': 0.90, 'corner_mod': 0.9, 'desc': 'Topa sahip olma odaklı. Düşük korner, yüksek hakem müdahalesi.'}
 }
-
 LEAGUE_WEIGHTS = { 'E0': 1.5, 'SP1': 1.5, 'I1': 1.5, 'D1': 1.5, 'F1': 1.5, 'T1': 1.2, 'N1': 1.2 } 
 
 @st.cache_data(ttl=3600)
 def load_quantum_data():
-    seasons = ['2526', '2425', '2324', '2223', '2122', '2021', '1920', '1819']
+    # 26 BİN HATASI DÜZELTİLDİ: TÜM YILLAR GERİ EKLENDİ!
+    seasons = [
+        '2526', '2425', '2324', '2223', '2122', '2021', '1920', '1819', '1718', '1617', 
+        '1516', '1415', '1314', '1213', '1112', '1011', '0910', '0809', '0708', '0607', 
+        '0506', '0405', '0304', '0203', '0102', '0001'
+    ]
     leagues = list(LIG_MAP.keys())
     urls_to_fetch = [(s, l, f'https://www.football-data.co.uk/mmz4281/{s}/{l}.csv') for s in seasons for l in leagues]
     
@@ -127,39 +128,27 @@ def load_quantum_data():
     return pd.DataFrame()
 
 db = load_quantum_data()
-
-# --- 3. HATA ÇÖZÜMÜ: mevcut_ligler TANIMLAMASI ---
 mevcut_ligler = ["TÜM DÜNYA (GLOBAL)"]
 if not db.empty and 'Div' in db.columns:
     mevcut_ligler += sorted([f"{k} | {v}" for k, v in LIG_MAP.items() if k in db['Div'].unique()])
 else:
     mevcut_ligler += sorted([f"{k} | {v}" for k, v in LIG_MAP.items()])
 
-# --- 4. SOL MENÜ (SIDEBAR) ---
 with st.sidebar:
     st.markdown("<h3 style='color:#00ffcc;'>🎛️ Radar Kalibrasyonu</h3>", unsafe_allow_html=True)
     value_threshold = st.slider("🚨 Value Alarm Hassasiyeti (%)", min_value=3, max_value=25, value=10, step=1)
-    
     st.divider()
     st.markdown(f"<div style='background:#0c1015; padding:15px; border-radius:10px; border:1px solid #1e2530; font-size:16px;'><b>Aktif Veri Havuzu:</b><br><span style='font-size:20px; color:#d4af37;'>{len(db):,} Maç</span></div>", unsafe_allow_html=True)
-    
     if len(db) == 0:
-        st.markdown("""
-        <div style='background:rgba(255, 75, 75, 0.1); border:1px solid #ff4b4b; padding:15px; border-radius:10px; margin-top:15px;'>
-            <span style='color:#ff4b4b; font-size:15px; font-weight:bold;'>⚠️ Veri İndirme Başarısız!</span><br>
-            <span style='color:#8b949e; font-size:14px;'>Güvenlik duvarını aşmak için Hayalet Modu'nu kullanın.</span>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown("<div style='background:rgba(255, 75, 75, 0.1); border:1px solid #ff4b4b; padding:15px; border-radius:10px; margin-top:15px;'><span style='color:#ff4b4b; font-size:15px; font-weight:bold;'>⚠️ Veri İndirme Başarısız!</span><br><span style='color:#8b949e; font-size:14px;'>Güvenlik duvarını aşmak için Hayalet Modu'nu kullanın.</span></div>", unsafe_allow_html=True)
         if st.button("🔄 Hayalet Modu ile Yeniden İndir"):
             st.cache_data.clear()
             st.rerun()
-            
     st.divider()
-    st.info("👑 V200 THE APEX: Kusursuz Grid Arayüzü, Survival Mode ve Ekstrem Gol Pazarları aktiftir.")
+    st.info("🧠 V201 THE MASTERMIND: Otonom Zeka Karar Motoru tüm verileri sentezleyecek şekilde yeniden yazıldı. İ.Y %44 xG limiti aktiftir.")
 
-# --- 5. ARAYÜZ VE API İSTİHBARAT MERKEZİ ---
-st.markdown("<h1 style='text-align:center; color:#d4af37; font-size:54px; margin-bottom:0;'>👑 QUANTUM ORACLE V200</h1>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align:center; color:#8b949e; font-size:18px; margin-top:5px;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | The Apex: Tam Kapsamlı Borsa Terminali</p>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#d4af37; font-size:54px; margin-bottom:0;'>👑 QUANTUM ORACLE V201</h1>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align:center; color:#8b949e; font-size:18px; margin-top:5px;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | The Mastermind: Yapay Zeka Sentez Motoru</p>", unsafe_allow_html=True)
 
 st.markdown("<div class='api-box'>", unsafe_allow_html=True)
 st.markdown("<h3 style='margin-top:0; color:#8a2be2;'>🛰️ Canlı Oran İstihbarat Merkezi (24s)</h3>", unsafe_allow_html=True)
@@ -168,20 +157,13 @@ api_c1, api_c2 = st.columns([2, 1])
 with api_c1:
     gizli_api = st.secrets.get("API_KEY", "") if "API_KEY" in st.secrets else ""
     api_key = st.text_input("The-Odds-API Anahtarı (Bulut Kasasına Kilitli):", value=gizli_api, type="password")
-    
-with api_c2:
-    fetch_btn = st.button("🔄 YAKLAŞAN MAÇLARI BUL")
+with api_c2: fetch_btn = st.button("🔄 YAKLAŞAN MAÇLARI BUL")
 
 if fetch_btn and api_key:
     with st.spinner("Küresel bahis borsaları taranıyor..."):
         try:
             clean_key = api_key.strip()
-            target_leagues = [
-                'soccer_turkey_super_league', 'soccer_epl', 'soccer_spain_la_liga', 'soccer_italy_serie_a', 
-                'soccer_germany_bundesliga', 'soccer_france_ligue_one', 'soccer_uefa_champs_league', 
-                'soccer_uefa_europa_league', 'soccer_netherlands_eredivisie'
-            ]
-            
+            target_leagues = ['soccer_turkey_super_league', 'soccer_epl', 'soccer_spain_la_liga', 'soccer_italy_serie_a', 'soccer_germany_bundesliga', 'soccer_france_ligue_one', 'soccer_uefa_champs_league', 'soccer_uefa_europa_league', 'soccer_netherlands_eredivisie']
             soccer_count = 0
             current_time_utc = datetime.datetime.now(datetime.timezone.utc)
             horizon_time_utc = current_time_utc + datetime.timedelta(hours=24)
@@ -191,8 +173,7 @@ if fetch_btn and api_key:
                 url = f"https://api.the-odds-api.com/v4/sports/{league}/odds/?apiKey={clean_key}&regions=eu&markets=h2h,totals&oddsFormat=decimal"
                 response = requests.get(url)
                 if response.status_code == 200:
-                    matches = response.json()
-                    for m in matches:
+                    for m in response.json():
                         try:
                             match_time_utc = datetime.datetime.fromisoformat(m['commence_time'].replace('Z', '+00:00'))
                             local_time = match_time_utc + datetime.timedelta(hours=3)
@@ -220,7 +201,6 @@ if st.session_state.live_matches:
                 st.session_state.ev_t = m_data['home_team']
                 st.session_state.dep_t = m_data['away_team']
                 st.session_state.match_date_utc = m_data.get('_match_date', datetime.datetime.now(datetime.timezone.utc))
-                
                 ms1_list, msx_list, ms2_list = [], [], []
                 o15_list, u15_list, o25_list, u25_list, o35_list, u35_list = [], [], [], [], [], []
                 
@@ -256,18 +236,13 @@ if st.session_state.live_matches:
                 st.rerun() 
 st.markdown("</div>", unsafe_allow_html=True)
 
-# --- 6. YENİ ARAYÜZ (PROFESYONEL GRID - TABLO) ---
 st.markdown("<div class='input-container'>", unsafe_allow_html=True)
-
-# Satır 1: Takımlar ve Lig
 top_c1, top_c2, top_c3 = st.columns([1.5, 1.5, 1.5])
 with top_c1: ev_t = st.text_input("🏠 EV SAHİBİ TAKIM", value=st.session_state.ev_t)
 with top_c2: dep_t = st.text_input("🚀 DEPLASMAN TAKIM", value=st.session_state.dep_t)
 with top_c3: sec_lig = st.selectbox("🌍 ANALİZ EDİLECEK LİG", mevcut_ligler)
 
 st.markdown("<hr style='border-color: #1e2530; margin: 30px 0;'>", unsafe_allow_html=True)
-
-# Satır 2: Oran Blokları (Taraf, Alt/Üst, KG)
 col_ms, col_uo, col_kg = st.columns([1, 2.2, 1])
 
 with col_ms:
@@ -292,21 +267,12 @@ with col_kg:
     st.markdown("<h3 style='color:#00ffcc; text-align:center; margin-bottom:20px;'>🎯 KG DURUMU</h3>", unsafe_allow_html=True)
     kgv = st.number_input("KG VAR", value=st.session_state.btts_y, format="%.2f")
     kgy = st.number_input("KG YOK", value=st.session_state.btts_n, format="%.2f")
-
 st.markdown("</div>", unsafe_allow_html=True)
 
-# --- 7. YARDIMCI FONKSİYONLAR ---
 def get_clean_team_name(team_name):
     name_map = str.maketrans("éáíóúüöçşğÉÁÍÓÚÜÖÇŞĞ", "eaiouuocsgeaiouuocsg")
     name = str(team_name).translate(name_map).lower().strip()
-    aliases = {
-        "atletico madrid": "Ath Madrid", "athletic bilbao": "Ath Bilbao", "tottenham": "Tottenham", "wolverhampton": "Wolves", 
-        "wolves": "Wolves", "manchester utd": "Man United", "manchester united": "Man United", "manchester city": "Man City", 
-        "nott'm forest": "Nott'm Forest", "nottingham": "Nott'm Forest", "paris sg": "Paris SG", "psg": "Paris SG",
-        "bayern": "Bayern Munich", "leverkusen": "Leverkusen", "dortmund": "Dortmund", "m'gladbach": "M'gladbach",
-        "inter": "Inter", "ac milan": "Milan", "roma": "Roma", "napoli": "Napoli", "juventus": "Juventus", 
-        "real madrid": "Real Madrid", "barcelona": "Barcelona", "galatasaray": "Galatasaray", "fenerbahce": "Fenerbahce"
-    }
+    aliases = {"atletico madrid": "Ath Madrid", "athletic bilbao": "Ath Bilbao", "tottenham": "Tottenham", "wolverhampton": "Wolves", "wolves": "Wolves", "manchester utd": "Man United", "manchester united": "Man United", "manchester city": "Man City", "nott'm forest": "Nott'm Forest", "nottingham": "Nott'm Forest", "paris sg": "Paris SG", "psg": "Paris SG", "bayern": "Bayern Munich", "leverkusen": "Leverkusen", "dortmund": "Dortmund", "m'gladbach": "M'gladbach", "inter": "Inter", "ac milan": "Milan", "roma": "Roma", "napoli": "Napoli", "juventus": "Juventus", "real madrid": "Real Madrid", "barcelona": "Barcelona", "galatasaray": "Galatasaray", "fenerbahce": "Fenerbahce"}
     for k, v in aliases.items():
         if k in name: return v
     clean_name = str(team_name).translate(name_map) 
@@ -330,17 +296,14 @@ def get_syndicate_form(team_search_name, df, target_date_utc):
     if team_matches.empty: return 0, 0, 0, 0, 0, 0, 0, [], 0.0, "Bilinmiyor", "Normal", "Dengeli", 4.5, 1.5, 0.5
     team_matches['Date_Parsed'] = pd.to_datetime(team_matches['Date'], dayfirst=True, errors='coerce')
     team_matches = team_matches.dropna(subset=['Date_Parsed']).sort_values('Date_Parsed')
-    
     last_5 = team_matches.tail(5)
-    pts = 0; gs = 0; gc = 0; games_played = len(last_5)
-    w = 0; d = 0; l = 0; seq = []
-    elo_bonus = 0.0; total_shots_on_target = 0
-    t_corners = []; t_cards = []; t_htg = []
-    
+    pts, gs, gc, games_played = 0, 0, 0, len(last_5)
+    w, d, l, seq = 0, 0, 0, []
+    elo_bonus, total_shots_on_target = 0.0, 0
+    t_corners, t_cards, t_htg = [], [], []
     for _, row in last_5.iterrows():
         is_home = actual_search.lower() in str(row['HomeTeam']).lower()
         match_odds = row.get('B365H', 2.0) if is_home else row.get('B365A', 2.0)
-        
         if is_home:
             gs += row.get('FTHG', 0); gc += row.get('FTAG', 0)
             total_shots_on_target += row.get('HST', row.get('FTHG', 0)*3) if pd.notna(row.get('HST')) else row.get('FTHG', 0)*3
@@ -361,36 +324,19 @@ def get_syndicate_form(team_search_name, df, target_date_utc):
             if row.get('FTR') == 'A': pts += 3; w += 1; seq.append('G'); elo_bonus += (match_odds * 0.5)
             elif row.get('FTR') == 'D': pts += 1; d += 1; seq.append('B'); elo_bonus += (match_odds * 0.1)
             else: l += 1; seq.append('M'); elo_bonus -= (1.0 / match_odds)
-                
     last_match_date = last_5.iloc[-1]['Date_Parsed']
     target_dt = target_date_utc.replace(tzinfo=None) if target_date_utc else datetime.datetime.now()
     days_rest = (target_dt - last_match_date).days
-    
-    fatigue_status = "Dinlenmiş"; fatigue_penalty = 0.0
-    if 0 <= days_rest <= 3: fatigue_status = "Yorgun ⚠️"; fatigue_penalty = -1.5
-    elif days_rest > 10: fatigue_status = "Maç Eksiği"; fatigue_penalty = -0.5
-        
-    elo_status = "Dengeli"
-    if elo_bonus > 3.0: elo_status = "Zorlu Rakipleri Geçti 🔥"
-    elif elo_bonus < -1.0: elo_status = "Zayıflara Takıldı 📉"
-    
+    fatigue_status, fatigue_penalty = "Dinlenmiş", 0.0
+    if 0 <= days_rest <= 3: fatigue_status, fatigue_penalty = "Yorgun ⚠️", -1.5
+    elif days_rest > 10: fatigue_status, fatigue_penalty = "Maç Eksiği", -0.5
+    elo_status = "Zorlu Rakipleri Geçti 🔥" if elo_bonus > 3.0 else ("Zayıflara Takıldı 📉" if elo_bonus < -1.0 else "Dengeli")
     expected_goals_from_shots = total_shots_on_target * 0.30 
-    luck_status = "Normal"
-    if gs > expected_goals_from_shots + 2: luck_status = "Aşırı Şanslı (Düşüş Beklenir) 🍀"
-    elif gs < expected_goals_from_shots - 2: luck_status = "Şanssız (Patlama Yapabilir) 💣"
+    luck_status = "Aşırı Şanslı (Düşüş Beklenir) 🍀" if gs > expected_goals_from_shots + 2 else ("Şanssız (Patlama Yapabilir) 💣" if gs < expected_goals_from_shots - 2 else "Normal")
+    final_momentum = ((pts / max(games_played, 1)) * 5 - 6) * 0.8 + (elo_bonus * 0.2) + fatigue_penalty
+    return pts, gs, gc, games_played, w, d, l, seq, final_momentum, fatigue_status, elo_status, luck_status, np.nanmean(t_corners) if t_corners else 4.5, np.nanmean(t_cards) if t_cards else 1.5, np.nanmean(t_htg) if t_htg else 0.5
 
-    final_momentum = ((pts / max(games_played, 1)) * 5 - 6) * 0.8
-    final_momentum += (elo_bonus * 0.2) + fatigue_penalty
-    a_corn = np.nanmean(t_corners) if t_corners else 4.5
-    a_card = np.nanmean(t_cards) if t_cards else 1.5
-    a_htg = np.nanmean(t_htg) if t_htg else 0.5
-
-    return pts, gs, gc, games_played, w, d, l, seq, final_momentum, fatigue_status, elo_status, luck_status, a_corn, a_card, a_htg
-
-def get_color(prob):
-    if prob >= 60: return "#00ffcc" 
-    elif prob >= 40: return "#ffcc00" 
-    else: return "#ff4b4b" 
+def get_color(prob): return "#00ffcc" if prob >= 60 else ("#ffcc00" if prob >= 40 else "#ff4b4b")
 
 def build_seq_html(seq, align="left"):
     if not seq: return ""
@@ -408,13 +354,11 @@ def train_ml_model(df, lig_kodu):
     features = ['B365H', 'B365D', 'B365A']
     train_df = train_df.dropna(subset=features + ['FTR']).tail(2000) 
     if len(train_df) < 50: return None
-    X = train_df[features]
-    y = train_df['FTR']
+    X, y = train_df[features], train_df['FTR']
     rf = RandomForestClassifier(n_estimators=100, random_state=42, max_depth=5)
     rf.fit(X, y)
     return rf
 
-# --- 8. YAPAY ZEKA MOTORU BAŞLATMA ---
 if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
     aktif_db = db.copy()
     target_dt = st.session_state.get('match_date_utc', datetime.datetime.now(datetime.timezone.utc))
@@ -424,27 +368,16 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
     else:
         for col in ['B365O', 'B365U', 'HTHG', 'HTAG']:
             if col not in aktif_db.columns: aktif_db[col] = np.nan
-            
-        lig_kodu = None
-        if sec_lig != "TÜM DÜNYA (GLOBAL)":
-            lig_kodu = sec_lig.split(" | ")[0]
-            aktif_db = aktif_db[aktif_db['Div'] == lig_kodu]
-
+        lig_kodu = sec_lig.split(" | ")[0] if sec_lig != "TÜM DÜNYA (GLOBAL)" else None
+        if lig_kodu: aktif_db = aktif_db[aktif_db['Div'] == lig_kodu]
         dna = LEAGUE_DNA.get(lig_kodu, {'name': 'Standart Mod', 'card_mod': 1.0, 'xg_mod': 1.0, 'corner_mod': 1.0, 'desc': 'Kültürel DNA saptanamadı, global algoritmalar devrede.'})
 
-        ev_search_name = get_clean_team_name(ev_t)
-        dep_search_name = get_clean_team_name(dep_t)
-
+        ev_search_name, dep_search_name = get_clean_team_name(ev_t), get_clean_team_name(dep_t)
         ev_gecmis, act_ev = get_team_df(ev_search_name, aktif_db)
         dep_gecmis, act_dep = get_team_df(dep_search_name, aktif_db)
 
-        with st.spinner("V200 APEX devrede: Devasa algoritmalar işleniyor..."):
-            
-            # --- V197 SURVIVAL MODE (CAN HAVLİ) ALGORİTMASI ---
-            is_survival = False
-            survival_boost = 1.0
-            current_month = datetime.datetime.now().month
-            
+        with st.spinner("V201 MASTERMIND devrede: Sentez Motoru çalışıyor..."):
+            is_survival, survival_boost = False, 1.0
             def get_ppg(team_name, param_df):
                 m = param_df[(param_df['HomeTeam'].str.contains(team_name, case=False, na=False)) | (param_df['AwayTeam'].str.contains(team_name, case=False, na=False))]
                 if len(m) < 5: return 1.5 
@@ -455,14 +388,10 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
                     elif r['FTR']=='D': pts += 1
                 return pts / len(m)
 
-            ev_ppg = get_ppg(act_ev, aktif_db)
-            dep_ppg = get_ppg(act_dep, aktif_db)
-
-            # Mart(3), Nisan(4), Mayıs(5) aylarında alt takım üst takımla oynuyorsa can havli:
-            if current_month in [3, 4, 5]:
+            ev_ppg, dep_ppg = get_ppg(act_ev, aktif_db), get_ppg(act_dep, aktif_db)
+            if datetime.datetime.now().month in [3, 4, 5]:
                 if (ev_ppg < 1.0 and dep_ppg > 1.8) or (dep_ppg < 1.0 and ev_ppg > 1.8):
-                    is_survival = True
-                    survival_boost = 1.25 # %25 Form Artışı
+                    is_survival, survival_boost = True, 1.25 
                     
             if is_survival:
                 st.markdown(f"<div class='survival-mode'>🚨 SURVIVAL MODE AKTİF: Düşme potasındaki takımın can havli motivasyonu ({survival_boost}x) xG algoritmalarına eklendi!</div>", unsafe_allow_html=True)
@@ -471,8 +400,7 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
             ml_preds = {'H': 0, 'D': 0, 'A': 0}
             if rf_model:
                 probs = rf_model.predict_proba([[ms1, msx, ms2]])[0]
-                for idx, c in enumerate(rf_model.classes_):
-                    ml_preds[c] = probs[idx] * 100
+                for idx, c in enumerate(rf_model.classes_): ml_preds[c] = probs[idx] * 100
 
             ev_home_matches = ev_gecmis[ev_gecmis['HomeTeam'].str.contains(act_ev, case=False, na=False)].tail(5)
             dep_away_matches = dep_gecmis[dep_gecmis['AwayTeam'].str.contains(act_dep, case=False, na=False)].tail(5)
@@ -482,14 +410,10 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
             dep_scored_away = dep_away_matches['FTAG'].mean() if not dep_away_matches.empty else 1.1
             dep_conceded_away = dep_away_matches['FTHG'].mean() if not dep_away_matches.empty else 1.5
             
-            # Survival Boost'u xG'ye ekle
             true_ev_xg = ((ev_scored_home + dep_conceded_away) / 2) * dna['xg_mod'] * (survival_boost if ev_ppg < dep_ppg else 1.0)
             true_dep_xg = ((dep_scored_away + ev_conceded_home) / 2) * dna['xg_mod'] * (survival_boost if dep_ppg < ev_ppg else 1.0)
 
-            h2h_mask = (
-                (aktif_db['HomeTeam'].str.contains(act_ev, case=False, na=False) & aktif_db['AwayTeam'].str.contains(act_dep, case=False, na=False)) |
-                (aktif_db['HomeTeam'].str.contains(act_dep, case=False, na=False) & aktif_db['AwayTeam'].str.contains(act_ev, case=False, na=False))
-            )
+            h2h_mask = ((aktif_db['HomeTeam'].str.contains(act_ev, case=False, na=False) & aktif_db['AwayTeam'].str.contains(act_dep, case=False, na=False)) | (aktif_db['HomeTeam'].str.contains(act_dep, case=False, na=False) & aktif_db['AwayTeam'].str.contains(act_ev, case=False, na=False)))
             h2h_df = aktif_db[h2h_mask].dropna(subset=['Date']).tail(5)
             
             ev_h2h_pts, dep_h2h_pts = 0, 0
@@ -511,12 +435,10 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
             
             match_expected_corners = (ev_corn + dep_corn) * dna['corner_mod']
             match_expected_cards = (ev_card + dep_card) * dna['card_mod']
-            match_expected_ht_goals = (ev_htg + dep_htg) * dna['xg_mod']
-
+            
             ev_xg = max(0.1, true_ev_xg + (ev_momentum * 0.05))
             dep_xg = max(0.1, true_dep_xg + (dep_momentum * 0.05))
 
-            # Benzer maç arama (Sadece ms1, msx, ms2 ve o25'i kullanıyoruz ki geniş havuz bulsun)
             hassasiyet = 0.05
             while hassasiyet <= 0.40:
                 aktif_db['diff'] = np.sqrt((aktif_db['B365H']-ms1)**2 + (aktif_db['B365D']-msx)**2 + (aktif_db['B365A']-ms2)**2)
@@ -532,29 +454,18 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
             benzer['weight'] = (1 / (benzer['diff'] + 0.01)) * benzer['s_weight'] * benzer['l_weight']
             w_sum = benzer['weight'].sum()
 
-            avg_hist_ms1 = benzer['B365H'].mean()
-            avg_hist_ms2 = benzer['B365A'].mean()
-            anomaly_alert = None
-            anomaly_type = None
+            avg_hist_ms1, avg_hist_ms2 = benzer['B365H'].mean(), benzer['B365A'].mean()
+            anomaly_alert, anomaly_type = None, None
             
-            if ms1 < (avg_hist_ms1 * 0.80): 
-                anomaly_alert = f"⚠️ TUZAK UYARISI: {ev_t} oranı tarihsel ortalamanın çok altında! (Tarihsel: {avg_hist_ms1:.2f} -> Güncel: {ms1:.2f})."
-                anomaly_type = "trap"
-            elif ms2 < (avg_hist_ms2 * 0.80): 
-                anomaly_alert = f"⚠️ TUZAK UYARISI: {dep_t} oranı tarihsel ortalamanın çok altında! (Tarihsel: {avg_hist_ms2:.2f} -> Güncel: {ms2:.2f})."
-                anomaly_type = "trap"
-            elif ms1 > (avg_hist_ms1 * 1.25):
-                anomaly_alert = f"💎 GİZLİ DEĞER: {ev_t} oranı tarihsel ortalamanın çok üzerinde! (Tarihsel: {avg_hist_ms1:.2f} -> Güncel: {ms1:.2f}). Piyasada sürü psikolojisi var!"
-                anomaly_type = "value"
-            elif ms2 > (avg_hist_ms2 * 1.25):
-                anomaly_alert = f"💎 GİZLİ DEĞER: {dep_t} oranı tarihsel ortalamanın çok üzerinde! (Tarihsel: {avg_hist_ms2:.2f} -> Güncel: {ms2:.2f}). Piyasada sürü psikolojisi var!"
-                anomaly_type = "value"
+            if ms1 < (avg_hist_ms1 * 0.80): anomaly_alert, anomaly_type = f"⚠️ TUZAK UYARISI: {ev_t} oranı tarihsel ortalamanın çok altında! (Tarihsel: {avg_hist_ms1:.2f} -> Güncel: {ms1:.2f}).", "trap"
+            elif ms2 < (avg_hist_ms2 * 0.80): anomaly_alert, anomaly_type = f"⚠️ TUZAK UYARISI: {dep_t} oranı tarihsel ortalamanın çok altında! (Tarihsel: {avg_hist_ms2:.2f} -> Güncel: {ms2:.2f}).", "trap"
+            elif ms1 > (avg_hist_ms1 * 1.25): anomaly_alert, anomaly_type = f"💎 GİZLİ DEĞER: {ev_t} oranı tarihsel ortalamanın çok üzerinde! Piyasada sürü psikolojisi var!", "value"
+            elif ms2 > (avg_hist_ms2 * 1.25): anomaly_alert, anomaly_type = f"💎 GİZLİ DEĞER: {dep_t} oranı tarihsel ortalamanın çok üzerinde! Piyasada sürü psikolojisi var!", "value"
 
             raw_p_ms1 = (benzer[benzer['FTR']=='H']['weight'].sum() / w_sum) * 100 if 'FTR' in benzer.columns else 0
             raw_p_msx = (benzer[benzer['FTR']=='D']['weight'].sum() / w_sum) * 100 if 'FTR' in benzer.columns else 0
             raw_p_ms2 = (benzer[benzer['FTR']=='A']['weight'].sum() / w_sum) * 100 if 'FTR' in benzer.columns else 0
             
-            # YENİ EKSTREM GOL PAZARLARI HESAPLAMASI
             raw_p_o15 = min(99.0, ((benzer[(benzer['FTHG']+benzer['FTAG'])>1.5]['weight'].sum() / w_sum) * 100)) if 'FTHG' in benzer.columns else 0
             raw_p_o25 = min(99.0, ((benzer[(benzer['FTHG']+benzer['FTAG'])>2.5]['weight'].sum() / w_sum) * 100)) if 'FTHG' in benzer.columns else 0
             raw_p_o35 = min(99.0, ((benzer[(benzer['FTHG']+benzer['FTAG'])>3.5]['weight'].sum() / w_sum) * 100)) if 'FTHG' in benzer.columns else 0
@@ -580,19 +491,13 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
             p_o15 = min(99.0, max(1.0, raw_p_o15 + (ev_momentum + dep_momentum)*0.2 + (xg_sum_diff * 4.0)))
             p_o25 = min(99.0, max(1.0, raw_p_o25 + (ev_momentum + dep_momentum)*0.5 + (xg_sum_diff * 6.0)))
             p_o35 = min(99.0, max(1.0, raw_p_o35 + (ev_momentum + dep_momentum)*0.7 + (xg_sum_diff * 8.0)))
-            p_u15 = 100 - p_o15
-            p_u25 = 100 - p_o25
-            p_u35 = 100 - p_o35
-            
+            p_u15, p_u25, p_u35 = 100 - p_o15, 100 - p_o25, 100 - p_o35
             p_kgv = min(99.0, max(1.0, raw_p_kgv + (ev_momentum + dep_momentum)*0.5 + (xg_sum_diff * 4.0)))
             p_kgy = 100 - p_kgv
 
             ev_color = "#00ffcc" if ev_momentum > 0 else "#ff4b4b"
             dep_color = "#00ffcc" if dep_momentum > 0 else "#ff4b4b"
             
-            ev_seq_html = build_seq_html(ev_seq, "left")
-            dep_seq_html = build_seq_html(dep_seq, "right")
-
             st.markdown(f"""
             <div class='dna-box'>
                 <div>
@@ -620,7 +525,7 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
                 f"Toplanan Puan: <span style='color:#fff; font-weight:bold;'>{ev_pts}</span><br>Gol (A/Y): <span style='color:#00ffcc; font-weight:bold;'>{ev_gs}</span> - <span style='color:#ff4b4b; font-weight:bold;'>{ev_gc}</span><br>Momentum İvmesi: <span style='color: {ev_color}; font-weight:900; font-size:18px;'>{ev_momentum:.1f}</span>"
                 f"</div>"
                 f"<div><span class='syndicate-badge'>Zorluk: {ev_elo}</span><span class='syndicate-badge'>Durum: {ev_fatigue}</span><span class='syndicate-badge'>Bitiricilik: {ev_luck}</span></div>"
-                f"{ev_seq_html}"
+                f"{build_seq_html(ev_seq, 'left')}"
                 f"</div>"
                 f"<div style='width:2px; background-color:#1e2530; margin:0 20px;'></div>"
                 f"<div style='flex:1; padding-left:15px; text-align:right;'>"
@@ -630,7 +535,7 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
                 f"<span style='color:#fff; font-weight:bold;'>{dep_pts}</span> :Toplanan Puan<br><span style='color:#00ffcc; font-weight:bold;'>{dep_gs}</span> - <span style='color:#ff4b4b; font-weight:bold;'>{dep_gc}</span> :(A/Y) Gol<br><span style='color: {dep_color}; font-weight:900; font-size:18px;'>{dep_momentum:.1f}</span> :Momentum İvmesi"
                 f"</div>"
                 f"<div><span class='syndicate-badge'>Zorluk: {dep_elo}</span><span class='syndicate-badge'>Durum: {dep_fatigue}</span><span class='syndicate-badge'>Bitiricilik: {dep_luck}</span></div>"
-                f"{dep_seq_html}"
+                f"{build_seq_html(dep_seq, 'right')}"
                 f"</div>"
                 f"</div>"
                 f"</div>"
@@ -639,26 +544,18 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
             
             st.markdown("<h2 style='margin-bottom:20px; color:#ffffff;'>📊 Taraf & Skor İhtimalleri</h2>", unsafe_allow_html=True)
             r1_c1, r1_c2, r1_c3 = st.columns(3)
-            p_ms1_c = get_color(p_ms1)
-            r1_c1.markdown(f"<div class='prob-card' style='border-top: 5px solid {p_ms1_c};'><div class='prob-title'>{ev_t} Kazanır</div><div class='prob-value' style='color:{p_ms1_c};'>%{int(p_ms1)}</div><div class='prob-odd'>Oran: {ms1}</div></div>", unsafe_allow_html=True)
-            p_msx_c = get_color(p_msx)
-            r1_c2.markdown(f"<div class='prob-card' style='border-top: 5px solid {p_msx_c};'><div class='prob-title'>Beraberlik (MS 0)</div><div class='prob-value' style='color:{p_msx_c};'>%{int(p_msx)}</div><div class='prob-odd'>Oran: {msx}</div></div>", unsafe_allow_html=True)
-            p_ms2_c = get_color(p_ms2)
-            r1_c3.markdown(f"<div class='prob-card' style='border-top: 5px solid {p_ms2_c};'><div class='prob-title'>{dep_t} Kazanır</div><div class='prob-value' style='color:{p_ms2_c};'>%{int(p_ms2)}</div><div class='prob-odd'>Oran: {ms2}</div></div>", unsafe_allow_html=True)
+            r1_c1.markdown(f"<div class='prob-card' style='border-top: 5px solid {get_color(p_ms1)};'><div class='prob-title'>{ev_t}</div><div class='prob-value' style='color:{get_color(p_ms1)};'>%{int(p_ms1)}</div><div class='prob-odd'>Oran: {ms1}</div></div>", unsafe_allow_html=True)
+            r1_c2.markdown(f"<div class='prob-card' style='border-top: 5px solid {get_color(p_msx)};'><div class='prob-title'>Beraberlik (0)</div><div class='prob-value' style='color:{get_color(p_msx)};'>%{int(p_msx)}</div><div class='prob-odd'>Oran: {msx}</div></div>", unsafe_allow_html=True)
+            r1_c3.markdown(f"<div class='prob-card' style='border-top: 5px solid {get_color(p_ms2)};'><div class='prob-title'>{dep_t}</div><div class='prob-value' style='color:{get_color(p_ms2)};'>%{int(p_ms2)}</div><div class='prob-odd'>Oran: {ms2}</div></div>", unsafe_allow_html=True)
 
             r2_c1, r2_c2, r2_c3, r2_c4 = st.columns(4)
-            p_o25_c = get_color(p_o25)
-            r2_c1.markdown(f"<div class='prob-card' style='border-top: 5px solid {p_o25_c};'><div class='prob-title'>2.5 ÜST</div><div class='prob-value' style='color:{p_o25_c};'>%{int(p_o25)}</div><div class='prob-odd'>Oran: {o25}</div></div>", unsafe_allow_html=True)
-            p_a25_c = get_color(p_u25)
-            r2_c2.markdown(f"<div class='prob-card' style='border-top: 5px solid {p_a25_c};'><div class='prob-title'>2.5 ALT</div><div class='prob-value' style='color:{p_a25_c};'>%{int(p_u25)}</div><div class='prob-odd'>Oran: {u25}</div></div>", unsafe_allow_html=True)
-            p_kgv_c = get_color(p_kgv)
-            r2_c3.markdown(f"<div class='prob-card' style='border-top: 5px solid {p_kgv_c};'><div class='prob-title'>KG VAR</div><div class='prob-value' style='color:{p_kgv_c};'>%{int(p_kgv)}</div><div class='prob-odd'>Oran: {kgv}</div></div>", unsafe_allow_html=True)
-            p_kgy_c = get_color(p_kgy)
-            r2_c4.markdown(f"<div class='prob-card' style='border-top: 5px solid {p_kgy_c};'><div class='prob-title'>KG YOK</div><div class='prob-value' style='color:{p_kgy_c};'>%{int(p_kgy)}</div><div class='prob-odd'>Oran: {kgy}</div></div>", unsafe_allow_html=True)
+            r2_c1.markdown(f"<div class='prob-card' style='border-top: 5px solid {get_color(p_o25)};'><div class='prob-title'>2.5 ÜST</div><div class='prob-value' style='color:{get_color(p_o25)};'>%{int(p_o25)}</div><div class='prob-odd'>Oran: {o25}</div></div>", unsafe_allow_html=True)
+            r2_c2.markdown(f"<div class='prob-card' style='border-top: 5px solid {get_color(p_u25)};'><div class='prob-title'>2.5 ALT</div><div class='prob-value' style='color:{get_color(p_u25)};'>%{int(p_u25)}</div><div class='prob-odd'>Oran: {u25}</div></div>", unsafe_allow_html=True)
+            r2_c3.markdown(f"<div class='prob-card' style='border-top: 5px solid {get_color(p_kgv)};'><div class='prob-title'>KG VAR</div><div class='prob-value' style='color:{get_color(p_kgv)};'>%{int(p_kgv)}</div><div class='prob-odd'>Oran: {kgv}</div></div>", unsafe_allow_html=True)
+            r2_c4.markdown(f"<div class='prob-card' style='border-top: 5px solid {get_color(p_kgy)};'><div class='prob-title'>KG YOK</div><div class='prob-value' style='color:{get_color(p_kgy)};'>%{int(p_kgy)}</div><div class='prob-odd'>Oran: {kgy}</div></div>", unsafe_allow_html=True)
 
             st.divider()
             
-            # BÜTÜN PAZARLAR YARIŞIYOR
             targets = [
                 ("MS 1", p_ms1, ms1), ("MS X", p_msx, msx), ("MS 2", p_ms2, ms2), 
                 ("1.5 Üst", p_o15, o15), ("1.5 Alt", p_u15, u15),
@@ -670,15 +567,32 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
             det_l, det_r = st.columns(2)
             with det_l:
                 st.markdown("<h2 style='color:#fff;'>🧠 Tam Otonom Banko Tahmini</h2>", unsafe_allow_html=True)
-                en_guvenilir_tahmin = None; en_yuksek_ihtimal = -1
-                for t in targets:
-                    if t[1] > en_yuksek_ihtimal: en_yuksek_ihtimal = t[1]; en_guvenilir_tahmin = t
+                
+                # --- 3. YENİ YAPAY ZEKA GÜVEN VE SENTEZ MOTORU ---
+                ai_candidates = []
+                for t_name, t_prob, t_odd in targets:
+                    if t_odd <= 1.05: continue
+                    
+                    # Pazara göre Risk Çarpanı (Alt/Üst daha istikrarlı, MS daha risklidir)
+                    risk_mod = 1.0
+                    if "1.5 Üst" in t_name or "1.5 Alt" in t_name: risk_mod = 1.15
+                    elif "2.5 Üst" in t_name or "2.5 Alt" in t_name or "KG" in t_name: risk_mod = 1.05
+                    elif "MS" in t_name: risk_mod = 0.85 
+                    
+                    implied_prob = (1 / t_odd) * 100
+                    value_margin = t_prob - implied_prob
+                    
+                    # Güven Skoru Formülü: (İhtimal * Güvenilirlik Çarpanı) + Oran Değeri Bonusu
+                    guven_skoru = (t_prob * risk_mod) + (max(0, value_margin) * 0.4)
+                    ai_candidates.append((t_name, t_prob, t_odd, guven_skoru))
 
-                name, prob, odd = en_guvenilir_tahmin
+                ai_candidates.sort(key=lambda x: x[3], reverse=True)
+                best_target = ai_candidates[0]
+                name, prob, odd = best_target[0], best_target[1], best_target[2]
 
                 st.markdown(f"""
                 <div class='ai-verdict-box'>
-                    <p style='color:#8b949e; font-size:16px; text-align:left; font-style:italic;'>Otonom karar motoru tüm istatistiksel faktörleri harmanladı. En güvenilir senaryo budur:</p>
+                    <p style='color:#8b949e; font-size:16px; text-align:left; font-style:italic;'>Yapay zeka salt ihtimalleri değil; pazar riskini (varyans) ve oran değerlerini (value) sentezleyerek yatırım yapılacak en güvenli limanı buldu:</p>
                     <h1 style='color:#d4af37; font-size: 54px; font-weight:900; margin: 15px 0;'>🎯 {name} 🎯</h1>
                     <div style='display: flex; justify-content: space-around; margin: 30px 0;'>
                         <div><span style='color:#8b949e; font-size:18px;'>Dinamik İhtimal:</span><br><b style='font-size:36px; color:#00ffcc;'>%{int(prob)}</b></div>
@@ -690,43 +604,23 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
                 value_alarms = []
                 for t in targets:
                     t_name, t_prob, t_odd = t
-                    if t_odd > 1.05: # Olası 0 oranlarını veya geçersizleri atla
+                    if t_odd > 1.05:
                         implied_prob = (1 / t_odd) * 100
                         if (t_prob - implied_prob) >= value_threshold: 
-                            value_alarms.append(f"{t_name} (Bulunan: %{int(t_prob)} / Şirketin Açtığı: %{int(implied_prob)})")
+                            value_alarms.append(f"{t_name} (Sistem: %{int(t_prob)} / Şirket: %{int(implied_prob)})")
                 
                 if value_alarms:
                     alarm_text = "<br>".join([f"🔥 {a}" for a in value_alarms])
-                    st.markdown(f"""
-                    <div class='value-alarm'>
-                        <h2 style='margin:0; color:#fff; font-weight:900;'>🚨 SİSTEM AÇIĞI (VALUE) TESPİT EDİLDİ!</h2>
-                        <p style='font-size:16px; color:#ddd; margin:10px 0;'>Bahis şirketinin oran hesaplamasında matematiksel hata bulundu. Bu oranlar büyük avantaj taşıyor:</p>
-                        <b style='color:#ffcc00; font-size:20px; line-height:1.5;'>{alarm_text}</b>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    st.markdown(f"<div class='value-alarm'><h2 style='margin:0; color:#fff; font-weight:900;'>🚨 SİSTEM AÇIĞI (VALUE) TESPİT EDİLDİ!</h2><b style='color:#ffcc00; font-size:20px; line-height:1.5;'>{alarm_text}</b></div>", unsafe_allow_html=True)
                 
                 if anomaly_alert:
                     bg_class = 'trap-alarm' if anomaly_type == 'trap' else 'value-alarm'
-                    st.markdown(f"""
-                    <div class='{bg_class}'>
-                        <span style='font-size:18px; font-weight:bold; color:#fff;'>{anomaly_alert}</span>
-                    </div>
-                    """, unsafe_allow_html=True)
-
-                st.divider()
-                if rf_model:
-                    st.markdown(f"""
-                    <div class='ml-box'>
-                        <h3 style='margin:0; color:#00ffcc;'>🧠 Scikit-Learn Nöral Ağ Kararı</h3>
-                        <p style='font-size:15px; color:#8b949e; margin-top:5px;'>Yapay Zeka bu ligin son 2000 maçını canlı eğiterek şu saf olasılıkları buldu:</p>
-                        <div style='font-size:18px; margin-top:10px;'>Ev Sahibi: <b style='color:#fff;'>%{int(ml_preds.get('H', 0))}</b> | Beraberlik: <b style='color:#fff;'>%{int(ml_preds.get('D', 0))}</b> | Deplasman: <b style='color:#fff;'>%{int(ml_preds.get('A', 0))}</b></div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    st.markdown(f"<div class='{bg_class}'><span style='font-size:18px; font-weight:bold; color:#fff;'>{anomaly_alert}</span></div>", unsafe_allow_html=True)
 
                 st.divider()
                 st.markdown("<h3>🏆 İhtimal Hiyerarşisi (Tüm Pazarlar)</h3>", unsafe_allow_html=True)
                 sirali_ihtimaller = sorted(targets, key=lambda x: x[1], reverse=True)
-                for i, (isim, i_prob, i_odd) in enumerate(sirali_ihtimaller[:7]): # Sadece en iyi 7 pazarı göster ki liste çok uzamasın
+                for i, (isim, i_prob, i_odd) in enumerate(sirali_ihtimaller[:7]):
                     renk = "#00ffcc" if i_prob >= 60 else ("#d4af37" if i_prob >= 40 else "#ff4b4b")
                     st.markdown(f"<div class='rank-row' style='border-left: 6px solid {renk};'><span style='font-size: 18px;'><b>{i+1}.</b> {isim}</span><span style='color:{renk}; font-weight:900; font-size:24px;'>%{int(i_prob)}</span></div>", unsafe_allow_html=True)
 
@@ -745,10 +639,12 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
                         score_probs[f"{h} - {a}"] = base_prob * tau * 100
                         
                 sorted_scores = sorted(score_probs.items(), key=lambda x: x[1], reverse=True)[:6]
-                st.markdown("<p style='color:#8b949e; font-size:15px; margin-bottom:10px;'>Dixon-Coles Savunma Algoritmasına Göre En Olası Skorlar:</p>", unsafe_allow_html=True)
                 chart_data = pd.DataFrame({"Skorlar": [f"{i+1}. İhtimal ({s[0]})" for i, s in enumerate(sorted_scores)], "İhtimal (%)": [int(s[1]) for s in sorted_scores]}).set_index("Skorlar")
                 st.bar_chart(chart_data, color="#d4af37", height=250)
                 
+                # --- 2. GERÇEKÇİ İLK YARI (HT) xG FİLTRESİ ---
+                # İstatistiksel gerçek: İlk yarıda toplam maç xG'sinin ortalama %44'ü gerçekleşir.
+                match_expected_ht_goals = (ev_xg + dep_xg) * 0.44 
                 prob_ht_0 = poisson.pmf(0, match_expected_ht_goals)
                 prob_ht_1 = poisson.pmf(1, match_expected_ht_goals)
                 prob_ht_o15 = (1.0 - (prob_ht_0 + prob_ht_1)) * 100
@@ -761,8 +657,8 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
                     <h3 style='color:#00ffcc; margin-top:0; margin-bottom:20px;'>⏱️ Alternatif Marketler (İlk Yarı & Agresyon)</h3>
                     <div style='display:flex; justify-content:space-between; align-items:center;'>
                         <div style='flex:1;'>
-                            <span style='color:#8b949e; font-size:15px;'>İlk Yarı Beklenen Gol:</span><br>
-                            <b style='font-size:28px; color:#ffffff;'>{match_expected_ht_goals:.1f}</b><br>
+                            <span style='color:#8b949e; font-size:15px;'>İlk Yarı Gerçekçi xG:</span><br>
+                            <b style='font-size:28px; color:#ffffff;'>{match_expected_ht_goals:.2f}</b><br>
                             <span style='font-size:15px; color:#fff;'>İ.Y 1.5 Üst Şansı: <b style='color:{ht_o15_color};'>%{int(prob_ht_o15)}</b></span><br>
                             <span style='font-size:13px; color:{ht_o15_color}; font-weight:800; background:rgba(255,255,255,0.05); padding:3px 8px; border-radius:5px; margin-top:5px; display:inline-block;'>{ht_text}</span>
                         </div>
