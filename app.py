@@ -9,8 +9,8 @@ import io
 import re
 from sklearn.ensemble import RandomForestClassifier
 
-# --- QUANTUM DESIGN: V194 ANOMALY HUNTER (TUZAK RADARI VE TARİHSEL ANOMALİ) ---
-st.set_page_config(page_title="V194 | QUANTUM APEX", layout="wide", page_icon="🧿")
+# --- QUANTUM DESIGN: V195 HT SNIPER (İ.Y 1.5 ÜST POISSON RADARI) ---
+st.set_page_config(page_title="V195 | QUANTUM APEX", layout="wide", page_icon="🎯")
 
 st.markdown("""
     <style>
@@ -133,7 +133,7 @@ with st.sidebar:
             st.rerun()
             
     st.divider()
-    st.info("🧿 V194 ANOMALY HUNTER: Sistem, geçmiş 25 yıllık verilere dayanarak bahis şirketlerinin kurduğu 'Oran Tuzaklarını' ve 'Şişirilmiş Değerleri' anında tespit eder.")
+    st.info("🎯 V195 HT SNIPER: İlk Yarı beklentisi 1.5 Üst hedefine göre Poisson olasılık formülüyle yeniden kalibre edildi.")
 
 mevcut_ligler = ["TÜM DÜNYA (GLOBAL)"]
 if not db.empty and 'Div' in db.columns:
@@ -141,8 +141,8 @@ if not db.empty and 'Div' in db.columns:
 else:
     mevcut_ligler += sorted([f"{k} | {v}" for k, v in LIG_MAP.items()])
 
-st.markdown("<h1 style='text-align:center; color:#d4af37;'>🧿 QUANTUM ORACLE V194</h1>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align:center; color:#8b949e;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | Anomali Avcısı & Tuzak Radarı</p>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#d4af37;'>🎯 QUANTUM APEX V195</h1>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align:center; color:#8b949e;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | İlk Yarı 1.5 Üst İhtimal Motoru</p>", unsafe_allow_html=True)
 
 st.markdown("<div class='api-box'>", unsafe_allow_html=True)
 st.subheader("⚡ Canlı Oran Borsası (24 Saatlik Hedefler)")
@@ -425,7 +425,7 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
         ev_gecmis, act_ev = get_team_df(ev_search_name, aktif_db)
         dep_gecmis, act_dep = get_team_df(dep_search_name, aktif_db)
 
-        with st.spinner("V194 ANOMALY HUNTER devrede: Tarihsel tuzaklar ve şişirilmiş oranlar aranıyor..."):
+        with st.spinner("V195 HT SNIPER devrede: İlk yarı Poisson İhtimalleri hesaplanıyor..."):
             
             rf_model = train_ml_model(aktif_db, lig_kodu)
             ml_preds = {'H': 0, 'D': 0, 'A': 0}
@@ -490,20 +490,17 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
             benzer['weight'] = (1 / (benzer['diff'] + 0.01)) * benzer['s_weight'] * benzer['l_weight']
             w_sum = benzer['weight'].sum()
 
-            # --- V194 TARİHSEL ORAN ANOMALİSİ (TUZAK RADARI) ---
             avg_hist_ms1 = benzer['B365H'].mean()
             avg_hist_ms2 = benzer['B365A'].mean()
             anomaly_alert = None
             anomaly_type = None
             
-            # TUZAK: Oran olması gerekenden ÇOK DÜŞÜK açılmış (Şirket bir şey biliyor)
             if ms1 < (avg_hist_ms1 * 0.80): 
                 anomaly_alert = f"⚠️ TUZAK UYARISI: {ev_t} oranı tarihsel ortalamanın çok altında! (Tarihsel Ort: {avg_hist_ms1:.2f} -> Güncel: {ms1:.2f}). Şirketler bir şey biliyor olabilir, oynamadan önce sakat/cezalı listesini kontrol edin!"
                 anomaly_type = "trap"
             elif ms2 < (avg_hist_ms2 * 0.80): 
                 anomaly_alert = f"⚠️ TUZAK UYARISI: {dep_t} oranı tarihsel ortalamanın çok altında! (Tarihsel Ort: {avg_hist_ms2:.2f} -> Güncel: {ms2:.2f}). Şirketler bir şey biliyor olabilir, kadroları kontrol edin!"
                 anomaly_type = "trap"
-            # DEĞER: Oran olması gerekenden ÇOK YÜKSEK açılmış (Sürü psikolojisi)
             elif ms1 > (avg_hist_ms1 * 1.25):
                 anomaly_alert = f"💎 GİZLİ DEĞER: {ev_t} oranı tarihsel ortalamanın çok üzerinde! (Tarihsel Ort: {avg_hist_ms1:.2f} -> Güncel: {ms1:.2f}). Piyasada sürü psikolojisi var, bahis şirketleri bu oranı şişirmiş!"
                 anomaly_type = "value"
@@ -650,7 +647,6 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
                     </div>
                     """, unsafe_allow_html=True)
                 
-                # V194: ANOMALİ RADARI (TUZAK VEYA DEĞER)
                 if anomaly_alert:
                     bg_class = 'trap-alarm' if anomaly_type == 'trap' else 'value-alarm'
                     st.markdown(f"""
@@ -695,6 +691,14 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
                 chart_data = pd.DataFrame({"Skorlar": [f"{i+1}. İhtimal ({s[0]})" for i, s in enumerate(sorted_scores)], "İhtimal (%)": [int(s[1]) for s in sorted_scores]}).set_index("Skorlar")
                 st.bar_chart(chart_data, color="#d4af37", height=200)
                 
+                # --- V195: İ.Y 1.5 ÜST POISSON HESAPLAMASI ---
+                prob_ht_0 = poisson.pmf(0, match_expected_ht_goals)
+                prob_ht_1 = poisson.pmf(1, match_expected_ht_goals)
+                prob_ht_o15 = (1.0 - (prob_ht_0 + prob_ht_1)) * 100
+                
+                ht_o15_color = "#00ffcc" if prob_ht_o15 >= 35 else ("#ffcc00" if prob_ht_o15 >= 25 else "#ff4b4b")
+                ht_text = "(İ.Y 1.5 ÜST KUVVETLİ)" if prob_ht_o15 >= 35 else ("(İ.Y 1.5 ÜST DENENEBİLİR)" if prob_ht_o15 >= 25 else "(İ.Y 1.5 ÜST ÇOK RİSKLİ)")
+
                 st.markdown(f"""
                 <div class='alt-market'>
                     <h4 style='color:#00ffcc; margin-top:0;'>⏱️ Alternatif Marketler (İlk Yarı & Agresyon)</h4>
@@ -702,7 +706,8 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
                         <div>
                             <span style='color:#8b949e; font-size:12px;'>İlk Yarı Beklenen Gol:</span><br>
                             <b style='font-size:20px; color:#ffffff;'>{match_expected_ht_goals:.1f}</b><br>
-                            <span style='font-size:10px; color:{"#00ffcc" if match_expected_ht_goals>1.0 else "#ff4b4b"};'>{"(İ.Y 0.5 ÜST KUVVETLİ)" if match_expected_ht_goals>1.0 else "(İLK YARI SESSİZ)"}</span>
+                            <span style='font-size:11px; color:#fff;'>İ.Y 1.5 Üst Şansı: <b style='color:{ht_o15_color};'>%{int(prob_ht_o15)}</b></span><br>
+                            <span style='font-size:10px; color:{ht_o15_color}; font-weight:bold;'>{ht_text}</span>
                         </div>
                         <div>
                             <span style='color:#8b949e; font-size:12px;'>Beklenen Korner:</span><br>
