@@ -75,7 +75,7 @@ for k, v in default_vals.items():
     if k not in st.session_state: st.session_state[k] = v
 if 'live_matches' not in st.session_state: st.session_state.live_matches = {}
 
-# --- VERİ TABANI ---
+# --- VERI TABANI ---
 LIG_MAP = {
     'T1': 'Türkiye Süper Lig', 'E0': 'İngiltere Premier Lig', 'E1': 'İngiltere Championship',
     'E2': 'İngiltere League 1', 'E3': 'İngiltere League 2', 'EC': 'İngiltere National League',
@@ -153,7 +153,7 @@ with st.sidebar:
 st.markdown("<h1 style='text-align:center; color:#d4af37; font-size:54px; margin-bottom:0;'>💎 QUANTUM ORACLE V203</h1>", unsafe_allow_html=True)
 st.markdown(f"<p style='text-align:center; color:#8b949e; font-size:18px; margin-top:5px;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | The Flawless: Kusursuz Mimari</p>", unsafe_allow_html=True)
 
-# --- API İSTİHBARAT MERKEZİ ---
+# --- API ISTIHBARAT MERKEZI ---
 st.markdown("<div class='api-box'>", unsafe_allow_html=True)
 st.markdown("<h3 style='margin-top:0; color:#8a2be2;'>🛰️ Keskin Nişancı İstihbarat Merkezi (Tam Kapsamlı)</h3>", unsafe_allow_html=True)
 
@@ -613,10 +613,9 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
             with det_l:
                 st.markdown("<h2 style='color:#fff;'>🧠 Tam Otonom Banko Tahmini</h2>", unsafe_allow_html=True)
                 
-                # --- YAPAY ZEKA GÜVEN VE SENTEZ MOTORU (EV FİLTRELİ) ---
                 ai_candidates = []
                 for t_name, t_prob, t_odd in targets:
-                    if t_odd <= 1.25: continue # Kâr marjı düşük çöp oranları banko yapma!
+                    if t_odd <= 1.25: continue
                     
                     risk_mod = 1.0
                     if "1.5" in t_name: risk_mod = 1.15
@@ -636,7 +635,6 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
                 best_target = ai_candidates[0]
                 name, prob, odd, _, imp_p = best_target
 
-                # --- MAÇIN HİKAYESİ OLUŞTURUCU ---
                 hikaye = ""
                 if "Üst" in name or "KG Var" in name:
                     hikaye = f"Bu maçta hücum hatları savunmalara göre bariz şekilde ağır basıyor (Toplam xG: {(ev_xg+dep_xg):.2f}). Şirketler oranı {odd:.2f} seviyesinde tutarak riski dengelemeye çalışmış ancak istatistikler, hücum momentumu ve lig DNA'sı maçın '{name}' senaryosuna gideceğini kanıtlıyor. Kâr/Risk dengesi (EV) açısından en mantıklı yatırım budur."
@@ -694,16 +692,6 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
                     st.markdown(f"<div class='{bg_class}'><span style='font-size:18px; font-weight:bold; color:#fff;'>{anomaly_alert}</span></div>", unsafe_allow_html=True)
 
                 st.divider()
-                if rf_model:
-                    st.markdown(f"""
-                    <div class='ml-box'>
-                        <h3 style='margin:0; color:#00ffcc;'>🧠 Scikit-Learn Nöral Ağ Kararı</h3>
-                        <p style='font-size:15px; color:#8b949e; margin-top:5px;'>Yapay Zeka bu ligin son 2000 maçını canlı eğiterek şu saf olasılıkları buldu:</p>
-                        <div style='font-size:18px; margin-top:10px;'>Ev Sahibi: <b style='color:#fff;'>%{int(ml_preds.get('H', 0))}</b> | Beraberlik: <b style='color:#fff;'>%{int(ml_preds.get('D', 0))}</b> | Deplasman: <b style='color:#fff;'>%{int(ml_preds.get('A', 0))}</b></div>
-                    </div>
-                    """, unsafe_allow_html=True)
-
-                st.divider()
                 st.markdown("<h3>🏆 İhtimal Hiyerarşisi (Tüm Pazarlar)</h3>", unsafe_allow_html=True)
                 sirali_ihtimaller = sorted(targets, key=lambda x: x[1], reverse=True)
                 for i, (isim, i_prob, i_odd) in enumerate(sirali_ihtimaller[:7]):
@@ -728,7 +716,6 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
                 chart_data = pd.DataFrame({"Skorlar": [f"{i+1}. İhtimal ({s[0]})" for i, s in enumerate(sorted_scores)], "İhtimal (%)": [int(s[1]) for s in sorted_scores]}).set_index("Skorlar")
                 st.bar_chart(chart_data, color="#d4af37", height=250)
                 
-                # GERÇEKÇİ İLK YARI (HT) xG FİLTRESİ
                 match_expected_ht_goals = (ev_xg + dep_xg) * 0.44 
                 prob_ht_0 = poisson.pmf(0, match_expected_ht_goals)
                 prob_ht_1 = poisson.pmf(1, match_expected_ht_goals)
