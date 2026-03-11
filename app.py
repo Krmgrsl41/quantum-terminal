@@ -8,8 +8,8 @@ import requests
 import io
 import re
 
-# --- QUANTUM DESIGN: V191 CALIBRATOR (DİNAMİK VALUE ALARMI & HASSASİYET KONTROLÜ) ---
-st.set_page_config(page_title="V191 | QUANTUM APEX", layout="wide", page_icon="🎛️")
+# --- QUANTUM DESIGN: V192 STREAMLINED (YALIN ODAK & SAF ANALİZ) ---
+st.set_page_config(page_title="V192 | QUANTUM APEX", layout="wide", page_icon="🎯")
 
 st.markdown("""
     <style>
@@ -111,11 +111,6 @@ def load_quantum_data():
 db = load_quantum_data()
 
 with st.sidebar:
-    st.markdown("<h2 style='color:#d4af37;'>👑 Kasa & Finans Yönetimi</h2>", unsafe_allow_html=True)
-    kasa_miktari = st.number_input("Güncel Toplam Kasa (TL)", value=10000, step=500)
-    
-    # --- V191: HASSASİYET KONTROLÜ EKLENDİ ---
-    st.divider()
     st.markdown("<h3 style='color:#00ffcc;'>🎛️ Radar Kalibrasyonu</h3>", unsafe_allow_html=True)
     value_threshold = st.slider("🚨 Value Alarm Hassasiyeti (%)", min_value=3, max_value=25, value=10, step=1, help="Yapay Zeka tahmini ile bahis şirketinin gizli yüzdesi arasında kaç puanlık bir uçurum olduğunda kırmızı alarm çalsın? Düşük yüzde = Çok alarm (Profesyonel). Yüksek yüzde = Sadece devasa hatalarda alarm.")
     
@@ -134,7 +129,7 @@ with st.sidebar:
             st.rerun()
             
     st.divider()
-    st.info("🎛️ V191 CALIBRATOR: Sistem açığı (Value) alarmının tetiklenme hassasiyetini sol menüden kendiniz belirleyebilirsiniz.")
+    st.info("🎯 V192 STREAMLINED: Kasa yönetimi kafa karışıklığını önlemek adına kaldırıldı. Sistem tamamen saf veri analizine odaklandı.")
 
 mevcut_ligler = ["TÜM DÜNYA (GLOBAL)"]
 if not db.empty and 'Div' in db.columns:
@@ -142,8 +137,8 @@ if not db.empty and 'Div' in db.columns:
 else:
     mevcut_ligler += sorted([f"{k} | {v}" for k, v in LIG_MAP.items()])
 
-st.markdown("<h1 style='text-align:center; color:#d4af37;'>🎛️ QUANTUM APEX V191</h1>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align:center; color:#8b949e;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | Dinamik Value Radarı & Kalibrasyon</p>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#d4af37;'>🎯 QUANTUM APEX V192</h1>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align:center; color:#8b949e;'>{datetime.datetime.now().strftime('%d.%m.%Y')} | Saf Analiz & Dinamik Value Radarı</p>", unsafe_allow_html=True)
 
 st.markdown("<div class='api-box'>", unsafe_allow_html=True)
 st.subheader("⚡ Canlı Oran Borsası (24 Saatlik Hedefler)")
@@ -429,7 +424,7 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
         ev_gecmis, act_ev = get_team_df(ev_search_name, aktif_db)
         dep_gecmis, act_dep = get_team_df(dep_search_name, aktif_db)
 
-        with st.spinner("V191 CALIBRATOR devrede: Değer radarı ayarladığınız hassasiyete göre taranıyor..."):
+        with st.spinner("V192 STREAMLINED devrede: Değer radarı ayarladığınız hassasiyete göre taranıyor..."):
             
             ev_home_matches = ev_gecmis[ev_gecmis['HomeTeam'].str.contains(act_ev, case=False, na=False)].tail(5)
             dep_away_matches = dep_gecmis[dep_gecmis['AwayTeam'].str.contains(act_dep, case=False, na=False)].tail(5)
@@ -613,26 +608,19 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
                     if t[1] > en_yuksek_ihtimal: en_yuksek_ihtimal = t[1]; en_guvenilir_tahmin = t
 
                 name, prob, odd = en_guvenilir_tahmin
-                b_val = odd - 1; p_val = prob / 100; q_val = 1 - p_val
-                kelly_fraction = ((b_val * p_val) - q_val) / b_val if b_val > 0 else 0
-                quarter_kelly = max(0, (kelly_fraction / 4))
-                
-                if quarter_kelly > 0: yatirim_notu = f"<b style='color:#00ffcc; font-size:16px;'>💰 Güvenli Kasa Oranı (Kelly): {int(min(kasa_miktari * quarter_kelly, kasa_miktari * 0.05))} TL</b>"
-                else: yatirim_notu = f"<span style='color:#ffcc00; font-size:14px;'>⚠️ Oran düşük olduğu için uzun vadeli yatırım değil, günlük banko/kombine bahsidir.</span>"
 
+                # Kasa miktarı ve Kelly Kriteri kaldırıldı, saf analiz bırakıldı.
                 st.markdown(f"""
                 <div class='ai-verdict-box'>
-                    <p style='color:#8b949e; font-size:14px; text-align:left; font-style:italic;'>Otonom karar motoru tüm faktörleri harmanladı. En güvenilir senaryo budur:</p>
+                    <p style='color:#8b949e; font-size:14px; text-align:left; font-style:italic;'>Otonom karar motoru tüm istatistiksel faktörleri harmanladı. En güvenilir senaryo budur:</p>
                     <h1 style='color:#d4af37; font-size: 40px; margin: 10px 0;'>🎯 {name} 🎯</h1>
                     <div style='display: flex; justify-content: space-around; margin: 20px 0;'>
                         <div><span style='color:#8b949e;'>Dinamik İhtimal:</span><br><b style='font-size:24px; color:#00ffcc;'>%{int(prob)}</b></div>
                         <div><span style='color:#8b949e;'>Piyasa Oranı:</span><br><b style='font-size:24px;'>{odd:.2f}</b></div>
                     </div>
-                    <hr style='border-color: #333;'>{yatirim_notu}
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # --- V191: DİNAMİK VALUE (HATA PAYI) ALARMI KULLANICININ SEÇTİĞİ YÜZDEYE GÖRE TETİKLENİR ---
                 value_alarms = []
                 for t in targets:
                     t_name, t_prob, t_odd = t
