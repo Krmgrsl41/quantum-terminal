@@ -570,36 +570,63 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
 
             det_l, det_r = st.columns(2)
             with det_l:
-                st.markdown("<h2 style='color:#fff;'>🧠 Tam Otonom Banko Tahmini</h2>", unsafe_allow_html=True)
+               st.markdown("<h2 style='color:#fff;'>🧠 Tam Otonom Banko Tahmini</h2>", unsafe_allow_html=True)
                 
-                # --- 3. YENİ YAPAY ZEKA GÜVEN VE SENTEZ MOTORU ---
+                # --- 3. YENİ YAPAY ZEKA GÜVEN VE SENTEZ MOTORU (DENGELİ KAR MARJI) ---
                 ai_candidates = []
                 for t_name, t_prob, t_odd in targets:
-                    if t_odd <= 1.05: continue
+                    # FİLTRE: 1.25 ve altındaki oranlar kârlı yatırım değildir, yapay zeka bunları ana banko yapmaktan kaçınır.
+                    if t_odd <= 1.25: continue 
                     
-                    # Pazara göre Risk Çarpanı (Alt/Üst daha istikrarlı, MS daha risklidir)
                     risk_mod = 1.0
-                    if "1.5 Üst" in t_name or "1.5 Alt" in t_name: risk_mod = 1.15
-                    elif "2.5 Üst" in t_name or "2.5 Alt" in t_name or "KG" in t_name: risk_mod = 1.05
+                    if "1.5" in t_name: risk_mod = 1.15
+                    elif "2.5" in t_name or "KG" in t_name: risk_mod = 1.05
                     elif "MS" in t_name: risk_mod = 0.85 
                     
                     implied_prob = (1 / t_odd) * 100
-                    value_margin = t_prob - implied_prob
                     
-                    # Güven Skoru Formülü: (İhtimal * Güvenilirlik Çarpanı) + Oran Değeri Bonusu
-                    guven_skoru = (t_prob * risk_mod) + (max(0, value_margin) * 0.4)
-                    ai_candidates.append((t_name, t_prob, t_odd, guven_skoru))
+                    # YENİ DENGE: Beklenen Değer (Expected Value - EV)
+                    expected_value = (t_prob / 100) * t_odd
+                    # Sadece ihtimale değil, kâr marjına da (EV) odaklanan yeni formül
+                    guven_skoru = (t_prob * risk_mod) * expected_value
+                    
+                    ai_candidates.append((t_name, t_prob, t_odd, guven_skoru, implied_prob))
+
+                if not ai_candidates: # Eğer bültende her şey 1.25 altındaysa mecburen en iyiyi al
+                    ai_candidates.append((targets[0][0], targets[0][1], targets[0][2], 0, 100))
 
                 ai_candidates.sort(key=lambda x: x[3], reverse=True)
                 best_target = ai_candidates[0]
-                name, prob, odd = best_target[0], best_target[1], best_target[2]
+                name, prob, odd, _, imp_p = best_target
+
+                # --- 4. DİNAMİK MAÇ HİKAYESİ OLUŞTURUCU ---
+                hikaye = ""
+                if "Üst" in name or "KG Var" in name:
+                    hikaye = f"Bu maçta hücum hatları savunmalara göre ağır basıyor (Toplam Beklenen Gol: {(ev_xg+dep_xg):.2f}). Şirketler oranı {odd:.2f} seviyesinde tutarak riski dengelemeye çalışmış ancak istatistikler ve momentum maçın {name} senaryosuna gideceğini gösteriyor. Kâr/Risk dengesi açısından en optimal yatırım budur."
+                elif "Alt" in name or "KG Yok" in name:
+                    hikaye = f"Kısır bir mücadele bekleniyor. Savunma kurguları ve takım DNA'ları maçın temposunu düşürecektir. {odd:.2f} oranlık {name} tercihi, bu taktik savaşında paranızı korumak için en kârlı sığınaktır."
+                elif "MS 1" in name:
+                    hikaye = f"Ev sahibi avantajı, {ev_momentum:.1f} puanlık momentum ivmesi ve {ev_xg:.2f} xG (Gol Beklentisi) ile ibreyi tamamen kendine çevirmiş durumda. {odd:.2f} oran, bu senaryo için sistemdeki en değerli (Value) tercihtir."
+                elif "MS 2" in name:
+                    hikaye = f"Deplasman ekibi zorlu bir fikstürde olmasına rağmen {dep_xg:.2f} gol beklentisi ve dominant formuyla ağır basıyor. Şirketler deplasman faktörü yüzünden oranı ({odd:.2f}) yüksek tutarak tuzak kurmuş olabilir, veri bilimi tamamen Deplasman galibiyetini işaret ediyor."
+                else:
+                    hikaye = f"İki takımın da sahadaki momentumu ve ELO güçleri kilitlenmiş durumda. Matematiksel olarak en çok değer barındıran (Value) ve mantıklı tercih {name} olacaktır."
+
+                if is_survival:
+                    hikaye += " Ayrıca ligin sonlarındayız ve düşme hattında yaşanan 'Can Havli (Survival)' motivasyonu sahadaki mücadeleyi ve bu tercihi ekstra destekliyor."
 
                 st.markdown(f"""
                 <div class='ai-verdict-box'>
-                    <p style='color:#8b949e; font-size:16px; text-align:left; font-style:italic;'>Yapay zeka salt ihtimalleri değil; pazar riskini (varyans) ve oran değerlerini (value) sentezleyerek yatırım yapılacak en güvenli limanı buldu:</p>
+                    <p style='color:#8b949e; font-size:15px; text-align:left; font-style:italic;'>Yapay zeka salt kazanma ihtimallerini değil; pazar riskini ve oran değerlerini (EV) sentezleyerek seni kâr marjı tatmin edici olan bu limana yönlendirdi:</p>
                     <h1 style='color:#d4af37; font-size: 54px; font-weight:900; margin: 15px 0;'>🎯 {name} 🎯</h1>
-                    <div style='display: flex; justify-content: space-around; margin: 30px 0;'>
-                        <div><span style='color:#8b949e; font-size:18px;'>Dinamik İhtimal:</span><br><b style='font-size:36px; color:#00ffcc;'>%{int(prob)}</b></div>
+                    
+                    <div style='background:rgba(255,255,255,0.05); padding:20px; border-radius:12px; border-left:4px solid #00ffcc; text-align:left; margin:20px 0;'>
+                        <span style='color:#00ffcc; font-weight:900; font-size:16px;'>📝 MAÇIN HİKAYESİ & ANALİZİ:</span><br>
+                        <span style='color:#ddd; font-size:15px; line-height:1.6;'>{hikaye}</span>
+                    </div>
+
+                    <div style='display: flex; justify-content: space-around; margin-top: 25px;'>
+                        <div><span style='color:#8b949e; font-size:18px;'>Gerçek İhtimal:</span><br><b style='font-size:36px; color:#00ffcc;'>%{int(prob)}</b></div>
                         <div><span style='color:#8b949e; font-size:18px;'>Piyasa Oranı:</span><br><b style='font-size:36px;'>{odd:.2f}</b></div>
                     </div>
                 </div>
@@ -611,12 +638,19 @@ if st.button("🚀 TAM OTONOM YAPAY ZEKAYI BAŞLAT"):
                     if t_odd > 1.05:
                         implied_prob = (1 / t_odd) * 100
                         if (t_prob - implied_prob) >= value_threshold: 
-                            value_alarms.append(f"{t_name} (Sistem: %{int(t_prob)} / Şirket: %{int(implied_prob)})")
+                            value_alarms.append(f"🔥 <span style='font-size:18px;'><b>{t_name}</b> (Açılan Oran: {t_odd:.2f})</span><br><span style='font-size:14px; font-weight:normal; color:#fff;'>Bahis şirketi bu sonuca sadece <b>%{int(implied_prob)}</b> ihtimal vererek oranı şişirmiş. Ancak yapay zekamız maçın dinamiklerinde bu ihtimalin <b>%{int(t_prob)}</b> olduğunu tespit etti. Bu <b>%{int(t_prob - implied_prob)}</b> oranında devasa bir hata ve değer (Value) fırsatıdır!</span>")
                 
                 if value_alarms:
-                    alarm_text = "<br>".join([f"🔥 {a}" for a in value_alarms])
-                    st.markdown(f"<div class='value-alarm'><h2 style='margin:0; color:#fff; font-weight:900;'>🚨 SİSTEM AÇIĞI (VALUE) TESPİT EDİLDİ!</h2><b style='color:#ffcc00; font-size:20px; line-height:1.5;'>{alarm_text}</b></div>", unsafe_allow_html=True)
-                
+                    alarm_text = "<br><hr style='border-color:#555; margin:10px 0;'><br>".join(value_alarms)
+                    st.markdown(f"""
+                    <div class='value-alarm' style='text-align:left;'>
+                        <h2 style='margin:0 0 10px 0; color:#fff; font-weight:900; text-align:center;'>🚨 SİSTEM AÇIĞI (VALUE) TESPİT EDİLDİ!</h2>
+                        <p style='font-size:15px; color:#ddd; margin-bottom:15px; text-align:center;'>Aşağıdaki seçeneklerde bahis şirketinin matematiksel hesaplama hatası tespit edilmiştir. Bu oranlara yatırım yapmak uzun vadeli kasanızı büyütür:</p>
+                        <div style='background:rgba(0,0,0,0.3); padding:20px; border-radius:10px; border-left:5px solid #ffcc00;'>
+                            {alarm_text}
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
                 if anomaly_alert:
                     bg_class = 'trap-alarm' if anomaly_type == 'trap' else 'value-alarm'
                     st.markdown(f"<div class='{bg_class}'><span style='font-size:18px; font-weight:bold; color:#fff;'>{anomaly_alert}</span></div>", unsafe_allow_html=True)
