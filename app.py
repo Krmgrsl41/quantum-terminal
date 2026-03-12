@@ -240,7 +240,7 @@ with tab1:
             else: st.error("🚨 DİKKAT: Yasal oranlar bu kuponu 'Negatif EV' pozisyonuna düşürüyor. Oynamayın!")
 
 # ---------------------------------------------------------
-# TAB 2: FON YÖNETİM MERKEZİ (KİMLİK KORUMALI)
+# TAB 2: FON YÖNETİM MERKEZİ (DİNAMİK ROI VE KİMLİK KORUMALI)
 # ---------------------------------------------------------
 with tab2:
     if sheet is None:
@@ -251,9 +251,16 @@ with tab2:
         </div>
         """, unsafe_allow_html=True)
         
+    # ROI İÇİN BAŞLANGIÇ KASASINI HAFIZAYA AL
+    if 'baslangic_kasa' not in st.session_state: 
+        st.session_state.baslangic_kasa = st.session_state.lokal_kasa
+        
     kasa = st.session_state.lokal_kasa
     bekleyen = st.session_state.bekleyen_tutar
-    roi = ((kasa - 10000) / 10000) * 100 if kasa != 10000 else 0.0
+    baslangic = st.session_state.baslangic_kasa
+    
+    # DİNAMİK ROI HESAPLAMASI
+    roi = ((kasa - baslangic) / baslangic) * 100 if baslangic > 0 else 0.0
     
     st.markdown("<h2 style='color:#d4af37;'>💼 Fon Bilanço Özeti</h2>", unsafe_allow_html=True)
     m1, m2, m3 = st.columns(3)
@@ -265,10 +272,11 @@ with tab2:
         yeni_bakiye = st.number_input("Gerçek Kasa Bakiyenizi Girin (TL):", min_value=0.0, value=float(st.session_state.lokal_kasa), step=50.0, key="ayar_bakiye")
         if st.button("🔄 BAKİYEYİ SİSTEME TANIMLA", key="btn_bakiye_tanimla"):
             st.session_state.lokal_kasa = yeni_bakiye
+            st.session_state.baslangic_kasa = yeni_bakiye # ROI'Yİ SIFIRLAYAN SİHİRLİ SATIR
             if sheet is not None:
                 zaman = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
                 sheet.append_row([zaman, 0, 1.0, "Sermaye Girişi", "0", yeni_bakiye])
-            st.success(f"✅ Sistem kasası başarıyla {yeni_bakiye:.2f} TL olarak güncellendi ve Excel'e işlendi!")
+            st.success(f"✅ Sistem kasası başarıyla {yeni_bakiye:.2f} TL olarak güncellendi, ROI sıfırlandı ve Excel'e işlendi!")
             st.rerun()
 
     st.divider()
@@ -408,6 +416,7 @@ with tab3:
 
                 else:
                     st.error("❌ Veritabanında bu oranlara benzeyen yeterli maç bulunamadı.")
+
 
 
 
