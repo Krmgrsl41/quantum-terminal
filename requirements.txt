@@ -4,4 +4,5 @@ numpy
 scipy
 requests
 scikit-learn
-pip install gspread
+
+
