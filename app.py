@@ -240,7 +240,7 @@ with tab1:
             else: st.error("🚨 DİKKAT: Yasal oranlar bu kuponu 'Negatif EV' pozisyonuna düşürüyor. Oynamayın!")
 
 # ---------------------------------------------------------
-# TAB 2: FON YÖNETİM MERKEZİ (DİNAMİK OKUMA VE BEKLEYEN KUPONLAR)
+# TAB 2: FON YÖNETİM MERKEZİ (KİMLİK KORUMALI)
 # ---------------------------------------------------------
 with tab2:
     if sheet is None:
@@ -253,7 +253,7 @@ with tab2:
         
     kasa = st.session_state.lokal_kasa
     bekleyen = st.session_state.bekleyen_tutar
-    roi = ((kasa - 10000) / 10000) * 100 if kasa != 10000 else 0.0 # Yatırım Getirisi
+    roi = ((kasa - 10000) / 10000) * 100 if kasa != 10000 else 0.0
     
     st.markdown("<h2 style='color:#d4af37;'>💼 Fon Bilanço Özeti</h2>", unsafe_allow_html=True)
     m1, m2, m3 = st.columns(3)
@@ -262,10 +262,9 @@ with tab2:
     with m3: st.markdown(f"<div class='metric-box'><div class='metric-title'>NET BÜYÜME (ROI)</div><div class='metric-value'>% {roi:.1f}</div></div>", unsafe_allow_html=True)
     
     with st.expander("⚙️ SERMAYE AYARLARI (Manuel Bakiye Girişi)"):
-        yeni_bakiye = st.number_input("Gerçek Kasa Bakiyenizi Girin (TL):", min_value=0.0, value=float(st.session_state.lokal_kasa), step=50.0)
-        if st.button("🔄 BAKİYEYİ SİSTEME TANIMLA"):
+        yeni_bakiye = st.number_input("Gerçek Kasa Bakiyenizi Girin (TL):", min_value=0.0, value=float(st.session_state.lokal_kasa), step=50.0, key="ayar_bakiye")
+        if st.button("🔄 BAKİYEYİ SİSTEME TANIMLA", key="btn_bakiye_tanimla"):
             st.session_state.lokal_kasa = yeni_bakiye
-            # İstersen bu manuel tanımlamayı da Excel'e "Sermaye Güncellemesi" olarak yazarız
             if sheet is not None:
                 zaman = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
                 sheet.append_row([zaman, 0, 1.0, "Sermaye Girişi", "0", yeni_bakiye])
@@ -275,11 +274,11 @@ with tab2:
     st.divider()
     st.markdown("<h3>📝 Yeni Yatırım (Kupon) Kaydı Ekleyin</h3>", unsafe_allow_html=True)
     k1, k2, k3 = st.columns(3)
-    yatirim_tutar = k1.number_input("Yatırılan Tutar (TL)", min_value=1.0, value=100.0)
-    kupon_oran = k2.number_input("Toplam Kupon Oranı", min_value=1.01, value=2.00)
-    durum = k3.selectbox("Kupon Durumu", ["Bekliyor", "Kazandı", "Kaybetti"])
+    yatirim_tutar = k1.number_input("Yatırılan Tutar (TL)", min_value=1.0, value=100.0, key="kayit_tutar")
+    kupon_oran = k2.number_input("Toplam Kupon Oranı", min_value=1.01, value=2.00, key="kayit_oran")
+    durum = k3.selectbox("Kupon Durumu", ["Bekliyor", "Kazandı", "Kaybetti"], key="kayit_durum")
     
-    if st.button("💾 BULUT KASAYI GÜNCELLE"):
+    if st.button("💾 BULUT KASAYI GÜNCELLE", key="btn_bulut_guncelle"):
         if sheet is not None:
             zaman = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
             
@@ -304,24 +303,6 @@ with tab2:
             st.rerun()
         else:
             st.error("Bulut bağlantısı koptu! Excel'e yazılamadı.")
-    
-    if st.button("💾 BULUT KASAYI GÜNCELLE"):
-        if sheet is not None:
-            zaman = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-            if durum == "Kazandı": 
-                net_kar = (yatirim_tutar * kupon_oran) - yatirim_tutar
-                st.session_state.lokal_kasa += net_kar
-                # Excel'e yeni satır ekle: [Tarih, Yatırım, Oran, Durum, Kâr/Zarar, Yeni Kasa]
-                sheet.append_row([zaman, yatirim_tutar, kupon_oran, durum, f"+{net_kar}", st.session_state.lokal_kasa])
-                st.success(f"✅ Tebrikler! {net_kar:.2f} TL kâr edildi. Veriler kalıcı olarak Google Cloud Excel'ine yazıldı!")
-            elif durum == "Kaybetti": 
-                st.session_state.lokal_kasa -= yatirim_tutar
-                sheet.append_row([zaman, yatirim_tutar, kupon_oran, durum, f"-{yatirim_tutar}", st.session_state.lokal_kasa])
-                st.error(f"📉 Kayıp işlendi. Kasadan {yatirim_tutar:.2f} TL düşüldü ve Excel defterine kaydedildi.")
-            st.rerun()
-        else:
-            st.error("Bulut bağlantısı koptu! Excel'e yazılamadı.")
-
 # ---------------------------------------------------------
 # TAB 3: MANUEL ANALİZ
 # ---------------------------------------------------------
@@ -427,6 +408,7 @@ with tab3:
 
                 else:
                     st.error("❌ Veritabanında bu oranlara benzeyen yeterli maç bulunamadı.")
+
 
 
 
