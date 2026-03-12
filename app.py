@@ -369,8 +369,14 @@ with tab2:
         st.info("Şu an sistemde bekleyen akıllı yatırımınız bulunmamaktadır.")
     else:
         for row_idx, r in bekleyenler:
-            b_tutar = float(r[1])
-            b_oran = float(r[2])
+            try:
+                # Virgülleri noktaya çevirip boşlukları silerek güvenli okuma yapıyoruz
+                b_tutar = float(str(r[1]).replace(',', '.').strip())
+                b_oran = float(str(r[2]).replace(',', '.').strip())
+            except ValueError:
+                st.error(f"⚠️ Excel'de {row_idx}. satırda hatalı bir sayı formatı var. Sistem o satırı atladı. Lütfen Excel'den o satırı silin.")
+                continue # Hatalı satırı atla, sistemi asla çökertme!
+                
             b_lig = r[8] if len(r) > 8 else "Bilinmiyor"
             
             st.markdown(f"<div style='background:#1e2530; padding:15px; border-radius:8px; margin-bottom:10px;'><b>Yatırım:</b> {b_tutar:.0f} TL | <b>Oran:</b> {b_oran:.2f} | <b>Ligler:</b> {b_lig.replace('#', ' - ')}</div>", unsafe_allow_html=True)
@@ -402,3 +408,4 @@ with tab2:
 
 with tab3:
     st.info("Eski Manuel Borsa Terminali buradadır.")
+
