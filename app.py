@@ -84,7 +84,7 @@ LEAGUE_DNA = {
 
 @st.cache_data(ttl=3600)
 def load_quantum_data():
-    seasons = ['2526', '2425', '2324', '2223', '2122', '2021', '1920', '1819']
+    seasons = ['2526', '2425', '2324', '2223', '2122', '2021', '1920', '1819', '1718', '1617', '1516', '1415', '1314', '1213', '1112', '1011', '0910', '0809', '0708', '0607', '0506', '0405', '0304', '0203', '0102', '0001']
     leagues = list(LIG_MAP.keys())
     urls = [(s, l, f'https://www.football-data.co.uk/mmz4281/{s}/{l}.csv') for s in seasons for l in leagues]
     def fetch(item):
@@ -366,3 +366,4 @@ with tab3:
 
                 else:
                     st.error("❌ Veritabanında bu oranlara benzeyen yeterli maç bulunamadı.")
+
