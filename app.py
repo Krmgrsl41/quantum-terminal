@@ -257,14 +257,22 @@ with tab2:
     kupon_oran = k2.number_input("Toplam Kupon Oranı", min_value=1.01, value=2.00)
     durum = k3.selectbox("Kupon Durumu", ["Bekliyor", "Kazandı", "Kaybetti"])
     
-    if st.button("💾 KASAYI GÜNCELLE"):
-        if durum == "Kazandı": 
-            st.session_state.lokal_kasa += (yatirim_tutar * kupon_oran) - yatirim_tutar
-            st.success(f"Tebrikler! Kasaya {(yatirim_tutar * kupon_oran):.2f} TL eklendi.")
-        elif durum == "Kaybetti": 
-            st.session_state.lokal_kasa -= yatirim_tutar
-            st.error(f"Kayıp işlendi. Kasadan {yatirim_tutar:.2f} TL düşüldü.")
-        st.rerun()
+    if st.button("💾 BULUT KASAYI GÜNCELLE"):
+        if sheet is not None:
+            zaman = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+            if durum == "Kazandı": 
+                net_kar = (yatirim_tutar * kupon_oran) - yatirim_tutar
+                st.session_state.lokal_kasa += net_kar
+                # Excel'e yeni satır ekle: [Tarih, Yatırım, Oran, Durum, Kâr/Zarar, Yeni Kasa]
+                sheet.append_row([zaman, yatirim_tutar, kupon_oran, durum, f"+{net_kar}", st.session_state.lokal_kasa])
+                st.success(f"✅ Tebrikler! {net_kar:.2f} TL kâr edildi. Veriler kalıcı olarak Google Cloud Excel'ine yazıldı!")
+            elif durum == "Kaybetti": 
+                st.session_state.lokal_kasa -= yatirim_tutar
+                sheet.append_row([zaman, yatirim_tutar, kupon_oran, durum, f"-{yatirim_tutar}", st.session_state.lokal_kasa])
+                st.error(f"📉 Kayıp işlendi. Kasadan {yatirim_tutar:.2f} TL düşüldü ve Excel defterine kaydedildi.")
+            st.rerun()
+        else:
+            st.error("Bulut bağlantısı koptu! Excel'e yazılamadı.")
 
 # ---------------------------------------------------------
 # TAB 3: MANUEL ANALİZ
@@ -371,5 +379,6 @@ with tab3:
 
                 else:
                     st.error("❌ Veritabanında bu oranlara benzeyen yeterli maç bulunamadı.")
+
 
 
