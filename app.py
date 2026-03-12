@@ -240,7 +240,7 @@ with tab1:
                 oran = data['oran']
                 ihtimal = data['match']['gercek_ihtimal']
                 edge = (ihtimal * oran) - 1
-                if edge > 0.02: # Matematiksel olarak yasal sitede %2 avantajımız varsa oyna!
+                if edge > 0.05: # Matematiksel olarak yasal sitede %2 avantajımız varsa oyna!
                     gecerli_maclar.append({'match': f"{data['match']['home_team']} - {data['match']['away_team']}", 'tercih': data['match']['hedef_pazar'], 'oran': oran, 'edge': edge, 'prob': ihtimal})
             
             if len(gecerli_maclar) >= 2:
@@ -368,3 +368,4 @@ with tab2:
 # ---------------------------------------------------------
 with tab3:
     st.info("Eski Manuel Borsa Terminali buradadır. Kendi maçlarınızı buradan detaylı manuel oran girerek analiz edebilirsiniz.")
+
