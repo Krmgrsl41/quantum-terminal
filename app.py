@@ -39,18 +39,23 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- GOOGLE SHEETS VERİTABANI BAĞLANTISI ---
+# --- GOOGLE SHEETS VERİTABANI BAĞLANTISI (DEDEKTÖRLÜ) ---
 @st.cache_resource(ttl=600)
 def init_google_sheets():
-    if not GSPREAD_INSTALLED: return None
-    try:
-        if "gcp_service_account" in st.secrets:
-            scopes = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
-            creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scopes)
-            client = gspread.authorize(creds)
-            return client.open("Quantum_Bilanco").sheet1
+    if not GSPREAD_INSTALLED:
+        st.error("🚨 HATA 1: 'gspread' veya 'google-auth' kütüphanesi kurulamadı! (requirements.txt dosyasını kontrol et)")
         return None
+    try:
+        if "gcp_service_account" not in st.secrets:
+            st.error("🚨 HATA 2: Streamlit Secrets içinde [gcp_service_account] başlığı bulunamadı!")
+            return None
+            
+        scopes = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
+        creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scopes)
+        client = gspread.authorize(creds)
+        return client.open("Quantum_Bilanco").sheet1
     except Exception as e:
+        st.error(f"🚨 GOOGLE CLOUD BAĞLANTI HATASI: {e}")
         return None
 
 sheet = init_google_sheets()
@@ -366,4 +371,5 @@ with tab3:
 
                 else:
                     st.error("❌ Veritabanında bu oranlara benzeyen yeterli maç bulunamadı.")
+
 
