@@ -17,8 +17,8 @@ try:
 except ImportError:
     GSPREAD_INSTALLED = False
 
-# --- QUANTUM DESIGN: V208 THE AUTONOMOUS (HEDGE FUND EDITION) ---
-st.set_page_config(page_title="V208 | AUTONOMOUS FUND", layout="wide", page_icon="🏦")
+# --- QUANTUM DESIGN: V209 THE GLOBAL QUANT (BUG FIX & NEW LEAGUES) ---
+st.set_page_config(page_title="V209 | AUTONOMOUS FUND", layout="wide", page_icon="🏦")
 
 st.markdown("""
     <style>
@@ -53,34 +53,52 @@ def init_google_sheets():
 
 sheet = init_google_sheets()
 
-# --- GEÇİCİ LOKAL KASA (Eğer Google Sheets henüz kurulmadıysa) ---
-if 'lokal_kasa' not in st.session_state:
-    st.session_state.lokal_kasa = 10000.0 # Varsayılan 10 Bin TL
-if 'kupon_gecmisi' not in st.session_state:
-    st.session_state.kupon_gecmisi = []
+# --- HAFIZA KİLİDİ (ATTRIBUTE ERROR ÇÖZÜMÜ) ---
+if 'lokal_kasa' not in st.session_state: st.session_state.lokal_kasa = 10000.0
+if 'kupon_gecmisi' not in st.session_state: st.session_state.kupon_gecmisi = []
+if 'live_matches' not in st.session_state: st.session_state.live_matches = {}
+
+# Tüm manuel kutular için session state kilitlerini sağlamlaştırıyoruz
+defaults = {
+    'ms1': 2.10, 'msx': 3.30, 'ms2': 3.40, 
+    'o15': 1.25, 'u15': 3.50, 'o25': 1.90, 'u25': 1.90, 'o35': 3.20, 'u35': 1.30, 
+    'btts_y': 1.70, 'btts_n': 2.00, 'ev_t': 'Ev Sahibi', 'dep_t': 'Deplasman'
+}
+for k, v in defaults.items():
+    if k not in st.session_state: 
+        st.session_state[k] = v
 
 # --- ARAYÜZ SEKMELERİ (TABS) ---
-st.markdown("<h1 style='text-align:center; color:#d4af37; font-size:48px; margin-bottom:0;'>🏦 QUANTUM HEDGE FUND V208</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:#8b949e; font-size:16px;'>Otonom Tarayıcı & Finansal Kasa Yönetimi</p><br>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#d4af37; font-size:48px; margin-bottom:0;'>🏦 QUANTUM HEDGE FUND V209</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#8b949e; font-size:16px;'>Global Otonom Tarayıcı & Finansal Kasa Yönetimi</p><br>", unsafe_allow_html=True)
 
 tab1, tab2, tab3 = st.tabs(["🤖 OTONOM RADAR (Günün Kuponu)", "💼 FON YÖNETİMİ (Kasa & Bilanço)", "🔬 MANUEL ANALİZ (Eski Sistem)"])
 
 # ---------------------------------------------------------
-# TAB 1: OTONOM RADAR (BUL VE DOĞRULA SİSTEMİ)
+# TAB 1: OTONOM RADAR (YENİ GOLLÜ LİGLER EKLENDİ)
 # ---------------------------------------------------------
 with tab1:
     st.markdown("<h3>🌍 Dünyayı Tara & Sistemi Kandır</h3>", unsafe_allow_html=True)
     st.markdown("<p style='color:#8b949e;'>Sistem kredinizi korumak için seçeceğiniz ligleri tarar, dünyadaki en iyi 5 maçı bulur ve sizin yasal oranlarınıza göre kâr marjını hesaplar.</p>", unsafe_allow_html=True)
     
+    # YENİ GOLLÜ LİGLER BURAYA EKLENDİ
     API_LEAGUES = {
-        "Şampiyonlar Ligi": "soccer_uefa_champs_league", "Avrupa Ligi": "soccer_uefa_europa_league",
-        "Türkiye Süper Lig": "soccer_turkey_super_league", "İngiltere Premier Lig": "soccer_epl",
-        "İspanya La Liga": "soccer_spain_la_liga", "İtalya Serie A": "soccer_italy_serie_a",
-        "Almanya Bundesliga": "soccer_germany_bundesliga", "Fransa Ligue 1": "soccer_france_ligue_one"
+        "Şampiyonlar Ligi": "soccer_uefa_champs_league", 
+        "Avrupa Ligi": "soccer_uefa_europa_league",
+        "Türkiye Süper Lig": "soccer_turkey_super_league", 
+        "İngiltere Premier Lig": "soccer_epl",
+        "İspanya La Liga": "soccer_spain_la_liga", 
+        "İtalya Serie A": "soccer_italy_serie_a",
+        "Almanya Bundesliga": "soccer_germany_bundesliga", 
+        "Fransa Ligue 1": "soccer_france_ligue_one",
+        "Hollanda Eredivisie (Gollü)": "soccer_netherlands_eredivisie",
+        "Belçika Pro League (Gollü)": "soccer_belgium_first_div",
+        "Portekiz Primeira Liga": "soccer_portugal_primeira_liga",
+        "İskoçya Premiership": "soccer_spl"
     }
     
     c1, c2 = st.columns([2, 1])
-    with c1: secilen_ligler = st.multiselect("Taranacak Ligleri Seçin (Her lig 2 kredi yakar):", list(API_LEAGUES.keys()), default=["İngiltere Premier Lig", "Türkiye Süper Lig"])
+    with c1: secilen_ligler = st.multiselect("Taranacak Ligleri Seçin (Her lig 2 kredi yakar):", list(API_LEAGUES.keys()), default=["Hollanda Eredivisie (Gollü)", "Almanya Bundesliga", "Türkiye Süper Lig"])
     with c2: api_key = st.text_input("The-Odds-API Anahtarı:", value=st.secrets.get("API_KEY", ""), type="password")
     
     if st.button("🚀 GÜNÜN FIRSATLARINI BUL (Aşama 1)"):
@@ -125,31 +143,27 @@ with tab1:
             
         if st.button("🧮 YASAL KOMBİNEYİ OLUŞTUR VE KELLY HESAPLA (Aşama 3)"):
             with st.spinner("Yasal oranlarınıza göre Kelly Kriteri hesaplanıyor..."):
-                # Filtreleme mantığı: Yasal oran girildikten sonra kâr marjı (Edge) hala %3'ten büyük mü?
                 gecerli_maclar = []
                 for i, data in yasal_oranlar.items():
-                    # Gerçek kazanma ihtimali simülasyonu (V207 algoritmasından gelir, şu an temsili %60)
                     gercek_ihtimal = 0.62 
                     yasal_oran = max(data['ms1'], data['o25'])
                     tercih = "MS 1" if data['ms1'] > data['o25'] else "2.5 Üst"
                     
                     edge = (gercek_ihtimal * yasal_oran) - 1
-                    if edge > 0.02: # Eğer yasal kesintiye rağmen hala %2 avantajımız varsa
+                    if edge > 0.02: 
                         gecerli_maclar.append({'match': f"{data['match']['home_team']} - {data['match']['away_team']}", 'tercih': tercih, 'oran': yasal_oran, 'edge': edge})
                 
                 if len(gecerli_maclar) >= 2:
                     secilenler = sorted(gecerli_maclar, key=lambda x: x['edge'], reverse=True)[:2]
                     toplam_oran = secilenler[0]['oran'] * secilenler[1]['oran']
                     
-                    # KELLY KRİTERİ HESAPLAMASI
-                    # Formül: f* = (bp - q) / b  | b=oran-1, p=kazanma ihtimali, q=kaybetme ihtimali
+                    # KELLY KRİTERİ
                     kasa_miktari = st.session_state.lokal_kasa
                     b = toplam_oran - 1
-                    p = 0.45 # Bu toplam kombinenin kazanma ihtimali (2 maç için gerçekçi)
+                    p = 0.45 
                     q = 1 - p
                     kelly_yuzde = ((b * p) - q) / b
                     
-                    # Güvenlik için Fraction Kelly (Çeyrek Kelly) kullanıyoruz (Kasayı korumak için)
                     guvenli_kelly = max(0.01, (kelly_yuzde / 4))
                     yatirilacak_tutar = kasa_miktari * guvenli_kelly
 
@@ -172,22 +186,20 @@ with tab1:
                         <p style='color:#d4af37; font-size:18px; font-weight:800; margin-bottom:5px;'>💼 KELLY KRİTERİ YATIRIM EMRİ:</p>
                         <p style='color:#8b949e; font-size:14px; margin-top:0;'>Güncel Kasanız ({kasa_miktari:.2f} TL) üzerinden çeyrek Kelly formülü hesaplanmıştır.</p>
                         <div class='kelly-amount'>Maksimum Tutar: {yatirilacak_tutar:.0f} TL</div>
-                        
-                        <p style='font-size:13px; color:#666;'>Bu kuponu oynadıktan sonra 'FON YÖNETİMİ' sekmesine gidip manuel olarak kasanıza kaydediniz.</p>
                     </div>
                     """, unsafe_allow_html=True)
                 else:
-                    st.error("🚨 DİKKAT: Girdiğiniz yasal oranlar o kadar düşük ki (İddaa vergisi çok yüksek), bu maçlara oynamak matematiksel olarak KESİN ZARAR (Negatif EV) yazacaktır. Bugün bahis yapmayın, paranızı koruyun!")
+                    st.error("🚨 DİKKAT: Yasal oranlar bu kuponu 'Negatif EV' pozisyonuna düşürüyor. Yatırım iptal edildi, kasanızı koruyun!")
 
 # ---------------------------------------------------------
-# TAB 2: FON YÖNETİM MERKEZİ (KASA & BİLANÇO)
+# TAB 2: FON YÖNETİM MERKEZİ
 # ---------------------------------------------------------
 with tab2:
     if sheet is None:
         st.markdown("""
         <div class='fund-warning'>
             <b style='color:#ff4b4b; font-size:18px;'>⚠️ Kalıcı Bulut Hafızası (Google Sheets) Bağlı Değil!</b><br>
-            <span style='color:#ddd; font-size:15px;'>Şu an geçici Lokal Kasa kullanıyorsunuz. Sayfayı yenilediğinizde kasanız sıfırlanır. Kalıcı veritabanı için sol menüdeki talimatları okuyun.</span>
+            <span style='color:#ddd; font-size:15px;'>Şu an geçici Lokal Kasa kullanıyorsunuz. Sayfayı yenilediğinizde kasanız sıfırlanır.</span>
         </div>
         """, unsafe_allow_html=True)
         
@@ -216,10 +228,10 @@ with tab2:
         st.rerun()
 
 # ---------------------------------------------------------
-# TAB 3: MANUEL ANALİZ (ESKİ SİSTEM BURADA YAŞIYOR)
+# TAB 3: MANUEL ANALİZ (KİLİTLİ VE GÜVENLİ INPUTLAR)
 # ---------------------------------------------------------
 with tab3:
-    st.info("V207 Sürümündeki 'Smart Paste' ve Manuel Borsa Terminali özellikleri buradadır. Kendi bulduğunuz maçları buradan detaylı analiz edebilirsiniz.")
+    st.info("Eski otonomsuz sistem. Kendi bulduğunuz maçları buradan detaylı analiz edebilirsiniz.")
     with st.expander("✂️ GİZLİ SİLAH: Siteden Oran Kopyala / Yapıştır (Smart Paste)"):
         paste_text = st.text_area("Metni Buraya Bırakın:", height=80)
         if st.button("🪄 KELİME ANALİZİYLE DAĞIT"):
@@ -240,9 +252,10 @@ with tab3:
 
     c_ms, c_uo = st.columns(2)
     with c_ms:
-        st.session_state.ms1 = st.number_input("MS 1", value=st.session_state.ms1)
-        st.session_state.msx = st.number_input("MS 0", value=st.session_state.msx)
-        st.session_state.ms2 = st.number_input("MS 2", value=st.session_state.ms2)
+        # HATA ÇÖZÜMÜ: Sadece 'key' parametresi ile Streamlit'e devrettik
+        st.number_input("MS 1", key='ms1', format="%.2f", step=0.05)
+        st.number_input("MS 0", key='msx', format="%.2f", step=0.05)
+        st.number_input("MS 2", key='ms2', format="%.2f", step=0.05)
     with c_uo:
-        st.session_state.u25 = st.number_input("2.5 ALT", value=st.session_state.u25)
-        st.session_state.o25 = st.number_input("2.5 ÜST", value=st.session_state.o25)
+        st.number_input("2.5 ALT", key='u25', format="%.2f", step=0.05)
+        st.number_input("2.5 ÜST", key='o25', format="%.2f", step=0.05)
