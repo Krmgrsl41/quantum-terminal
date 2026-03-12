@@ -4,5 +4,5 @@ numpy
 scipy
 requests
 scikit-learn
-
-
+gspread
+google-auth
