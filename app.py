@@ -60,9 +60,25 @@ def init_google_sheets():
 
 sheet = init_google_sheets()
 
-# --- HAFIZA KİLİDİ (SESSION STATE) ---
-if 'lokal_kasa' not in st.session_state: st.session_state.lokal_kasa = 10000.0
+# --- HAFIZA KİLİDİ VE EXCEL'DEN KASA OKUMA MOTORU ---
+if 'bekleyen_tutar' not in st.session_state: st.session_state.bekleyen_tutar = 0.0
 if 'kupon_gecmisi' not in st.session_state: st.session_state.kupon_gecmisi = []
+if 'raw_api_data' not in st.session_state: st.session_state.raw_api_data = []
+
+if 'lokal_kasa' not in st.session_state:
+    if sheet is not None:
+        try:
+            # Excel'deki tüm verileri çek ve son satırdaki gerçek kasanı oku!
+            all_vals = sheet.get_all_values()
+            if len(all_vals) > 0:
+                son_kasa = float(all_vals[-1][5]) # 6. Sütun Kasa Sütunudur
+                st.session_state.lokal_kasa = son_kasa
+            else:
+                st.session_state.lokal_kasa = 10000.0 # Excel tamamen boşsa varsayılan
+        except:
+            st.session_state.lokal_kasa = 10000.0
+    else:
+        st.session_state.lokal_kasa = 10000.0
 
 defaults = {
     'ms1': 2.10, 'msx': 3.30, 'ms2': 3.40, 
@@ -379,6 +395,7 @@ with tab3:
 
                 else:
                     st.error("❌ Veritabanında bu oranlara benzeyen yeterli maç bulunamadı.")
+
 
 
 
