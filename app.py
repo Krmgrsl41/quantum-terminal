@@ -16,8 +16,8 @@ try:
 except ImportError:
     GSPREAD_INSTALLED = False
 
-# --- QUANTUM DESIGN: V214 THE SINGULARITY (BÜYÜK BİRLEŞME) ---
-st.set_page_config(page_title="V214 | AUTONOMOUS FUND", layout="wide", page_icon="🧠")
+# --- QUANTUM DESIGN: V215 THE ULTIMATE QUANT ---
+st.set_page_config(page_title="V215 | AUTONOMOUS FUND", layout="wide", page_icon="🧠")
 
 st.markdown("""
     <style>
@@ -69,14 +69,13 @@ if 'lokal_kasa' not in st.session_state:
 if 'baslangic_kasa' not in st.session_state: 
     st.session_state.baslangic_kasa = st.session_state.lokal_kasa
 
-# --- DEV YAPAY ZEKA BEYNİ (TARİHSEL VERİTABANI) ---
+# --- DEV YAPAY ZEKA BEYNİ (TARİHSEL VERİTABANI) YUMUŞATILMIŞ İNDİRME ---
 LIG_MAP = {
     'T1': 'Türkiye Süper Lig', 'E0': 'İngiltere Premier Lig', 'SP1': 'İspanya La Liga 1',
     'I1': 'İtalya Serie A', 'D1': 'Almanya Bundesliga 1', 'F1': 'Fransa Ligue 1',
     'N1': 'Hollanda Eredivisie', 'B1': 'Belçika Pro League'
 }
 
-# API'den gelen lig kodlarını bizim veritabanı kodlarına çeviren harita
 API_TO_DIV = {
     "soccer_turkey_super_league": "T1", "soccer_epl": "E0",
     "soccer_spain_la_liga": "SP1", "soccer_italy_serie_a": "I1",
@@ -84,16 +83,16 @@ API_TO_DIV = {
     "soccer_netherlands_eredivisie": "N1", "soccer_belgium_first_div": "B1"
 }
 
-@st.cache_data(ttl=3600)
+@st.cache_data(ttl=3600, show_spinner=False)
 def load_quantum_data():
-    # 25 Yıllık dev veri havuzu ayarı
     seasons = ['2526', '2425', '2324', '2223', '2122', '2021', '1920', '1819', '1718', '1617', '1516', '1415', '1314', '1213', '1112', '1011', '0910', '0809', '0708', '0607', '0506', '0405', '0304', '0203', '0102', '0001']
     leagues = list(LIG_MAP.keys())
     urls = [(s, l, f'https://www.football-data.co.uk/mmz4281/{s}/{l}.csv') for s in seasons for l in leagues]
+    
     def fetch(item):
         s, l, url = item
         try:
-            r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
+            r = requests.get(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}, timeout=15)
             if r.status_code != 200: return pd.DataFrame()
             df = pd.read_csv(io.StringIO(r.text))
             if 'B365>2.5' in df.columns: df.rename(columns={'B365>2.5': 'B365O', 'B365<2.5': 'B365U'}, inplace=True)
@@ -102,7 +101,10 @@ def load_quantum_data():
             df['Season'] = s
             return df
         except: return pd.DataFrame()
-    with concurrent.futures.ThreadPoolExecutor(max_workers=15) as executor: results = list(executor.map(fetch, urls))
+        
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor: 
+        results = list(executor.map(fetch, urls))
+        
     dfs = [res for res in results if not res.empty]
     if dfs:
         res_df = pd.concat(dfs, ignore_index=True)
@@ -112,16 +114,16 @@ def load_quantum_data():
 db = load_quantum_data()
 
 # --- ARAYÜZ SEKMELERİ (TABS) ---
-st.markdown("<h1 style='text-align:center; color:#d4af37; font-size:48px; margin-bottom:0;'>🧠 QUANTUM HEDGE FUND V214</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:#8b949e; font-size:16px;'>Gerçek Yapay Zeka Entegrasyonu & Otonom Broker</p><br>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#d4af37; font-size:48px; margin-bottom:0;'>🧠 QUANTUM HEDGE FUND V215</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#8b949e; font-size:16px;'>EV (Beklenen Değer) Odaklı Gerçek Yapay Zeka</p><br>", unsafe_allow_html=True)
 
-tab1, tab2, tab3 = st.tabs(["🎯 SNIPER RADAR (Yapay Zeka Aktif)", "💼 FON YÖNETİMİ (Kasa & Bilanço)", "🔬 MANUEL ANALİZ (Eski Sistem)"])
+tab1, tab2, tab3 = st.tabs(["🎯 SNIPER RADAR (Saf Matematik)", "💼 FON YÖNETİMİ (Kasa & Bilanço)", "🔬 MANUEL ANALİZ (Eski Sistem)"])
 
 # ---------------------------------------------------------
-# TAB 1: SNIPER RADAR (GERÇEK YAPAY ZEKA BAĞLANTISI)
+# TAB 1: SNIPER RADAR (SAF EV MATEMATİĞİ)
 # ---------------------------------------------------------
 with tab1:
-    st.markdown("<h3>🌍 Dünyayı Tara & İddaa'yı Avla</h3>", unsafe_allow_html=True)
+    st.markdown("<h3>🌍 Dünyayı Tara & Küresel Değeri (Value) Bul</h3>", unsafe_allow_html=True)
     
     API_LEAGUES = {
         "Şampiyonlar Ligi": "soccer_uefa_champs_league", "Avrupa Ligi": "soccer_uefa_europa_league",
@@ -158,24 +160,25 @@ with tab1:
 
     st.divider()
 
-    # AŞAMA 1 (GERÇEK YAPAY ZEKA ANALİZİ)
-    if st.button("🧠 GÜNÜN FIRSATLARINI BUL (Yapay Zeka Analizi)", key="btn_firsat"):
+    # AŞAMA 1 (KÜRESEL EV ANALİZİ - SIFIR TORPİL)
+    if st.button("🧠 GÜNÜN FIRSATLARINI BUL (Saf Matematik Analizi)", key="btn_firsat"):
         if len(st.session_state.raw_api_data) == 0:
             st.warning("Önce yukarıdaki 'CANLI ORANLARI MANUEL ÇEK' butonuna basarak havuzu doldurun!")
         elif len(db) == 0:
-            st.error("Tarihsel veritabanı yüklenemedi. Lütfen sayfayı yenileyin.")
+            st.error("Tarihsel veritabanı yüklenemedi. Lütfen sayfayı yenileyin (Reboot).")
         else:
-            with st.spinner("Yapay Zeka devrede... Canlı maçlar on binlerce geçmiş maç ile matematiksel olarak çarpıştırılıyor. Lütfen bekleyin..."):
+            with st.spinner("Tüm pazarlar için matematiksel Beklenen Değer (EV) hesaplanıyor. İddaa'nın açığı aranıyor..."):
                 analiz_edilenler = []
                 
                 for mac in st.session_state.raw_api_data:
-                    # 1. Maçın Ligini Bul ve Veritabanını Filtrele
                     lig_kodu = API_TO_DIV.get(mac.get('sport_key'))
                     aktif_db = db[db['Div'] == lig_kodu].copy() if lig_kodu else db.copy()
                     
                     if len(aktif_db) > 100:
-                        # 2. Canlı Oranları API'nin Karmaşık JSON'ından Çek (Defansif Kodlama)
-                        h_odd, d_odd, a_odd = 2.50, 3.20, 2.80 # Varsayılanlar
+                        # Gelişmiş API Veri Çekimi (Sadece MS değil, Alt/Üst de çekiliyor)
+                        h_odd, d_odd, a_odd = 2.50, 3.20, 2.80 
+                        o25_odd, u25_odd = 1.90, 1.90
+                        
                         try:
                             for bkm in mac.get('bookmakers', []):
                                 for mkt in bkm.get('markets', []):
@@ -184,49 +187,63 @@ with tab1:
                                             if out['name'] == mac['home_team']: h_odd = out['price']
                                             elif out['name'] == mac['away_team']: a_odd = out['price']
                                             elif out['name'] == 'Draw': d_odd = out['price']
+                                    elif mkt['key'] == 'totals':
+                                        for out in mkt['outcomes']:
+                                            if out['name'] == 'Over' and out.get('point') == 2.5: o25_odd = out['price']
+                                            elif out['name'] == 'Under' and out.get('point') == 2.5: u25_odd = out['price']
                         except: pass
                         
-                        # 3. Matematiksel Mesafe (Öklid) ile Tarihte Eşi Benzeri Olan Maçları Bul
+                        # Tarihte benzer maçları bul
                         aktif_db['diff'] = np.sqrt((aktif_db['B365H']-h_odd)**2 + (aktif_db['B365D']-d_odd)**2 + (aktif_db['B365A']-a_odd)**2)
-                        benzer = aktif_db.sort_values('diff').head(80) # En çok benzeyen 80 geçmiş maç
+                        benzer = aktif_db.sort_values('diff').head(80) 
                         
-                        # 4. İhtimal Hesaplamaları (Gerçek Tarihsel Yüzdeler)
+                        # Tarihsel İhtimalleri Çıkar
                         p_ms1 = (benzer[benzer['FTR']=='H']['B365H'].count() / len(benzer))
                         p_msx = (benzer[benzer['FTR']=='D']['B365D'].count() / len(benzer))
                         p_ms2 = (benzer[benzer['FTR']=='A']['B365A'].count() / len(benzer))
                         p_o25 = (benzer[(benzer['FTHG']+benzer['FTAG'])>2.5]['FTR'].count() / len(benzer))
                         p_u25 = 1.0 - p_o25
-                        p_kgv = (benzer[(benzer['FTHG']>0) & (benzer['FTAG']>0)]['FTR'].count() / len(benzer))
-                        p_kgy = 1.0 - p_kgv
                         
-                        targets = [
-                            ("MS 1", p_ms1), ("MS 0 (Beraberlik)", p_msx), ("MS 2", p_ms2), 
-                            ("2.5 Üst", p_o25), ("2.5 Alt", p_u25), ("KG Var", p_kgv), ("KG Yok", p_kgy)
+                        # BÜTÜN PAZARLARI BİRBİRİYLE SAVAŞTIR (Küresel EV Hesaplaması)
+                        ev_targets = [
+                            ("MS 1", p_ms1, h_odd),
+                            ("MS 0 (Beraberlik)", p_msx, d_odd),
+                            ("MS 2", p_ms2, a_odd),
+                            ("2.5 Üst", p_o25, o25_odd),
+                            ("2.5 Alt", p_u25, u25_odd)
                         ]
                         
-                        # 5. En Yüksek İhtimali Olan Pazarı (Sniper Hedefini) Seç (Sadece %55 üzeri olanlar)
-                        gecerli_hedefler = [t for t in targets if t[1] > 0.55]
-                        if gecerli_hedefler:
-                            best_t = sorted(gecerli_hedefler, key=lambda x: x[1], reverse=True)[0]
-                            mac['hedef_pazar'] = best_t[0]
-                            mac['gercek_ihtimal'] = best_t[1]
-                            mac['_g_score'] = best_t[1] # Yapay zekanın güven skoru
+                        en_iyi_ev = -999.0
+                        en_iyi_pazar = None
+                        
+                        for pazar_adi, p_ihtimal, k_oran in ev_targets:
+                            # Saf Matematik: İhtimal x Oran = Gerçek Değer
+                            hesaplanan_ev = (p_ihtimal * k_oran) - 1
+                            if hesaplanan_ev > en_iyi_ev:
+                                en_iyi_ev = hesaplanan_ev
+                                en_iyi_pazar = (pazar_adi, p_ihtimal, hesaplanan_ev)
+                                
+                        # Eğer en iyi pazarın bile gerçekleşme ihtimali %40'ın altındaysa (Çok sürprizse) çöpe at
+                        if en_iyi_pazar and en_iyi_pazar[1] > 0.40:
+                            mac['hedef_pazar'] = en_iyi_pazar[0]
+                            mac['gercek_ihtimal'] = en_iyi_pazar[1]
+                            mac['_g_score'] = en_iyi_pazar[2] # Artık maçları ihtimale göre değil, KAZANÇ MARJINA (EV) göre sıralıyor!
                             analiz_edilenler.append(mac)
 
-                # En güvenilir 5 maçı vitrine çıkar
-                st.session_state.top_adaylar = sorted(analiz_edilenler, key=lambda x: x.get('_g_score', 0), reverse=True)[:5]
+                # Küresel piyasada en büyük matematiksel avantaja sahip 5 maçı vitrine çıkar
+                st.session_state.top_adaylar = sorted(analiz_edilenler, key=lambda x: x.get('_g_score', -999), reverse=True)[:5]
                 st.session_state.pending_slip = None 
                 
                 if len(st.session_state.top_adaylar) > 0:
-                    st.success(f"🧠 Yapay Zeka On Binlerce veriyi işledi! En kârlı 5 özel Sniper Pazarı tespit edildi.")
+                    st.success(f"🧠 Küresel EV (Beklenen Değer) taraması bitti. İddaa'nın en büyük zaafları tespit edildi!")
                 else:
-                    st.warning("Bugün bültende geçmiş istatistiklerle örtüşen güvenilir bir maç bulunamadı. Paranı koru!")
+                    st.warning("Bugün bültende matematiksel bir boşluk (Edge) bulunamadı. Paranı koru!")
 
     # AŞAMA 2 (NOKTA ATIŞI YASAL ORAN GİRİŞİ)
     if 'top_adaylar' in st.session_state and len(st.session_state.top_adaylar) > 0 and st.session_state.pending_slip is None:
         st.divider()
         st.markdown("<h3 style='color:#00ffcc;'>🎯 AŞAMA 2: Sniper Doğrulaması (Yasal Oran)</h3>", unsafe_allow_html=True)
-        st.markdown("<p style='color:#8b949e;'>Yapay Zeka bu maçların geçmiş 25 yıllık DNA'sını çözdü. Sistem senden sadece belirttiği <b>Kusursuz Pazar'ın</b> yasal oranını istiyor.</p>", unsafe_allow_html=True)
+        st.markdown("<p style='color:#8b949e;'>Yapay Zeka bu maçların küresel piyasadaki EV değerini hesapladı. Seçtiği <b>Nihai Pazarın</b> yasal sitenizdeki oranını girin.</p>", unsafe_allow_html=True)
         
         yasal_oranlar = {}
         for i, m in enumerate(st.session_state.top_adaylar):
@@ -240,7 +257,8 @@ with tab1:
                 oran = data['oran']
                 ihtimal = data['match']['gercek_ihtimal']
                 edge = (ihtimal * oran) - 1
-                if edge > -0.05: # Matematiksel olarak yasal sitede %2 avantajımız varsa oyna!
+                # YASAL FİLTRE: -0.05 (Yani en fazla %5 matematiksel zarara göz yum, altını çöpe at)
+                if edge > -0.05: 
                     gecerli_maclar.append({'match': f"{data['match']['home_team']} - {data['match']['away_team']}", 'tercih': data['match']['hedef_pazar'], 'oran': oran, 'edge': edge, 'prob': ihtimal})
             
             if len(gecerli_maclar) >= 2:
@@ -248,11 +266,13 @@ with tab1:
                 toplam_oran = secilenler[0]['oran'] * secilenler[1]['oran']
                 kasa_miktari = st.session_state.lokal_kasa
                 b = toplam_oran - 1
-                p = secilenler[0]['prob'] * secilenler[1]['prob'] # Yapay zekanın 2 maçı birden bilme ihtimali
+                p = secilenler[0]['prob'] * secilenler[1]['prob'] 
                 q = 1 - p
                 kelly_yuzde = ((b * p) - q) / b
-                hesaplanan_tutar = kasa_miktari * max(0.01, (kelly_yuzde / 4)) # Saf Matematik
-                yatirilacak_tutar = max(50.0, hesaplanan_tutar) # Yasal Site Minimum Limiti (50 TL Koruması)
+                
+                # 50 TL Yasal Limit Koruması
+                hesaplanan_tutar = kasa_miktari * max(0.01, (kelly_yuzde / 4)) 
+                yatirilacak_tutar = max(50.0, hesaplanan_tutar)
 
                 st.session_state.pending_slip = {
                     'maclar': secilenler,
@@ -276,7 +296,7 @@ with tab1:
             </div>
             <div style='display:flex; justify-content:space-around; align-items:center;'>
                 <div><span style='color:#8b949e;'>Toplam Oran</span><br><b style='font-size:36px; color:#fff;'>{slip['toplam_oran']:.2f}</b></div>
-                <div><span style='color:#8b949e;'>Sistem Açığı</span><br><b style='font-size:36px; color:#00ffcc;'>+%{(slip['edge']*100):.1f}</b></div>
+                <div><span style='color:#8b949e;'>Sistem Açığı (EV)</span><br><b style='font-size:36px; color:#00ffcc;'>{(slip['edge']*100):.1f}%</b></div>
             </div>
             <hr style='border-color:#333;'>
             <p style='color:#d4af37; font-size:18px; font-weight:800; margin-bottom:5px;'>💼 KELLY KRİTERİ YATIRIM EMRİ:</p>
@@ -306,7 +326,7 @@ with tab1:
                 st.rerun()
 
 # ---------------------------------------------------------
-# TAB 2: FON YÖNETİM MERKEZİ
+# TAB 2 & 3: FON YÖNETİMİ VE MANUEL ANALİZ (Aynı Kaldı)
 # ---------------------------------------------------------
 with tab2:
     kasa = st.session_state.lokal_kasa
@@ -364,12 +384,5 @@ with tab2:
         else:
             st.error("Bulut bağlantısı koptu! Excel'e yazılamadı.")
 
-# ---------------------------------------------------------
-# TAB 3: MANUEL ANALİZ (ESKİ SİSTEM)
-# ---------------------------------------------------------
 with tab3:
     st.info("Eski Manuel Borsa Terminali buradadır. Kendi maçlarınızı buradan detaylı manuel oran girerek analiz edebilirsiniz.")
-
-
-
-
