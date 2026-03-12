@@ -252,7 +252,7 @@ with tab1:
                 q = 1 - p
                 kelly_yuzde = ((b * p) - q) / b
                 hesaplanan_tutar = kasa_miktari * max(0.01, (kelly_yuzde / 4)) # Saf Matematik
-yatirilacak_tutar = max(50.0, hesaplanan_tutar) # Yasal Site Minimum Limiti (50 TL Koruması)
+                yatirilacak_tutar = max(50.0, hesaplanan_tutar) # Yasal Site Minimum Limiti (50 TL Koruması)
 
                 st.session_state.pending_slip = {
                     'maclar': secilenler,
@@ -369,5 +369,6 @@ with tab2:
 # ---------------------------------------------------------
 with tab3:
     st.info("Eski Manuel Borsa Terminali buradadır. Kendi maçlarınızı buradan detaylı manuel oran girerek analiz edebilirsiniz.")
+
 
 
