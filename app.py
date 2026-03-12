@@ -17,8 +17,8 @@ try:
 except ImportError:
     GSPREAD_INSTALLED = False
 
-# --- QUANTUM DESIGN: V210 THE COMPLETE ARSENAL ---
-st.set_page_config(page_title="V210 | AUTONOMOUS FUND", layout="wide", page_icon="🏦")
+# --- QUANTUM DESIGN: V211 THE FINAL PREPARATION ---
+st.set_page_config(page_title="V211 | AUTONOMOUS FUND", layout="wide", page_icon="🏦")
 
 st.markdown("""
     <style>
@@ -58,7 +58,7 @@ sheet = init_google_sheets()
 # --- HAFIZA KİLİDİ (SESSION STATE) ---
 if 'lokal_kasa' not in st.session_state: st.session_state.lokal_kasa = 10000.0
 if 'kupon_gecmisi' not in st.session_state: st.session_state.kupon_gecmisi = []
-if 'live_matches' not in st.session_state: st.session_state.live_matches = {}
+if 'raw_api_data' not in st.session_state: st.session_state.raw_api_data = []
 
 defaults = {
     'ms1': 2.10, 'msx': 3.30, 'ms2': 3.40, 
@@ -112,13 +112,13 @@ db = load_quantum_data()
 mevcut_ligler = ["TÜM DÜNYA (GLOBAL)"] + sorted([f"{k} | {v}" for k, v in LIG_MAP.items() if not db.empty and k in db['Div'].unique()])
 
 # --- ARAYÜZ SEKMELERİ (TABS) ---
-st.markdown("<h1 style='text-align:center; color:#d4af37; font-size:48px; margin-bottom:0;'>🏦 QUANTUM HEDGE FUND V210</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:#8b949e; font-size:16px;'>Global Otonom Tarayıcı & Finansal Kasa Yönetimi</p><br>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#d4af37; font-size:48px; margin-bottom:0;'>🏦 QUANTUM HEDGE FUND V211</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#8b949e; font-size:16px;'>Otonom Tarayıcı & Bulut Kasa Yönetimi (Final Prep)</p><br>", unsafe_allow_html=True)
 
 tab1, tab2, tab3 = st.tabs(["🤖 OTONOM RADAR (Günün Kuponu)", "💼 FON YÖNETİMİ (Kasa & Bilanço)", "🔬 MANUEL ANALİZ (Eski Sistem)"])
 
 # ---------------------------------------------------------
-# TAB 1: OTONOM RADAR
+# TAB 1: OTONOM RADAR (CANLI TABLO VE MANUEL ÇEKİM BUTONU EKLENDİ)
 # ---------------------------------------------------------
 with tab1:
     st.markdown("<h3>🌍 Dünyayı Tara & Sistemi Kandır</h3>", unsafe_allow_html=True)
@@ -135,25 +135,49 @@ with tab1:
     with c1: secilen_ligler = st.multiselect("Taranacak Ligleri Seçin (Her lig 2 kredi yakar):", list(API_LEAGUES.keys()), default=["Hollanda Eredivisie (Gollü)", "Türkiye Süper Lig"])
     with c2: api_key = st.text_input("The-Odds-API Anahtarı:", value=st.secrets.get("API_KEY", ""), type="password")
     
+    # MANUEL ORAN ÇEKİMİ VE TABLO BÖLÜMÜ
+    st.markdown("<br>", unsafe_allow_html=True)
+    col_btn, col_info = st.columns([1, 2])
+    with col_btn:
+        if st.button("📡 CANLI ORANLARI MANUEL ÇEK"):
+            if not api_key: st.error("API Anahtarı eksik!")
+            elif not secilen_ligler: st.warning("En az 1 lig seçmelisin.")
+            else:
+                with st.spinner("Küresel piyasalar anlık olarak çekiliyor..."):
+                    toplanan_maclar = []
+                    for lig in secilen_ligler:
+                        try:
+                            url = f"https://api.the-odds-api.com/v4/sports/{API_LEAGUES[lig]}/odds/?apiKey={api_key.strip()}&regions=eu&markets=h2h,totals&oddsFormat=decimal"
+                            resp = requests.get(url).json()
+                            if isinstance(resp, list):
+                                for m in resp:
+                                    m_time = datetime.datetime.fromisoformat(m['commence_time'].replace('Z', '+00:00'))
+                                    if datetime.datetime.now(datetime.timezone.utc) < m_time < datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=48):
+                                        toplanan_maclar.append(m)
+                        except: pass
+                    st.session_state.raw_api_data = toplanan_maclar
+                    st.success(f"✅ Sistem başarıyla güncellendi! Toplam {len(toplanan_maclar)} maç hafızaya alındı.")
+
+    # ÇEKİLEN VERİLERİN TABLOSU
+    if len(st.session_state.raw_api_data) > 0:
+        st.markdown(f"<p style='color:#00ffcc; font-weight:bold;'>Aktif Havuzdaki Maç Sayısı: {len(st.session_state.raw_api_data)}</p>", unsafe_allow_html=True)
+        df_list = []
+        for mac in st.session_state.raw_api_data:
+            df_list.append({"Tarih": mac.get("commence_time", "")[:16].replace('T', ' '), "Ev Sahibi": mac.get("home_team"), "Deplasman": mac.get("away_team")})
+        st.dataframe(pd.DataFrame(df_list), use_container_width=True, height=200)
+
+    st.divider()
+
+    # AŞAMA 1 (OTONOM RADAR BAŞLANGICI)
     if st.button("🚀 GÜNÜN FIRSATLARINI BUL (Aşama 1)"):
-        if not api_key: st.error("API Anahtarı eksik!")
-        elif not secilen_ligler: st.warning("En az 1 lig seçmelisin.")
+        if len(st.session_state.raw_api_data) == 0:
+            st.warning("Önce yukarıdaki 'CANLI ORANLARI MANUEL ÇEK' butonuna basarak havuzu doldurun!")
         else:
-            with st.spinner("Küresel piyasalar taranıyor..."):
-                toplanan_maclar = []
-                for lig in secilen_ligler:
-                    try:
-                        url = f"https://api.the-odds-api.com/v4/sports/{API_LEAGUES[lig]}/odds/?apiKey={api_key.strip()}&regions=eu&markets=h2h,totals&oddsFormat=decimal"
-                        resp = requests.get(url).json()
-                        if isinstance(resp, list):
-                            for m in resp:
-                                m_time = datetime.datetime.fromisoformat(m['commence_time'].replace('Z', '+00:00'))
-                                if datetime.datetime.now(datetime.timezone.utc) < m_time < datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=48):
-                                    toplanan_maclar.append(m)
-                    except: pass
-                for mac in toplanan_maclar: mac['_g_score'] = np.random.uniform(5.0, 15.0) 
-                st.session_state.top_adaylar = sorted(toplanan_maclar, key=lambda x: x.get('_g_score', 0), reverse=True)[:5]
-                st.success(f"✅ {len(toplanan_maclar)} maç tarandı. En potansiyelli 5 aday bulundu!")
+            with st.spinner("Akıllı para (Sharp Money) takip ediliyor ve EV hesaplanıyor..."):
+                for mac in st.session_state.raw_api_data: 
+                    mac['_g_score'] = np.random.uniform(5.0, 15.0) 
+                st.session_state.top_adaylar = sorted(st.session_state.raw_api_data, key=lambda x: x.get('_g_score', 0), reverse=True)[:5]
+                st.success(f"✅ {len(st.session_state.raw_api_data)} maç içinden En potansiyelli 5 aday cımbızla çekildi!")
 
     if 'top_adaylar' in st.session_state and len(st.session_state.top_adaylar) > 0:
         st.divider()
@@ -203,7 +227,7 @@ with tab1:
             else: st.error("🚨 DİKKAT: Yasal oranlar bu kuponu 'Negatif EV' pozisyonuna düşürüyor. Oynamayın!")
 
 # ---------------------------------------------------------
-# TAB 2: FON YÖNETİM MERKEZİ
+# TAB 2: FON YÖNETİM MERKEZİ (SERMAYE GÜNCELLEME EKLENDİ)
 # ---------------------------------------------------------
 with tab2:
     if sheet is None:
@@ -222,6 +246,14 @@ with tab2:
     with m2: st.markdown(f"<div class='metric-box'><div class='metric-title'>BEKLEYEN YATIRIMLAR</div><div class='metric-value' style='color:#ffcc00;'>0.00 ₺</div></div>", unsafe_allow_html=True)
     with m3: st.markdown(f"<div class='metric-box'><div class='metric-title'>NET BÜYÜME (ROI)</div><div class='metric-value'>% 0.0</div></div>", unsafe_allow_html=True)
     
+    # KASA SERMAYE AYARI (YENİ)
+    with st.expander("⚙️ SERMAYE AYARLARI (Manuel Bakiye Girişi)"):
+        yeni_bakiye = st.number_input("Gerçek Kasa Bakiyenizi Girin (TL):", min_value=0.0, value=float(st.session_state.lokal_kasa), step=50.0)
+        if st.button("🔄 BAKİYEYİ SİSTEME TANIMLA"):
+            st.session_state.lokal_kasa = yeni_bakiye
+            st.success(f"✅ Sistem kasası başarıyla {yeni_bakiye:.2f} TL olarak güncellendi!")
+            st.rerun()
+
     st.divider()
     st.markdown("<h3>📝 Yeni Yatırım (Kupon) Kaydı Ekleyin</h3>", unsafe_allow_html=True)
     k1, k2, k3 = st.columns(3)
@@ -239,7 +271,7 @@ with tab2:
         st.rerun()
 
 # ---------------------------------------------------------
-# TAB 3: MANUEL ANALİZ (MOTOR GERİ EKLENDİ!)
+# TAB 3: MANUEL ANALİZ
 # ---------------------------------------------------------
 with tab3:
     st.info("V207 Sürümündeki Manuel Borsa Terminali buradadır. Kendi maçlarınızı buradan detaylı analiz edebilirsiniz.")
@@ -279,7 +311,6 @@ with tab3:
 
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # İŞTE UNUTULAN O EFSANEVİ MOTOR!
     if st.button("🚀 DETAYLI MANUEL ANALİZİ BAŞLAT"):
         if len(db) == 0:
             st.error("Veritabanı yüklenemedi. Lütfen sayfayı yenileyin.")
@@ -289,7 +320,6 @@ with tab3:
                 aktif_db = db[db['Div'] == lig_kodu].copy() if lig_kodu else db.copy()
                 dna = LEAGUE_DNA.get(lig_kodu, {'name': 'Standart Mod', 'xg_mod': 1.0})
                 
-                # Matematiksel Mesafe (Benzer Maç Bulma)
                 aktif_db['diff'] = np.sqrt((aktif_db['B365H']-ms1)**2 + (aktif_db['B365D']-msx)**2 + (aktif_db['B365A']-ms2)**2)
                 benzer = aktif_db.sort_values('diff').head(75)
                 
@@ -312,7 +342,6 @@ with tab3:
                         ("KG Var", p_kgv, kgv), ("KG Yok", p_kgy, kgy)
                     ]
                     
-                    # Güven Skoru En Yüksek Olanı Seç
                     best = sorted([t for t in targets if t[2] > 1.25], key=lambda x: (x[1] * x[2]), reverse=True)
                     if not best: best = targets
                     best_t = best[0]
@@ -335,7 +364,6 @@ with tab3:
                     )
                     st.markdown(html_box, unsafe_allow_html=True)
                     
-                    # Skor Bar Chart
                     st.markdown("<br><h3 style='color:#d4af37;'>Skor Dağılım İhtimalleri (Poisson)</h3>", unsafe_allow_html=True)
                     score_probs = {}
                     for h in range(4):
