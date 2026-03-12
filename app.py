@@ -240,7 +240,7 @@ with tab1:
             else: st.error("🚨 DİKKAT: Yasal oranlar bu kuponu 'Negatif EV' pozisyonuna düşürüyor. Oynamayın!")
 
 # ---------------------------------------------------------
-# TAB 2: FON YÖNETİM MERKEZİ
+# TAB 2: FON YÖNETİM MERKEZİ (DİNAMİK OKUMA VE BEKLEYEN KUPONLAR)
 # ---------------------------------------------------------
 with tab2:
     if sheet is None:
@@ -252,18 +252,24 @@ with tab2:
         """, unsafe_allow_html=True)
         
     kasa = st.session_state.lokal_kasa
+    bekleyen = st.session_state.bekleyen_tutar
+    roi = ((kasa - 10000) / 10000) * 100 if kasa != 10000 else 0.0 # Yatırım Getirisi
     
     st.markdown("<h2 style='color:#d4af37;'>💼 Fon Bilanço Özeti</h2>", unsafe_allow_html=True)
     m1, m2, m3 = st.columns(3)
     with m1: st.markdown(f"<div class='metric-box'><div class='metric-title'>GÜNCEL FON KASASI</div><div class='metric-value' style='color:#fff;'>{kasa:.2f} ₺</div></div>", unsafe_allow_html=True)
-    with m2: st.markdown(f"<div class='metric-box'><div class='metric-title'>BEKLEYEN YATIRIMLAR</div><div class='metric-value' style='color:#ffcc00;'>0.00 ₺</div></div>", unsafe_allow_html=True)
-    with m3: st.markdown(f"<div class='metric-box'><div class='metric-title'>NET BÜYÜME (ROI)</div><div class='metric-value'>% 0.0</div></div>", unsafe_allow_html=True)
+    with m2: st.markdown(f"<div class='metric-box'><div class='metric-title'>BEKLEYEN YATIRIMLAR</div><div class='metric-value' style='color:#ffcc00;'>{bekleyen:.2f} ₺</div></div>", unsafe_allow_html=True)
+    with m3: st.markdown(f"<div class='metric-box'><div class='metric-title'>NET BÜYÜME (ROI)</div><div class='metric-value'>% {roi:.1f}</div></div>", unsafe_allow_html=True)
     
     with st.expander("⚙️ SERMAYE AYARLARI (Manuel Bakiye Girişi)"):
         yeni_bakiye = st.number_input("Gerçek Kasa Bakiyenizi Girin (TL):", min_value=0.0, value=float(st.session_state.lokal_kasa), step=50.0)
         if st.button("🔄 BAKİYEYİ SİSTEME TANIMLA"):
             st.session_state.lokal_kasa = yeni_bakiye
-            st.success(f"✅ Sistem kasası başarıyla {yeni_bakiye:.2f} TL olarak güncellendi!")
+            # İstersen bu manuel tanımlamayı da Excel'e "Sermaye Güncellemesi" olarak yazarız
+            if sheet is not None:
+                zaman = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+                sheet.append_row([zaman, 0, 1.0, "Sermaye Girişi", "0", yeni_bakiye])
+            st.success(f"✅ Sistem kasası başarıyla {yeni_bakiye:.2f} TL olarak güncellendi ve Excel'e işlendi!")
             st.rerun()
 
     st.divider()
@@ -272,6 +278,32 @@ with tab2:
     yatirim_tutar = k1.number_input("Yatırılan Tutar (TL)", min_value=1.0, value=100.0)
     kupon_oran = k2.number_input("Toplam Kupon Oranı", min_value=1.01, value=2.00)
     durum = k3.selectbox("Kupon Durumu", ["Bekliyor", "Kazandı", "Kaybetti"])
+    
+    if st.button("💾 BULUT KASAYI GÜNCELLE"):
+        if sheet is not None:
+            zaman = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+            
+            if durum == "Bekliyor":
+                st.session_state.bekleyen_tutar += yatirim_tutar
+                sheet.append_row([zaman, yatirim_tutar, kupon_oran, durum, "0", st.session_state.lokal_kasa])
+                st.info(f"⏳ {yatirim_tutar:.2f} TL değerindeki yatırım 'Bekleyen Yatırımlar' sekmesine aktarıldı!")
+                
+            elif durum == "Kazandı": 
+                net_kar = (yatirim_tutar * kupon_oran) - yatirim_tutar
+                st.session_state.lokal_kasa += net_kar
+                if st.session_state.bekleyen_tutar >= yatirim_tutar: st.session_state.bekleyen_tutar -= yatirim_tutar
+                sheet.append_row([zaman, yatirim_tutar, kupon_oran, durum, f"+{net_kar}", st.session_state.lokal_kasa])
+                st.success(f"✅ Tebrikler! {net_kar:.2f} TL kâr edildi. Veriler kalıcı olarak Google Cloud Excel'ine yazıldı!")
+                
+            elif durum == "Kaybetti": 
+                st.session_state.lokal_kasa -= yatirim_tutar
+                if st.session_state.bekleyen_tutar >= yatirim_tutar: st.session_state.bekleyen_tutar -= yatirim_tutar
+                sheet.append_row([zaman, yatirim_tutar, kupon_oran, durum, f"-{yatirim_tutar}", st.session_state.lokal_kasa])
+                st.error(f"📉 Kayıp işlendi. Kasadan {yatirim_tutar:.2f} TL düşüldü ve Excel defterine kaydedildi.")
+                
+            st.rerun()
+        else:
+            st.error("Bulut bağlantısı koptu! Excel'e yazılamadı.")
     
     if st.button("💾 BULUT KASAYI GÜNCELLE"):
         if sheet is not None:
@@ -395,6 +427,7 @@ with tab3:
 
                 else:
                     st.error("❌ Veritabanında bu oranlara benzeyen yeterli maç bulunamadı.")
+
 
 
 
