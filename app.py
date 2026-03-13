@@ -94,7 +94,6 @@ API_TO_DIV = {"soccer_turkey_super_league": "T1", "soccer_epl": "E0", "soccer_ge
 LEAGUE_IDS = {"Hollanda Eredivisie": 88, "Almanya Bundesliga": 78, "Türkiye Süper Lig": 203, "İngiltere Premier Lig": 39, "İspanya La Liga": 140, "İtalya Serie A": 135, "Fransa Ligue 1": 61, "Belçika Pro Lig": 144, "Portekiz Premier Lig": 94, "Polonya Ekstraklasa": 106}
 API_LEAGUES = {"İngiltere Premier Lig": "soccer_epl", "Almanya Bundesliga": "soccer_germany_bundesliga", "Türkiye Süper Lig": "soccer_turkey_super_league", "Hollanda Eredivisie": "soccer_netherlands_eredivisie", "İspanya La Liga": "soccer_spain_la_liga", "İtalya Serie A": "soccer_italy_serie_a", "Fransa Ligue 1": "soccer_france_ligue_one", "Belçika Pro Lig": "soccer_belgium_first_division_a", "Portekiz Premier Lig": "soccer_portugal_primeira_liga", "Polonya Ekstraklasa": "soccer_poland_ekstraklasa"}
 
-# --- TARİHSEL VERİTABANI (25/26 SEZONU EKLENDİ) ---
 @st.cache_data(ttl=3600, show_spinner=False)
 def load_quantum_data():
     seasons = ['2526', '2425', '2324', '2223', '2122'] 
@@ -114,19 +113,19 @@ def load_quantum_data():
     return pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
 db = load_quantum_data()
 
-# --- TAM DİNAMİK ZAMAN ALGISI ---
+# --- YENİLENMİŞ VE HAFIZASI TEMİZLENMİŞ API SORGUSU ---
 @st.cache_data(ttl=18000, show_spinner=False)
-def get_live_standings(league_id):
+def get_live_standings_v2(league_id):
     if league_id == 0: return {}
     try:
-        # Otomatik Sezon Yılı Hesaplama Motoru (Ağustos'tan önceyse bir önceki yıl)
         now = datetime.datetime.now()
         aktif_sezon = str(now.year - 1) if now.month < 8 else str(now.year)
         
         url = f"https://v3.football.api-sports.io/standings?league={league_id}&season={aktif_sezon}"
         headers = {'x-apisports-key': API_SPORTS_KEY}
         response = requests.get(url, headers=headers).json()
-        if response['response']:
+        
+        if 'response' in response and len(response['response']) > 0:
             standings = response['response'][0]['league']['standings'][0]
             return {team['team']['name'].lower(): team for team in standings}
     except: pass
@@ -137,7 +136,25 @@ def format_form_string(form_str):
     tr_map = {'W': 'G', 'D': 'B', 'L': 'M'}
     return "-".join([tr_map.get(char, char) for char in form_str])
 
-# --- GELİŞMİŞ AI RAPORU ---
+# --- AKILLI TAKIM EŞLEŞTİRME MOTORU ---
+def takim_eslestir(hedef_isim, standings_dict):
+    hedef = hedef_isim.lower().strip()
+    # 1. Birebir eşleşme
+    if hedef in standings_dict: return standings_dict[hedef]
+    
+    # 2. İçinde geçme (Örn: "inter" in "inter milan")
+    for k, v in standings_dict.items():
+        if k in hedef or hedef in k: return v
+        
+    # 3. Kelime bazlı kesişim (Örn: "hellas verona" -> "verona")
+    hedef_kelimeler = set([w for w in hedef.split() if len(w) > 3])
+    for k, v in standings_dict.items():
+        k_kelimeler = set([w for w in k.split() if len(w) > 3])
+        if len(hedef_kelimeler.intersection(k_kelimeler)) > 0:
+            return v
+            
+    return None
+
 def generate_ai_report(ev, dep, pazar, oran, ihtimal, ev_form, dep_form, cerrahi, ev_sira, ev_at, ev_ye, ev_son5, dep_sira, dep_at, dep_ye, dep_son5, lig):
     rapor = f"Analizime göre sistem, bu maçta <span class='highlight-green'>{oran:.2f}</span> oranla <span class='highlight-gold'>[{pazar}]</span> pazarında ciddi bir matematiksel değer tespit etti. Veritabanındaki geçmiş eşleşmeler ve mevcut momentum ışığında maçın bu senaryoda bitme ihtimali net olarak <span class='highlight-green'>%{int(ihtimal*100)}</span>.<br><br>"
     
@@ -201,7 +218,8 @@ with tab1:
                 now_tr = now_utc + datetime.timedelta(hours=3)
                 
                 for lig in secilen_ligler:
-                    get_live_standings(LEAGUE_IDS.get(lig, 0)) 
+                    # Yeni isimli fonksiyon çağrılıyor
+                    get_live_standings_v2(LEAGUE_IDS.get(lig, 0)) 
                     try:
                         url = f"https://api.the-odds-api.com/v4/sports/{API_LEAGUES[lig]}/odds/?apiKey={api_key.strip()}&regions=eu&markets=h2h,totals&oddsFormat=decimal"
                         resp = requests.get(url).json()
@@ -241,27 +259,20 @@ with tab1:
                     gercek_lig_adi = mac.get('kendi_ligi', '')
                     aktif_db = db[db['Div'] == lig_kodu].copy() if lig_kodu else db.copy()
                     
-                    standings_data = get_live_standings(LEAGUE_IDS.get(gercek_lig_adi, 0))
+                    standings_data = get_live_standings_v2(LEAGUE_IDS.get(gercek_lig_adi, 0))
                     ev_sira, ev_at, ev_ye, ev_son5 = '?', '?', '?', '?'
                     dep_sira, dep_at, dep_ye, dep_son5 = '?', '?', '?', '?'
                     
                     if standings_data:
-                        ev_key = mac['home_team'].lower()
-                        ev_info = standings_data.get(ev_key)
-                        if not ev_info:
-                            for k, v in standings_data.items():
-                                if k in ev_key or ev_key in k: ev_info = v; break
+                        # Akıllı Eşleştirme Motoru
+                        ev_info = takim_eslestir(mac['home_team'], standings_data)
                         if ev_info:
                             ev_sira = ev_info.get('rank', '?')
                             ev_at = ev_info.get('all', {}).get('goals', {}).get('for', '?')
                             ev_ye = ev_info.get('all', {}).get('goals', {}).get('against', '?')
                             ev_son5 = format_form_string(ev_info.get('form', '?'))
                             
-                        dep_key = mac['away_team'].lower()
-                        dep_info = standings_data.get(dep_key)
-                        if not dep_info:
-                            for k, v in standings_data.items():
-                                if k in dep_key or dep_key in k: dep_info = v; break
+                        dep_info = takim_eslestir(mac['away_team'], standings_data)
                         if dep_info:
                             dep_sira = dep_info.get('rank', '?')
                             dep_at = dep_info.get('all', {}).get('goals', {}).get('for', '?')
