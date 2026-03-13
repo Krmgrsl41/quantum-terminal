@@ -14,7 +14,7 @@ try:
 except ImportError:
     GSPREAD_INSTALLED = False
 
-# --- V300 FINAL APEX: PREMIUM UI & OTONOM SKOR ---
+# --- V300 FINAL APEX: PREMIUM UI, OTONOM SKOR & ÖZGÜR KOMBİNE ---
 st.set_page_config(page_title="V300 APEX | PREMIUM FUND", layout="wide", page_icon="📈")
 
 st.markdown("""
@@ -113,8 +113,9 @@ def load_quantum_data():
     return pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
 db = load_quantum_data()
 
+# --- HAFIZASI SIFIRLANMIŞ, DİNAMİK ZAMANLI API MOTORU ---
 @st.cache_data(ttl=18000, show_spinner=False)
-def get_live_standings_v2(league_id):
+def get_live_standings_v3(league_id):
     if league_id == 0: return {}
     try:
         now = datetime.datetime.now()
@@ -122,12 +123,17 @@ def get_live_standings_v2(league_id):
         
         url = f"https://v3.football.api-sports.io/standings?league={league_id}&season={aktif_sezon}"
         headers = {'x-apisports-key': API_SPORTS_KEY}
-        response = requests.get(url, headers=headers).json()
+        r = requests.get(url, headers=headers)
         
-        if 'response' in response and len(response['response']) > 0:
-            standings = response['response'][0]['league']['standings'][0]
-            return {team['team']['name']: team for team in standings} # Orijinal ismi kaydet
-    except: pass
+        if r.status_code == 200:
+            response = r.json()
+            if 'errors' in response and response['errors']:
+                return {"API_ERROR": response['errors']}
+                
+            if 'response' in response and len(response['response']) > 0:
+                standings = response['response'][0]['league']['standings'][0]
+                return {team['team']['name']: team for team in standings}
+    except Exception as e: pass
     return {}
 
 def format_form_string(form_str):
@@ -135,8 +141,10 @@ def format_form_string(form_str):
     tr_map = {'W': 'G', 'D': 'B', 'L': 'M'}
     return "-".join([tr_map.get(char, char) for char in form_str])
 
-# --- TÜRKÇE KARAKTER KALKANLI EŞLEŞTİRİCİ ---
+# --- TÜRKÇE KARAKTER KALKANLI AKILLI EŞLEŞTİRİCİ ---
 def takim_eslestir(hedef_isim, standings_dict):
+    if "API_ERROR" in standings_dict: return None 
+    
     def normalize_text(text):
         if not isinstance(text, str): return ""
         replacements = {'ç':'c', 'ğ':'g', 'ı':'i', 'ö':'o', 'ş':'s', 'ü':'u', 'Ç':'C', 'Ğ':'G', 'İ':'I', 'Ö':'O', 'Ş':'S', 'Ü':'U'}
@@ -146,24 +154,16 @@ def takim_eslestir(hedef_isim, standings_dict):
         return text
 
     hedef_norm = normalize_text(hedef_isim)
-    
-    # Standings sözlüğündeki anahtarları da normalize et
     norm_dict = {normalize_text(k): v for k, v in standings_dict.items()}
     
-    # 1. Birebir eşleşme
     if hedef_norm in norm_dict: return norm_dict[hedef_norm]
-    
-    # 2. İçinde geçme durumu
     for k, v in norm_dict.items():
         if k in hedef_norm or hedef_norm in k: return v
-        
-    # 3. Kelime bazlı kesişim
     hedef_kelimeler = set([w for w in hedef_norm.split() if len(w) > 3])
     for k, v in norm_dict.items():
         k_kelimeler = set([w for w in k.split() if len(w) > 3])
         if len(hedef_kelimeler.intersection(k_kelimeler)) > 0:
             return v
-            
     return None
 
 def generate_ai_report(ev, dep, pazar, oran, ihtimal, ev_form, dep_form, cerrahi, ev_sira, ev_at, ev_ye, ev_son5, dep_sira, dep_at, dep_ye, dep_son5, lig):
@@ -182,7 +182,7 @@ def generate_ai_report(ev, dep, pazar, oran, ihtimal, ev_form, dep_form, cerrahi
     elif pazar == "2.5 Alt": rapor += f"Takımların gol kısırlığı ve puan durumundaki pozisyonları, maçı tamamen bir taktik savaşına çevirecektir. Temponun düşük kalması kuvvetle muhtemel. "
 
     if cerrahi > 0:
-        rapor += f"<br><br>⚠️ <i>Güvenlik Notu: Sistem, olası ufak rotasyonlar ve teknik direktör değişiklikleri ihtimaline karşı genel başarı yüzdesinden <span class='alert-text'>%{int(cerrahi*100)}</span>'lük minimal bir 'Risk Kesintisi' yapmıştır. (İsim bazlı sakatlık analizi The-Odds-API sunucusuyla eşleşmediği için uygulanmamıştır.)</i>"
+        rapor += f"<br><br>⚠️ <i>Güvenlik Notu: Sistem, olası ufak rotasyonlar ve teknik direktör değişiklikleri ihtimaline karşı genel başarı yüzdesinden <span class='alert-text'>%{int(cerrahi*100)}</span>'lük minimal bir 'Risk Kesintisi' yapmıştır.</i>"
     
     rapor += f"<br><br><b>🎯 Sonuç:</b> Tüm veriler filtrelendiğinde en yüksek değerli oran (Value) <span class='highlight-gold'>{pazar}</span> tercihidir."
     return rapor
@@ -211,7 +211,7 @@ def check_match_result(sport_key, home, away, target_market, api_key):
 
 # --- ARAYÜZ ---
 st.markdown("<h1 style='text-align:center; color:#d4af37; font-size:52px; margin-bottom:0; text-shadow: 0 0 20px rgba(212,175,55,0.3);'>🧠 V300 APEX TERMINAL</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>Gelişmiş Puan Durumu Analizi, Premium Arayüz ve Tam Otonom Skor Motoru</p><br>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>Gelişmiş Puan Durumu Analizi, Premium Arayüz ve Tam Özgür Fon Yönetimi</p><br>", unsafe_allow_html=True)
 
 tab1, tab2 = st.tabs(["🎯 V300 OTONOM RADAR", "💼 FON YÖNETİMİ & KONTROL BİLANÇOSU"])
 
@@ -228,8 +228,13 @@ with tab1:
                 now_utc = datetime.datetime.now(datetime.timezone.utc)
                 now_tr = now_utc + datetime.timedelta(hours=3)
                 
+                hata_gosterildi = False
                 for lig in secilen_ligler:
-                    get_live_standings_v2(LEAGUE_IDS.get(lig, 0)) 
+                    s_data = get_live_standings_v3(LEAGUE_IDS.get(lig, 0)) 
+                    if s_data and "API_ERROR" in s_data and not hata_gosterildi:
+                        st.error(f"🚨 DİKKAT: API-Football (Puan Durumu) günlük kotanız dolmuş olabilir! Detay: {s_data['API_ERROR']}")
+                        hata_gosterildi = True
+
                     try:
                         url = f"https://api.the-odds-api.com/v4/sports/{API_LEAGUES[lig]}/odds/?apiKey={api_key.strip()}&regions=eu&markets=h2h,totals&oddsFormat=decimal"
                         resp = requests.get(url).json()
@@ -264,16 +269,22 @@ with tab1:
                         if 'HTHG' in mac and 'HTAG' in mac and (mac['HTHG'] + mac['HTAG'] > 0.5): ht_ust += 1
                     return 0.85 + ((tp / (len(sm) * 3)) * 0.30), (0.05 if ht_ust >= 3 else -0.02)
 
+                hata_gosterildi = False
                 for mac in st.session_state.raw_api_data:
                     lig_kodu = API_TO_DIV.get(mac.get('sport_key'))
                     gercek_lig_adi = mac.get('kendi_ligi', '')
                     aktif_db = db[db['Div'] == lig_kodu].copy() if lig_kodu else db.copy()
                     
-                    standings_data = get_live_standings_v2(LEAGUE_IDS.get(gercek_lig_adi, 0))
+                    standings_data = get_live_standings_v3(LEAGUE_IDS.get(gercek_lig_adi, 0))
+                    
+                    if standings_data and "API_ERROR" in standings_data and not hata_gosterildi:
+                        st.error("🚨 API KOTASI DOLDU! Puan durumları çekilemiyor. Sistem xG hesabı ile devam edecek.")
+                        hata_gosterildi = True
+
                     ev_sira, ev_at, ev_ye, ev_son5 = '?', '?', '?', '?'
                     dep_sira, dep_at, dep_ye, dep_son5 = '?', '?', '?', '?'
                     
-                    if standings_data:
+                    if standings_data and "API_ERROR" not in standings_data:
                         ev_info = takim_eslestir(mac['home_team'], standings_data)
                         if ev_info:
                             ev_sira = ev_info.get('rank', '?')
@@ -356,45 +367,71 @@ with tab1:
 
     if 'top_adaylar' in st.session_state and len(st.session_state.top_adaylar) > 0:
         st.divider()
-        st.markdown("<h2 style='color:#00ffcc;'>🎯 PREMIUM OTONOM KOMBİNE</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='color:#00ffcc;'>🎯 OTONOM KOMBİNE STÜDYOSU (Özel Seçim)</h2>", unsafe_allow_html=True)
+        st.markdown("<p style='color:#8b949e;'><i>Aşağıdaki listeden fon sepetine eklemek istediğiniz maçları işaretleyin. Sistem sadece seçtiğiniz maçların oranlarını çarpacaktır.</i></p>", unsafe_allow_html=True)
+        
         yasal_oranlar = {}
         for i, m in enumerate(st.session_state.top_adaylar):
-            badge = "<span class='ai-badge'>🧠 ML Algoritması Devrede</span>" if m['ml_kullanildi'] else ""
+            badge = "<span class='ai-badge'>🧠 ML Devrede</span>" if m['ml_kullanildi'] else ""
             
-            st.markdown(f"<div class='match-card'><div class='match-title'>{m['home_team']} ⚡ {m['away_team']} {badge}</div><span style='color:#8b949e; font-size:16px;'>Kazanma İhtimali: <b style='color:#fff;'>%{int(m['kalibre_ihtimal']*100)}</b> | Lig: {m['kendi_ligi']}</span><br><div class='target-market'>Hedef Pazar: {m['hedef_pazar']}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='match-card'><div class='match-title'>{m['home_team']} ⚡ {m['away_team']} {badge}</div><span style='color:#8b949e; font-size:16px;'>İhtimal: <b style='color:#fff;'>%{int(m['kalibre_ihtimal']*100)}</b> | Lig: {m['kendi_ligi']}</span><br><div class='target-market'>Hedef: {m['hedef_pazar']}</div>", unsafe_allow_html=True)
             
             with st.expander("🤖 Gelişmiş Yapay Zeka (Fon Analisti) Raporunu Oku"):
                 st.markdown(f"<div class='ai-report'>{m['ai_rapor']}</div>", unsafe_allow_html=True)
                 
-            yasal_oranlar[i] = {'oran': st.number_input(f"İddaa [{m['hedef_pazar']}] Oranını Girin:", min_value=1.01, value=1.50, step=0.05, key=f"y_oran_{i}"), 'match': m}
+            # --- ÖZGÜR SEÇİM KUTUCUKLARI ---
+            c_sec, c_oran = st.columns([1, 1])
+            with c_sec:
+                # Sadece en üstteki 2 maç varsayılan olarak seçili gelsin, ama kullanıcı değiştirebilsin
+                is_selected = st.checkbox(f"✅ KUPONA EKLE", value=(i<2), key=f"sec_mac_{i}")
+            with c_oran:
+                oran_val = st.number_input(f"İddaa [{m['hedef_pazar']}] Oranı:", min_value=1.01, value=1.50, step=0.05, key=f"y_oran_{i}")
+            
+            yasal_oranlar[i] = {'oran': oran_val, 'match': m, 'secildi': is_selected}
             st.markdown("</div>", unsafe_allow_html=True)
             
         st.markdown("<hr style='border:1px solid #2d3748;'>", unsafe_allow_html=True)
         manuel_tutar = st.number_input("💵 Kupona Yatırılacak Tutar (TL):", min_value=10.0, value=100.0, step=10.0)
             
         if st.button("🚀 KOMBİNEYİ ONAYLA (Fon Sistemine Gönder)", use_container_width=True):
-            gecerli_maclar = [{'isim': f"{d['match']['home_team']} - {d['match']['away_team']}", 'h': d['match']['home_team'], 'a': d['match']['away_team'], 'tercih': d['match']['hedef_pazar'], 'oran': d['oran'], 'prob': d['match']['kalibre_ihtimal'], 'lig': d['match']['sport_key']} for d in yasal_oranlar.values()]
+            # SADECE SEÇİLEN MAÇLARI FİLTRELE
+            secilen_maclar = []
+            for d in yasal_oranlar.values():
+                if d['secildi']:
+                    secilen_maclar.append({
+                        'isim': f"{d['match']['home_team']} - {d['match']['away_team']}", 
+                        'h': d['match']['home_team'], 
+                        'a': d['match']['away_team'], 
+                        'tercih': d['match']['hedef_pazar'], 
+                        'oran': d['oran'], 
+                        'prob': d['match']['kalibre_ihtimal'], 
+                        'lig': d['match']['sport_key']
+                    })
             
-            if len(gecerli_maclar) >= 2:
-                secilenler = gecerli_maclar[:2]
-                toplam_oran = secilenler[0]['oran'] * secilenler[1]['oran']
+            if len(secilen_maclar) > 0:
+                # Seçili maçların toplam oranını dinamik hesapla
+                toplam_oran = 1.0
+                for s in secilen_maclar:
+                    toplam_oran *= s['oran']
                 
                 yatirilacak_tutar = manuel_tutar
                 st.session_state.lokal_kasa -= yatirilacak_tutar
                 st.session_state.bekleyen_tutar += yatirilacak_tutar
                 
                 if sheet:
-                    isimler = f"{secilenler[0]['h']} vs {secilenler[0]['a']}#{secilenler[1]['h']} vs {secilenler[1]['a']}"
-                    ligler = f"{secilenler[0]['lig']}#{secilenler[1]['lig']}"
-                    tercihler = f"{secilenler[0]['tercih']}#{secilenler[1]['tercih']}"
-                    problar = f"{secilenler[0]['prob']:.3f}#{secilenler[1]['prob']:.3f}"
-                    oranlar = f"{secilenler[0]['oran']:.2f}#{secilenler[1]['oran']:.2f}"
+                    isimler = "#".join([f"{s['h']} vs {s['a']}" for s in secilen_maclar])
+                    ligler = "#".join([s['lig'] for s in secilen_maclar])
+                    tercihler = "#".join([s['tercih'] for s in secilen_maclar])
+                    problar = "#".join([f"{s['prob']:.3f}" for s in secilen_maclar])
+                    oranlar = "#".join([f"{s['oran']:.2f}" for s in secilen_maclar])
                     
                     sheet.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), yatirilacak_tutar, toplam_oran, "Bekliyor", "0", st.session_state.lokal_kasa, st.session_state.bekleyen_tutar, st.session_state.baslangic_kasa, isimler, ligler, tercihler, problar, oranlar])
                 
                 st.session_state.top_adaylar = []
-                st.success(f"✅ İşlem Başarılı! Otonom Kupon {yatirilacak_tutar:.0f} TL bakiye ile sisteme kilitlendi. Skorlar maç bitiminde kendi kendine denetlenecek.")
+                st.success(f"✅ İşlem Başarılı! {len(secilen_maclar)} maçlık Özel Kombine {yatirilacak_tutar:.0f} TL bakiye ile sisteme kilitlendi. Skorlar kendi kendine denetlenecek.")
                 st.rerun()
+            else:
+                st.error("🚨 Kupon oluşturmak için lütfen listeden en az 1 maç seçin!")
 
 with tab2:
     st.markdown("<h2 style='color:#d4af37;'>💼 Kuantum Fon Bilanço Özeti</h2>", unsafe_allow_html=True)
