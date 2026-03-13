@@ -113,7 +113,6 @@ def load_quantum_data():
     return pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
 db = load_quantum_data()
 
-# --- YENİLENMİŞ VE HAFIZASI TEMİZLENMİŞ API SORGUSU ---
 @st.cache_data(ttl=18000, show_spinner=False)
 def get_live_standings_v2(league_id):
     if league_id == 0: return {}
@@ -127,7 +126,7 @@ def get_live_standings_v2(league_id):
         
         if 'response' in response and len(response['response']) > 0:
             standings = response['response'][0]['league']['standings'][0]
-            return {team['team']['name'].lower(): team for team in standings}
+            return {team['team']['name']: team for team in standings} # Orijinal ismi kaydet
     except: pass
     return {}
 
@@ -136,19 +135,31 @@ def format_form_string(form_str):
     tr_map = {'W': 'G', 'D': 'B', 'L': 'M'}
     return "-".join([tr_map.get(char, char) for char in form_str])
 
-# --- AKILLI TAKIM EŞLEŞTİRME MOTORU ---
+# --- TÜRKÇE KARAKTER KALKANLI EŞLEŞTİRİCİ ---
 def takim_eslestir(hedef_isim, standings_dict):
-    hedef = hedef_isim.lower().strip()
-    # 1. Birebir eşleşme
-    if hedef in standings_dict: return standings_dict[hedef]
+    def normalize_text(text):
+        if not isinstance(text, str): return ""
+        replacements = {'ç':'c', 'ğ':'g', 'ı':'i', 'ö':'o', 'ş':'s', 'ü':'u', 'Ç':'C', 'Ğ':'G', 'İ':'I', 'Ö':'O', 'Ş':'S', 'Ü':'U'}
+        text = text.lower().strip()
+        for tr, eng in replacements.items():
+            text = text.replace(tr, eng)
+        return text
+
+    hedef_norm = normalize_text(hedef_isim)
     
-    # 2. İçinde geçme (Örn: "inter" in "inter milan")
-    for k, v in standings_dict.items():
-        if k in hedef or hedef in k: return v
+    # Standings sözlüğündeki anahtarları da normalize et
+    norm_dict = {normalize_text(k): v for k, v in standings_dict.items()}
+    
+    # 1. Birebir eşleşme
+    if hedef_norm in norm_dict: return norm_dict[hedef_norm]
+    
+    # 2. İçinde geçme durumu
+    for k, v in norm_dict.items():
+        if k in hedef_norm or hedef_norm in k: return v
         
-    # 3. Kelime bazlı kesişim (Örn: "hellas verona" -> "verona")
-    hedef_kelimeler = set([w for w in hedef.split() if len(w) > 3])
-    for k, v in standings_dict.items():
+    # 3. Kelime bazlı kesişim
+    hedef_kelimeler = set([w for w in hedef_norm.split() if len(w) > 3])
+    for k, v in norm_dict.items():
         k_kelimeler = set([w for w in k.split() if len(w) > 3])
         if len(hedef_kelimeler.intersection(k_kelimeler)) > 0:
             return v
@@ -205,7 +216,7 @@ st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>Geliş
 tab1, tab2 = st.tabs(["🎯 V300 OTONOM RADAR", "💼 FON YÖNETİMİ & KONTROL BİLANÇOSU"])
 
 c1, c2 = st.columns([2, 1])
-with c1: secilen_ligler = st.multiselect("Taranacak Ligleri Seçin:", list(API_LEAGUES.keys()), default=["İngiltere Premier Lig", "Almanya Bundesliga", "İtalya Serie A", "Polonya Ekstraklasa", "Belçika Pro Lig", "Hollanda Eredivisie"])
+with c1: secilen_ligler = st.multiselect("Taranacak Ligleri Seçin:", list(API_LEAGUES.keys()), default=["İngiltere Premier Lig", "Türkiye Süper Lig", "Almanya Bundesliga", "İtalya Serie A", "Polonya Ekstraklasa", "Belçika Pro Lig", "Hollanda Eredivisie"])
 with c2: api_key = st.text_input("The-Odds-API Anahtarı:", value=st.secrets.get("API_KEY", ""), type="password", key="odds_api_key")
 
 with tab1:
@@ -218,7 +229,6 @@ with tab1:
                 now_tr = now_utc + datetime.timedelta(hours=3)
                 
                 for lig in secilen_ligler:
-                    # Yeni isimli fonksiyon çağrılıyor
                     get_live_standings_v2(LEAGUE_IDS.get(lig, 0)) 
                     try:
                         url = f"https://api.the-odds-api.com/v4/sports/{API_LEAGUES[lig]}/odds/?apiKey={api_key.strip()}&regions=eu&markets=h2h,totals&oddsFormat=decimal"
@@ -264,7 +274,6 @@ with tab1:
                     dep_sira, dep_at, dep_ye, dep_son5 = '?', '?', '?', '?'
                     
                     if standings_data:
-                        # Akıllı Eşleştirme Motoru
                         ev_info = takim_eslestir(mac['home_team'], standings_data)
                         if ev_info:
                             ev_sira = ev_info.get('rank', '?')
