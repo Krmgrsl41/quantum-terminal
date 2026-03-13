@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import datetime
-from scipy.stats import poisson
 import concurrent.futures
 import requests
 import io
@@ -14,7 +13,7 @@ try:
 except ImportError:
     GSPREAD_INSTALLED = False
 
-# --- V300 FINAL APEX: BAĞIMSIZ PUAN DURUMU MOTORU ---
+# --- V300 FINAL APEX: TAM BAĞIMSIZ PUAN DURUMU MOTORU ---
 st.set_page_config(page_title="V300 APEX | PREMIUM FUND", layout="wide", page_icon="📈")
 
 st.markdown("""
@@ -87,11 +86,12 @@ for r in all_vals:
         except: pass
 st.session_state.ml_stats = ml_stats
 
+# LİG KODLARI
 LIG_MAP = {'T1': 'Türkiye Süper Lig', 'E0': 'İngiltere Premier Lig', 'D1': 'Almanya Bundesliga 1', 'N1': 'Hollanda Eredivisie', 'SP1': 'İspanya La Liga', 'I1': 'İtalya Serie A', 'F1': 'Fransa Ligue 1', 'B1': 'Belçika Pro Lig', 'P1': 'Portekiz Premier Lig', 'PL1': 'Polonya Ekstraklasa'}
 API_TO_DIV = {"soccer_turkey_super_league": "T1", "soccer_epl": "E0", "soccer_germany_bundesliga": "D1", "soccer_netherlands_eredivisie": "N1", "soccer_spain_la_liga": "SP1", "soccer_italy_serie_a": "I1", "soccer_france_ligue_one": "F1", "soccer_belgium_first_division_a": "B1", "soccer_portugal_primeira_liga": "P1", "soccer_poland_ekstraklasa": "PL1"}
 API_LEAGUES = {"İngiltere Premier Lig": "soccer_epl", "Almanya Bundesliga": "soccer_germany_bundesliga", "Türkiye Süper Lig": "soccer_turkey_super_league", "Hollanda Eredivisie": "soccer_netherlands_eredivisie", "İspanya La Liga": "soccer_spain_la_liga", "İtalya Serie A": "soccer_italy_serie_a", "Fransa Ligue 1": "soccer_france_ligue_one", "Belçika Pro Lig": "soccer_belgium_first_division_a", "Portekiz Premier Lig": "soccer_portugal_primeira_liga", "Polonya Ekstraklasa": "soccer_poland_ekstraklasa"}
 
-# --- SEZON BİLGİSİ EKLENMİŞ VERİTABANI MOTORU ---
+# --- 25/26 (2025-2026) GÜNCEL SEZONUNU KAPSAYAN VERİTABANI ---
 @st.cache_data(ttl=3600, show_spinner=False)
 def load_quantum_data():
     seasons = ['2526', '2425', '2324', '2223', '2122'] 
@@ -105,7 +105,7 @@ def load_quantum_data():
             if 'B365>2.5' in df.columns: df.rename(columns={'B365>2.5': 'B365O', 'B365<2.5': 'B365U'}, inplace=True)
             cols = ['Div', 'Date', 'HomeTeam', 'AwayTeam', 'B365H', 'B365D', 'B365A', 'B365O', 'B365U', 'FTR', 'FTHG', 'FTAG', 'HTR', 'HTHG', 'HTAG']
             df = df[[c for c in cols if c in df.columns]].dropna(subset=['B365H']).copy()
-            df['Season'] = s # Sezon bilgisini kaydet (Puan durumu için)
+            df['Season'] = s # Sezonu kaydet (Puan durumu hesaplarken lazım olacak)
             return df
         except: return pd.DataFrame()
     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor: results = list(executor.map(fetch, urls))
@@ -113,73 +113,105 @@ def load_quantum_data():
     return pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
 db = load_quantum_data()
 
-# --- YENİ: İÇ (BAĞIMSIZ) PUAN DURUMU HESAPLAMA MOTORU ---
-# Bu motor dışarıya bağımlı değildir. Güncel CSV dosyalarımızı okuyup lig tablosunu KENDİ çizer!
-def get_internal_stats_with_rank(hedef_isim, db_x):
-    try:
-        if 'Season' not in db_x.columns: return "?", "?", "?", "?"
-        latest_s = db_x['Season'].max() # En güncel sezonu bul (Örn: 2526)
-        df_s = db_x[db_x['Season'] == latest_s].copy()
-        
-        def norm(t): return str(t).lower().replace('ç','c').replace('ğ','g').replace('ı','i').replace('ö','o').replace('ş','s').replace('ü','u')
-        
-        # Puan Tablosunu Arka Planda Oluştur
-        teams = pd.concat([df_s['HomeTeam'], df_s['AwayTeam']]).dropna().unique()
-        table = []
-        for t in teams:
-            t_df = df_s[(df_s['HomeTeam'] == t) | (df_s['AwayTeam'] == t)]
-            pts = 0; gf = 0; ga = 0; form = []
-            for _, row in t_df.iterrows():
-                if row['HomeTeam'] == t:
-                    gf += row['FTHG']; ga += row['FTAG']
-                    if row['FTR'] == 'H': pts += 3; form.append('G')
-                    elif row['FTR'] == 'D': pts += 1; form.append('B')
-                    else: form.append('M')
-                else:
-                    gf += row['FTAG']; ga += row['FTHG']
-                    if row['FTR'] == 'A': pts += 3; form.append('G')
-                    elif row['FTR'] == 'D': pts += 1; form.append('B')
-                    else: form.append('M')
-            gd = gf - ga
-            table.append({'Team': t, 'Pts': pts, 'GD': gd, 'GF': gf, 'GA': ga, 'Form': "-".join(form[-5:]) if form else "?"})
-            
-        # Puan, Averaj ve Atılan Gole göre sırala
-        table_df = pd.DataFrame(table).sort_values(by=['Pts', 'GD', 'GF'], ascending=[False, False, False]).reset_index(drop=True)
-        table_df['Rank'] = table_df.index + 1
-        
-        # Eşleşen Takımı Bul
-        hedef = norm(hedef_isim)
-        t_match = None
-        for t in teams:
-            if hedef in norm(t) or norm(t) in hedef:
-                t_match = t; break
-                
-        if not t_match: return "?", "?", "?", "?"
-        
-        team_stats = table_df[table_df['Team'] == t_match].iloc[0]
-        return team_stats['Rank'], int(team_stats['GF']), int(team_stats['GA']), team_stats['Form']
-        
-    except Exception as e:
-        return "?", "?", "?", "?"
-
-def generate_ai_report(ev, dep, pazar, oran, ihtimal, ev_form, dep_form, cerrahi, ev_sira, ev_at, ev_ye, ev_son5, dep_sira, dep_at, dep_ye, dep_son5, lig):
-    rapor = f"Analizime göre sistem, bu maçta <span class='highlight-green'>{oran:.2f}</span> oranla <span class='highlight-gold'>[{pazar}]</span> pazarında ciddi bir matematiksel değer tespit etti. Kuantum Veritabanındaki eşleşmeler ve momentum ışığında maçın bu senaryoda bitme ihtimali net olarak <span class='highlight-green'>%{int(ihtimal*100)}</span>.<br><br>"
+# --- SIFIRDAN YAZILMIŞ %100 BAĞIMSIZ KENDİ PUAN MOTORUMUZ ---
+# (API-Football çöpe atıldı. Veriyi kendi okur, kendi hesaplar, kendi sıralar)
+@st.cache_data(ttl=3600, show_spinner=False)
+def calculate_internal_standings(league_code, db_data):
+    if not league_code or db_data.empty: return {}
     
-    rapor += f"<b>📊 {lig} Güncel Puan Durumu ve Form (Dahili Kuantum Motoru):</b><br>"
+    # Sadece o ligi filtrele
+    df_league = db_data[db_data['Div'] == league_code]
+    if df_league.empty: return {}
+    
+    # EN GÜNCEL sezonu bul (Şu an 2526)
+    latest_season = df_league['Season'].max()
+    df_s = df_league[df_league['Season'] == latest_season].copy()
+    
+    standings = {}
+    teams = pd.concat([df_s['HomeTeam'], df_s['AwayTeam']]).dropna().unique()
+    
+    for t in teams:
+        standings[t] = {'Pts': 0, 'GF': 0, 'GA': 0, 'Form': []}
+        
+    for _, row in df_s.iterrows():
+        home = row['HomeTeam']
+        away = row['AwayTeam']
+        hg = row['FTHG']
+        ag = row['FTAG']
+        
+        if pd.isna(hg) or pd.isna(ag): continue
+        
+        standings[home]['GF'] += int(hg)
+        standings[home]['GA'] += int(ag)
+        standings[away]['GF'] += int(ag)
+        standings[away]['GA'] += int(hg)
+        
+        if hg > ag:
+            standings[home]['Pts'] += 3; standings[home]['Form'].append('G')
+            standings[away]['Form'].append('M')
+        elif hg < ag:
+            standings[away]['Pts'] += 3; standings[away]['Form'].append('G')
+            standings[home]['Form'].append('M')
+        else:
+            standings[home]['Pts'] += 1; standings[away]['Pts'] += 1
+            standings[home]['Form'].append('B'); standings[away]['Form'].append('B')
+            
+    # Sıralama ve Formatlama
+    table = []
+    for t, stats in standings.items():
+        gd = stats['GF'] - stats['GA']
+        form_str = "-".join(stats['Form'][-5:]) if stats['Form'] else "?"
+        table.append({'Team': t, 'Pts': stats['Pts'], 'GD': gd, 'GF': stats['GF'], 'GA': stats['GA'], 'Form': form_str})
+        
+    df_table = pd.DataFrame(table).sort_values(by=['Pts', 'GD', 'GF'], ascending=[False, False, False]).reset_index(drop=True)
+    df_table['Rank'] = df_table.index + 1
+    
+    result_dict = {}
+    for _, row in df_table.iterrows():
+        result_dict[row['Team']] = row
+        
+    return result_dict
+
+# --- TÜRKÇE KARAKTER KALKANLI EŞLEŞTİRİCİ ---
+def takim_eslestir(hedef_isim, internal_standings_dict):
+    if not internal_standings_dict: return None
+    
+    def normalize_text(text):
+        if not isinstance(text, str): return ""
+        replacements = {'ç':'c', 'ğ':'g', 'ı':'i', 'ö':'o', 'ş':'s', 'ü':'u', 'Ç':'C', 'Ğ':'G', 'İ':'I', 'Ö':'O', 'Ş':'S', 'Ü':'U'}
+        text = text.lower().strip()
+        for tr, eng in replacements.items(): text = text.replace(tr, eng)
+        return text
+
+    hedef_norm = normalize_text(hedef_isim)
+    norm_dict = {normalize_text(k): v for k, v in internal_standings_dict.items()}
+    
+    if hedef_norm in norm_dict: return norm_dict[hedef_norm]
+    for k, v in norm_dict.items():
+        if k in hedef_norm or hedef_norm in k: return v
+    
+    hedef_kelimeler = set([w for w in hedef_norm.split() if len(w) > 3])
+    for k, v in norm_dict.items():
+        k_kelimeler = set([w for w in k.split() if len(w) > 3])
+        if len(hedef_kelimeler.intersection(k_kelimeler)) > 0: return v
+            
+    return None
+
+def generate_ai_report(ev, dep, pazar, oran, ihtimal, ev_sira, ev_at, ev_ye, ev_son5, dep_sira, dep_at, dep_ye, dep_son5, lig):
+    rapor = f"Analizime göre sistem, bu maçta <span class='highlight-green'>{oran:.2f}</span> oranla <span class='highlight-gold'>[{pazar}]</span> pazarında ciddi bir matematiksel değer tespit etti. Kuantum Veritabanındaki geçmiş eşleşmeler ışığında maçın bu senaryoda bitme ihtimali net olarak <span class='highlight-green'>%{int(ihtimal*100)}</span>.<br><br>"
+    
+    rapor += f"<b>📊 {lig} GÜNCEL Puan Durumu (Bağımsız Motor):</b><br>"
     if ev_sira != '?':
         rapor += f"• <b>{ev}</b> ligde <span class='highlight-gold'>{ev_sira}. sırada</span> bulunuyor. Rakip fileleri <b>{ev_at}</b> kez havalandırırken, kalesinde <b>{ev_ye}</b> gol gördü. Son 5 Maç Formu: <b>[{ev_son5}]</b><br>"
         rapor += f"• <b>{dep}</b> ise ligde <span class='highlight-gold'>{dep_sira}. sırada</span> yer alıyor. Attığı <b>{dep_at}</b> gole karşılık savunmasında <b>{dep_ye}</b> gol yedi. Son 5 Maç Formu: <b>[{dep_son5}]</b><br><br>"
     else:
-        rapor += f"• <i>Ligin güncel verileri hesaplanıyor... Algoritma doğrudan xG üzerinden karara vardı.</i><br><br>"
+        rapor += f"• <i>Bu lig için henüz yeterli veri oluşmamış olabilir. Algoritma xG hesaplaması üzerinden karara vardı.</i><br><br>"
         
     rapor += f"<b>🧠 V300 Kuantum Değerlendirmesi:</b><br>"
-    if pazar == "2.5 Üst": rapor += f"Her iki takımın attığı/yediği gol istatistikleri ve maç başı tempo (HT) verileri, savunma hatlarının kırılgan olduğunu ve gollerin erken geleceğini kanıtlıyor. "
-    elif pazar == "MS 1": rapor += f"Özellikle {ev} takımının kendi evindeki istikrarlı oyunu (Son form durumu: {ev_son5}) ve puan durumundaki motivasyonu, bu eşleşmede rakibine şans tanımayacağını gösteriyor. "
-    elif pazar == "2.5 Alt": rapor += f"Takımların gol kısırlığı ve puan durumundaki pozisyonları, maçı tamamen bir taktik savaşına çevirecektir. Temponun düşük kalması kuvvetle muhtemel. "
+    if pazar == "2.5 Üst": rapor += f"İki takımın hücum grafikleri ve savunma zafiyetleri, maçın bol gollü geçeceğini ve barajın aşılacağını kanıtlıyor. "
+    elif pazar == "MS 1": rapor += f"Ev sahibinin form durumu ve sıralamadaki konumu, bu maçta hata yapma lüksünü ortadan kaldırıyor. "
+    elif pazar == "2.5 Alt": rapor += f"Takımların gol kısırlığı ve puan durumundaki konumları maçı kilitli bir orta saha mücadelesine çevirecek. "
 
-    if cerrahi > 0:
-        rapor += f"<br><br>⚠️ <i>Güvenlik Notu: Sistem, olası ufak rotasyonlar ve teknik direktör değişiklikleri ihtimaline karşı genel başarı yüzdesinden <span class='alert-text'>%{int(cerrahi*100)}</span>'lük minimal bir 'Risk Kesintisi' yapmıştır.</i>"
-    
     rapor += f"<br><br><b>🎯 Sonuç:</b> Tüm veriler filtrelendiğinde en yüksek değerli oran (Value) <span class='highlight-gold'>{pazar}</span> tercihidir."
     return rapor
 
@@ -207,14 +239,14 @@ def check_match_result(sport_key, home, away, target_market, api_key):
 
 # --- ARAYÜZ ---
 st.markdown("<h1 style='text-align:center; color:#d4af37; font-size:52px; margin-bottom:0; text-shadow: 0 0 20px rgba(212,175,55,0.3);'>🧠 V300 APEX TERMINAL</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>Bağımsız Kuantum Veritabanı, Premium Arayüz ve Tam Özgür Fon Yönetimi</p><br>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>%100 Bağımsız Kuantum Motoru, Sınırsız Veri ve Tam Özgür Fon Yönetimi</p><br>", unsafe_allow_html=True)
 
 tab1, tab2 = st.tabs(["🎯 V300 OTONOM RADAR", "💼 FON YÖNETİMİ & KONTROL BİLANÇOSU"])
 
 c1, c2 = st.columns([2, 1])
-with c1: secilen_ligler = st.multiselect("Taranacak Ligleri Seçin:", list(API_LEAGUES.keys()), default=["İngiltere Premier Lig", "Türkiye Süper Lig", "Almanya Bundesliga", "İtalya Serie A", "Polonya Ekstraklasa", "Belçika Pro Lig", "Hollanda Eredivisie"])
+with c1: secilen_ligler = st.multiselect("Taranacak Ligleri Seçin:", list(API_LEAGUES.keys()), default=["İngiltere Premier Lig", "Türkiye Süper Lig", "Almanya Bundesliga", "İtalya Serie A", "Belçika Pro Lig", "Hollanda Eredivisie"])
 with c2: 
-    api_key = st.text_input("The-Odds-API Anahtarı:", value=st.secrets.get("API_KEY", ""), type="password", key="odds_api_key")
+    api_key = st.text_input("The-Odds-API (Sadece Oranlar İçin):", value=st.secrets.get("API_KEY", ""), type="password", key="odds_api_key")
     if st.button("🧹 SİSTEM HAFIZASINI TEMİZLE", use_container_width=True):
         st.cache_data.clear()
         st.success("✅ Hafıza başarıyla formatlandı!")
@@ -249,7 +281,7 @@ with tab1:
     if st.button("🧠 V300: YAPAY ZEKA MODELİNİ ÇALIŞTIR", use_container_width=True):
         if len(st.session_state.raw_api_data) == 0: st.warning("Önce 'MAÇLARI ÇEK' butonuna basın!")
         else:
-            with st.spinner("Bağımsız Kuantum Motoru lig tablolarını çiziyor ve Cerrahi Filtreyi uyguluyor..."):
+            with st.spinner("Bağımsız Kuantum Motoru Excel'den kendi Puan Durumunu hesaplıyor..."):
                 analiz_edilenler = []
                 def form_ve_ht(takim, db_x):
                     tk = str(takim)[:5]
@@ -269,9 +301,25 @@ with tab1:
                     gercek_lig_adi = mac.get('kendi_ligi', '')
                     aktif_db = db[db['Div'] == lig_kodu].copy() if lig_kodu else db.copy()
                     
-                    # DIŞA BAĞIMLI API YERİNE, KENDİ MOTORUMUZ ÇALIŞIYOR!
-                    ev_sira, ev_at, ev_ye, ev_son5 = get_internal_stats_with_rank(mac['home_team'], aktif_db)
-                    dep_sira, dep_at, dep_ye, dep_son5 = get_internal_stats_with_rank(mac['away_team'], aktif_db)
+                    # BAĞIMSIZ MOTORDAN PUAN DURUMUNU AL
+                    dahili_puan_durumu = calculate_internal_standings(lig_kodu, aktif_db)
+                    
+                    ev_sira, ev_at, ev_ye, ev_son5 = '?', '?', '?', '?'
+                    dep_sira, dep_at, dep_ye, dep_son5 = '?', '?', '?', '?'
+                    
+                    ev_info = takim_eslestir(mac['home_team'], dahili_puan_durumu)
+                    if ev_info is not None:
+                        ev_sira = ev_info['Rank']
+                        ev_at = ev_info['GF']
+                        ev_ye = ev_info['GA']
+                        ev_son5 = ev_info['Form']
+                        
+                    dep_info = takim_eslestir(mac['away_team'], dahili_puan_durumu)
+                    if dep_info is not None:
+                        dep_sira = dep_info['Rank']
+                        dep_at = dep_info['GF']
+                        dep_ye = dep_info['GA']
+                        dep_son5 = dep_info['Form']
 
                     if len(aktif_db) > 100:
                         h_odd, d_odd, a_odd, o25_odd, u25_odd = 2.50, 3.20, 2.80, 1.90, 1.90
@@ -331,8 +379,7 @@ with tab1:
                             mac['ai_rapor'] = generate_ai_report(
                                 mac['home_team'], mac['away_team'], en_iyi_pazar[0], 
                                 [x[2] for x in ev_targets if x[0]==en_iyi_pazar[0]][0], 
-                                son_prob, ev_formu, dep_formu, c_kesinti,
-                                ev_sira, ev_at, ev_ye, ev_son5, dep_sira, dep_at, dep_ye, dep_son5, gercek_lig_adi
+                                son_prob, ev_sira, ev_at, ev_ye, ev_son5, dep_sira, dep_at, dep_ye, dep_son5, gercek_lig_adi
                             )
                             analiz_edilenler.append(mac)
 
