@@ -257,7 +257,7 @@ with tab1:
                             if hev > en_iyi_ev:
                                 en_iyi_ev, en_iyi_pazar, son_prob = hev, (pazar, raw_prob, hev), kalibre
                                 
-                        if en_iyi_pazar and son_prob > 0.55:
+                        if en_iyi_pazar and son_prob > 0.53:
                             mac['hedef_pazar'] = en_iyi_pazar[0]
                             mac['kalibre_ihtimal'] = son_prob
                             mac['_g_score'] = en_iyi_pazar[2] 
