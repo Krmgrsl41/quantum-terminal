@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import datetime
-from scipy.stats import poisson
 import concurrent.futures
 import requests
 import io
@@ -14,7 +13,7 @@ try:
 except ImportError:
     GSPREAD_INSTALLED = False
 
-# --- V300 FINAL APEX: SAF MATEMATİK & ÖZGÜR KOMBİNE ---
+# --- V300 FINAL APEX: GÖLGE MODU (SHADOW TRADING) & SAF MATEMATİK ---
 st.set_page_config(page_title="V300 APEX | PREMIUM FUND", layout="wide", page_icon="📈")
 
 st.markdown("""
@@ -73,16 +72,17 @@ if 'lokal_kasa' not in st.session_state:
 
 if 'raw_api_data' not in st.session_state: st.session_state.raw_api_data = []
 
+# --- ML BEYNİ: ARTIK SANAL EĞİTİMLERİ DE OKUYOR ---
 ml_stats = {} 
 for r in all_vals:
-    if len(r) >= 11 and r[3] in ["Kazandı_Sonuc", "Kaybetti_Sonuc"]:
+    if len(r) >= 11 and r[3] in ["Kazandı_Sonuc", "Kaybetti_Sonuc", "Sanal_Kazandı", "Sanal_Kaybetti"]:
         try:
             ligler = r[9].split('#') if len(r) > 10 else r[8].split('#')
             pazarlar = r[10].split('#') if len(r) > 10 else r[9].split('#')
             for l, p in zip(ligler, pazarlar):
                 key = f"{l}|{p}"
                 if key not in ml_stats: ml_stats[key] = {'w': 0, 'l': 0}
-                if r[3] == "Kazandı_Sonuc": ml_stats[key]['w'] += 1
+                if r[3] in ["Kazandı_Sonuc", "Sanal_Kazandı"]: ml_stats[key]['w'] += 1
                 else: ml_stats[key]['l'] += 1
         except: pass
 st.session_state.ml_stats = ml_stats
@@ -110,7 +110,6 @@ def load_quantum_data():
     return pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
 db = load_quantum_data()
 
-# --- SADELEŞTİRİLMİŞ, NET VE MATEMATİKSEL AI RAPORU ---
 def generate_ai_report(ev, dep, pazar, oran, ihtimal, cerrahi):
     rapor = f"Sistem, bu eşleşmede küresel bahis piyasalarında <span class='highlight-green'>{oran:.2f}</span> oranla <span class='highlight-gold'>[{pazar}]</span> pazarında belirgin bir matematiksel hata (Value) tespit etti. Kuantum Veritabanındaki 25 yıllık xG (Gol Beklentisi) ve momentum analizine göre maçın bu senaryoda bitme ihtimali <span class='highlight-green'>%{int(ihtimal*100)}</span> olarak hesaplanmıştır.<br><br>"
     
@@ -149,7 +148,7 @@ def check_match_result(sport_key, home, away, target_market, api_key):
 
 # --- ARAYÜZ ---
 st.markdown("<h1 style='text-align:center; color:#d4af37; font-size:52px; margin-bottom:0; text-shadow: 0 0 20px rgba(212,175,55,0.3);'>🧠 V300 APEX TERMINAL</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>Saf Matematiksel Analiz, Value Tespiti ve Tam Özgür Fon Yönetimi</p><br>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>Saf Matematiksel Analiz, Gölge Modu (Sanal Eğitim) ve Özgür Fon Yönetimi</p><br>", unsafe_allow_html=True)
 
 tab1, tab2 = st.tabs(["🎯 V300 OTONOM RADAR", "💼 FON YÖNETİMİ & KONTROL BİLANÇOSU"])
 
@@ -208,7 +207,6 @@ with tab1:
 
                 for mac in st.session_state.raw_api_data:
                     lig_kodu = API_TO_DIV.get(mac.get('sport_key'))
-                    gercek_lig_adi = mac.get('kendi_ligi', '')
                     aktif_db = db[db['Div'] == lig_kodu].copy() if lig_kodu else db.copy()
 
                     if len(aktif_db) > 100:
@@ -278,8 +276,8 @@ with tab1:
 
     if 'top_adaylar' in st.session_state and len(st.session_state.top_adaylar) > 0:
         st.divider()
-        st.markdown("<h2 style='color:#00ffcc;'>🎯 OTONOM KOMBİNE STÜDYOSU (Özel Seçim)</h2>", unsafe_allow_html=True)
-        st.markdown("<p style='color:#8b949e;'><i>Aşağıdaki listeden fon sepetine eklemek istediğiniz maçları işaretleyin. Sistem sadece seçtiğiniz maçların oranlarını çarpacaktır.</i></p>", unsafe_allow_html=True)
+        st.markdown("<h2 style='color:#00ffcc;'>🎯 OTONOM KOMBİNE STÜDYOSU</h2>", unsafe_allow_html=True)
+        st.markdown("<p style='color:#8b949e;'><i>İstediğiniz maçları işaretleyin. Ardından Gerçek Kasa ile yatırım yapabilir veya Gölge Modu ile sadece sistemin kendini eğitmesi için sanal kayıt oluşturabilirsiniz.</i></p>", unsafe_allow_html=True)
         
         yasal_oranlar = {}
         for i, m in enumerate(st.session_state.top_adaylar):
@@ -287,7 +285,7 @@ with tab1:
             
             st.markdown(f"<div class='match-card'><div class='match-title'>{m['home_team']} ⚡ {m['away_team']} {badge}</div><span style='color:#8b949e; font-size:16px;'>İhtimal: <b style='color:#fff;'>%{int(m['kalibre_ihtimal']*100)}</b> | Lig: {m['kendi_ligi']}</span><br><div class='target-market'>Hedef: {m['hedef_pazar']}</div>", unsafe_allow_html=True)
             
-            with st.expander("🤖 Gelişmiş Yapay Zeka (Fon Analisti) Raporunu Oku"):
+            with st.expander("🤖 Matematiksel Değer (Value) Raporunu Oku"):
                 st.markdown(f"<div class='ai-report'>{m['ai_rapor']}</div>", unsafe_allow_html=True)
                 
             c_sec, c_oran = st.columns([1, 1])
@@ -300,30 +298,33 @@ with tab1:
             st.markdown("</div>", unsafe_allow_html=True)
             
         st.markdown("<hr style='border:1px solid #2d3748;'>", unsafe_allow_html=True)
-        manuel_tutar = st.number_input("💵 Kupona Yatırılacak Tutar (TL):", min_value=10.0, value=100.0, step=10.0)
+        manuel_tutar = st.number_input("💵 Kupona Yatırılacak Tutar (Sanal İşlemde Dikkate Alınmaz):", min_value=10.0, value=100.0, step=10.0)
             
-        if st.button("🚀 KOMBİNEYİ ONAYLA (Fon Sistemine Gönder)", use_container_width=True):
-            secilen_maclar = []
-            for d in yasal_oranlar.values():
-                if d['secildi']:
-                    secilen_maclar.append({
-                        'isim': f"{d['match']['home_team']} - {d['match']['away_team']}", 
-                        'h': d['match']['home_team'], 
-                        'a': d['match']['away_team'], 
-                        'tercih': d['match']['hedef_pazar'], 
-                        'oran': d['oran'], 
-                        'prob': d['match']['kalibre_ihtimal'], 
-                        'lig': d['match']['sport_key']
-                    })
+        # --- İKİ FARKLI ONAY BUTONU (GERÇEK ve SANAL) ---
+        c_btn_real, c_btn_shadow = st.columns(2)
+        
+        with c_btn_real:
+            btn_gercek = st.button("🚀 KOMBİNEYİ ONAYLA (Gerçek Kasa)", use_container_width=True)
+        with c_btn_shadow:
+            btn_sanal = st.button("👻 GÖLGE MODU: SANAL EĞİTİM (0 TL)", use_container_width=True)
+            
+        if btn_gercek or btn_sanal:
+            secilen_maclar = [d for d in yasal_oranlar.values() if d['secildi']]
             
             if len(secilen_maclar) > 0:
                 toplam_oran = 1.0
-                for s in secilen_maclar:
-                    toplam_oran *= s['oran']
+                for s in secilen_maclar: toplam_oran *= s['oran']
                 
-                yatirilacak_tutar = manuel_tutar
-                st.session_state.lokal_kasa -= yatirilacak_tutar
-                st.session_state.bekleyen_tutar += yatirilacak_tutar
+                if btn_gercek:
+                    yatirilacak_tutar = manuel_tutar
+                    st.session_state.lokal_kasa -= yatirilacak_tutar
+                    st.session_state.bekleyen_tutar += yatirilacak_tutar
+                    durum_text = "Bekliyor"
+                    mesaj = f"✅ İşlem Başarılı! {len(secilen_maclar)} maçlık Gerçek Kombine {yatirilacak_tutar:.0f} TL bakiye ile yatırıldı."
+                else:
+                    yatirilacak_tutar = 0.0 # SANAL KASA İŞLEMİ (KASAYA DOKUNMAZ)
+                    durum_text = "Sanal_Bekliyor"
+                    mesaj = f"👻 Gölge Modu Aktif! {len(secilen_maclar)} maç, sistemin kendini eğitmesi için 0 TL riskle Sanal Havuza eklendi."
                 
                 if sheet:
                     isimler = "#".join([f"{s['h']} vs {s['a']}" for s in secilen_maclar])
@@ -332,13 +333,13 @@ with tab1:
                     problar = "#".join([f"{s['prob']:.3f}" for s in secilen_maclar])
                     oranlar = "#".join([f"{s['oran']:.2f}" for s in secilen_maclar])
                     
-                    sheet.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), yatirilacak_tutar, toplam_oran, "Bekliyor", "0", st.session_state.lokal_kasa, st.session_state.bekleyen_tutar, st.session_state.baslangic_kasa, isimler, ligler, tercihler, problar, oranlar])
+                    sheet.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), yatirilacak_tutar, toplam_oran, durum_text, "0", st.session_state.lokal_kasa, st.session_state.bekleyen_tutar, st.session_state.baslangic_kasa, isimler, ligler, tercihler, problar, oranlar])
                 
                 st.session_state.top_adaylar = []
-                st.success(f"✅ İşlem Başarılı! {len(secilen_maclar)} maçlık Özel Kombine {yatirilacak_tutar:.0f} TL bakiye ile sisteme kilitlendi. Skorlar kendi kendine denetlenecek.")
+                st.success(mesaj)
                 st.rerun()
             else:
-                st.error("🚨 Kupon oluşturmak için lütfen listeden en az 1 maç seçin!")
+                st.error("🚨 İşlem yapmak için lütfen listeden en az 1 maç seçin!")
 
 with tab2:
     st.markdown("<h2 style='color:#d4af37;'>💼 Kuantum Fon Bilanço Özeti</h2>", unsafe_allow_html=True)
@@ -369,15 +370,17 @@ with tab2:
     st.divider()
     
     c_btn1, c_btn2 = st.columns([3,1])
-    with c_btn1: st.markdown("<h3>📝 Bekleyen Otonom Kuponlar</h3>", unsafe_allow_html=True)
+    with c_btn1: st.markdown("<h3>📝 Bekleyen Kuponlar (Gerçek & Sanal)</h3>", unsafe_allow_html=True)
     with c_btn2:
         if st.button("🤖 OTONOM DENETÇİYİ ÇALIŞTIR", use_container_width=True):
             if not api_key: st.error("Lütfen Ayarlar kısmına Odds API anahtarınızı girin!")
             else:
-                with st.spinner("Tüm bekleyen maçların canlı skorları taranıyor..."):
+                with st.spinner("Tüm bekleyen ve sanal maçların canlı skorları taranıyor..."):
                     updates_made = False
                     for idx, r in enumerate(all_vals):
-                        if len(r) > 12 and r[3] == "Bekliyor":
+                        # ARTIK HEM GERÇEK BEKLEYENLERİ HEM DE SANAL BEKLEYENLERİ DENETLİYOR
+                        if len(r) > 12 and r[3] in ["Bekliyor", "Sanal_Bekliyor"]:
+                            is_sanal = (r[3] == "Sanal_Bekliyor")
                             b_tutar = float(str(r[1]).replace(',','.'))
                             b_oran = float(str(r[2]).replace(',','.'))
                             
@@ -403,30 +406,45 @@ with tab2:
                             
                             if nihai_sonuc != "BEKLİYOR":
                                 updates_made = True
-                                sheet.update_cell(idx+1, 4, "Bekliyor_Kapandı")
+                                # Durumu güncelle
+                                sheet.update_cell(idx+1, 4, "Bekliyor_Kapandı" if not is_sanal else "Sanal_Kapandı")
                                 yeni_satir = [datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), b_tutar, b_oran]
+                                
                                 if nihai_sonuc == "KAZANDI":
-                                    st.session_state.lokal_kasa += (b_tutar * b_oran)
-                                    st.session_state.bekleyen_tutar = max(0.0, st.session_state.bekleyen_tutar - b_tutar)
-                                    yeni_satir.extend(["Kazandı_Sonuc", f"+{(b_tutar * b_oran) - b_tutar}"])
+                                    if not is_sanal:
+                                        st.session_state.lokal_kasa += (b_tutar * b_oran)
+                                        st.session_state.bekleyen_tutar = max(0.0, st.session_state.bekleyen_tutar - b_tutar)
+                                        yeni_satir.extend(["Kazandı_Sonuc", f"+{(b_tutar * b_oran) - b_tutar}"])
+                                    else:
+                                        yeni_satir.extend(["Sanal_Kazandı", "0"]) # Kasaya etkisi 0
                                 else:
-                                    st.session_state.bekleyen_tutar = max(0.0, st.session_state.bekleyen_tutar - b_tutar)
-                                    yeni_satir.extend(["Kaybetti_Sonuc", f"-{b_tutar}"])
+                                    if not is_sanal:
+                                        st.session_state.bekleyen_tutar = max(0.0, st.session_state.bekleyen_tutar - b_tutar)
+                                        yeni_satir.extend(["Kaybetti_Sonuc", f"-{b_tutar}"])
+                                    else:
+                                        yeni_satir.extend(["Sanal_Kaybetti", "0"]) # Kasaya etkisi 0
                                     
                                 yeni_satir.extend([st.session_state.lokal_kasa, st.session_state.bekleyen_tutar, st.session_state.baslangic_kasa])
                                 yeni_satir.extend([r[8] + f" (Skorlar: {' | '.join(skorlar)})"] + r[9:])
                                 sheet.append_row(yeni_satir)
                     
                     if updates_made:
-                        st.success("✅ Maçlar sonuçlandırıldı, Kasa güncellendi!")
+                        st.success("✅ Maçlar sonuçlandırıldı, ML Hafızası güncellendi!")
                         st.rerun()
                     else:
                         st.info("Maçlar henüz bitmemiş veya sonuçlanması bekleniyor.")
 
-    bekleyenler = [(idx+1, r) for idx, r in enumerate(all_vals) if len(r) > 3 and r[3] == "Bekliyor"]
-    if not bekleyenler: st.info("Şu an bekleyen yatırımınız bulunmamaktadır.")
+    bekleyenler = [(idx+1, r) for idx, r in enumerate(all_vals) if len(r) > 3 and r[3] in ["Bekliyor", "Sanal_Bekliyor"]]
+    if not bekleyenler: st.info("Şu an bekleyen veya sanal eğitimde olan bir yatırımınız bulunmamaktadır.")
     else:
         for row_idx, r in bekleyenler:
+            is_sanal = (r[3] == "Sanal_Bekliyor")
             b_tutar, b_oran = float(str(r[1]).replace(',','.').strip()), float(str(r[2]).replace(',','.').strip())
             mac_isimleri = r[8].replace('#', ' | ') if len(r) > 10 else "Eski Format Kupon"
-            st.markdown(f"<div style='background: linear-gradient(to right, #1a202c, #11161d); border-left: 4px solid #ffcc00; padding:20px; border-radius:10px; margin-bottom:15px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);'><b style='font-size:18px;'>Maçlar:</b> <span style='color:#e2e8f0;'>{mac_isimleri}</span><br><br><b style='font-size:16px;'>Tutar:</b> <span style='color:#00ffcc; font-size:18px; font-weight:bold;'>{b_tutar:.0f} TL</span> &nbsp;|&nbsp; <b style='font-size:16px;'>Toplam Oran:</b> <span style='color:#d4af37; font-size:18px; font-weight:bold;'>{b_oran:.2f}</span> <br><br><i style='color:#8b949e; font-size:14px;'>Otonom Denetçi bekleniyor...</i></div>", unsafe_allow_html=True)
+            
+            # Sanal işlemler için gri/hayalet stili, gerçekler için altın/neon stili
+            border_color = "#4a5568" if is_sanal else "#ffcc00"
+            tutar_text = "<span style='color:#a0aec0;'>0 TL (Sanal)</span>" if is_sanal else f"<span style='color:#00ffcc;'>{b_tutar:.0f} TL</span>"
+            bg_color = "linear-gradient(to right, #111827, #0d1117)" if is_sanal else "linear-gradient(to right, #1a202c, #11161d)"
+            
+            st.markdown(f"<div style='background: {bg_color}; border-left: 4px solid {border_color}; padding:20px; border-radius:10px; margin-bottom:15px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);'><b style='font-size:18px;'>Maçlar:</b> <span style='color:#e2e8f0;'>{mac_isimleri}</span><br><br><b style='font-size:16px;'>Tutar:</b> <span style='font-size:18px; font-weight:bold;'>{tutar_text}</span> &nbsp;|&nbsp; <b style='font-size:16px;'>Toplam Oran:</b> <span style='color:#d4af37; font-size:18px; font-weight:bold;'>{b_oran:.2f}</span> <br><br><i style='color:#8b949e; font-size:14px;'>Otonom Denetçi bekleniyor... {'(ML Eğitimi)' if is_sanal else ''}</i></div>", unsafe_allow_html=True)
