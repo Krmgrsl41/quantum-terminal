@@ -51,7 +51,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-API_SPORTS_KEY = "a29870611e6831abfb4beca2c86f7be0"
+API_SPORTS_KEY = "2a3a105efb62cf7033b00e86294814e7"
 
 @st.cache_resource(ttl=600)
 def init_google_sheets():
