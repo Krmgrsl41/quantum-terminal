@@ -14,8 +14,8 @@ try:
 except ImportError:
     GSPREAD_INSTALLED = False
 
-# --- V300 APEX: QUANTUM ENSEMBLE AI ---
-st.set_page_config(page_title="V300 APEX | AUTONOMOUS FUND", layout="wide", page_icon="🧠")
+# --- V300 FINAL APEX: OTONOM SKOR & QUANTUM AI ---
+st.set_page_config(page_title="V300 FINAL | AUTONOMOUS FUND", layout="wide", page_icon="🧠")
 
 st.markdown("""
     <style>
@@ -25,7 +25,7 @@ st.markdown("""
     .metric-box { background: #0c1015; border: 1px solid #1e2530; padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
     .metric-title { color: #8b949e; font-size: 14px; font-weight: 800; text-transform: uppercase; }
     .metric-value { font-size: 36px; font-weight: 900; color: #00ffcc; margin: 10px 0; }
-    .match-card { background: #0c1015; border: 1px solid #1e2530; border-left: 4px solid #00ffcc; padding: 20px; border-radius: 10px; margin-bottom: 15px; position: relative; }
+    .match-card { background: #0c1015; border: 1px solid #1e2530; border-left: 4px solid #00ffcc; padding: 20px; border-radius: 10px; margin-bottom: 15px; }
     .target-market { color: #00ffcc; font-weight: 900; font-size: 18px; background: rgba(0, 255, 204, 0.1); padding: 5px 10px; border-radius: 5px; }
     .ai-badge { background: #d4af37; color: #000; font-size: 12px; padding: 4px 10px; border-radius: 6px; font-weight: 900; margin-left: 10px; display: inline-block;}
     .ai-report { background: rgba(212, 175, 55, 0.05); border-left: 3px solid #d4af37; padding: 15px; margin-top: 15px; font-style: italic; font-size: 14px; color: #ccc;}
@@ -34,6 +34,7 @@ st.markdown("""
 
 # API ANAHTARLARI
 API_SPORTS_KEY = "a29870611e6831abfb4beca2c86f7be0"
+# Kendi Odds API anahtarını arayüzden gireceksin.
 
 # --- GOOGLE SHEETS & HAFIZA ---
 @st.cache_resource(ttl=600)
@@ -57,23 +58,28 @@ if 'lokal_kasa' not in st.session_state:
     else: st.session_state.lokal_kasa, st.session_state.bekleyen_tutar, st.session_state.baslangic_kasa = 10000.0, 0.0, 10000.0
 
 if 'raw_api_data' not in st.session_state: st.session_state.raw_api_data = []
-if 'pending_slip' not in st.session_state: st.session_state.pending_slip = None 
 
-# ML EĞİTİM VERİSİ
+# ML EĞİTİM VERİSİ OKUMA (Geriye Dönük Uyumluluk)
 ml_stats = {} 
 for r in all_vals:
-    if len(r) >= 12 and r[3] in ["Kazandı_Sonuc", "Kaybetti_Sonuc"]:
-        for l, p in zip(r[8].split('#'), r[9].split('#')):
-            key = f"{l}|{p}"
-            if key not in ml_stats: ml_stats[key] = {'w': 0, 'l': 0}
-            if r[3] == "Kazandı_Sonuc": ml_stats[key]['w'] += 1
-            else: ml_stats[key]['l'] += 1
+    if len(r) >= 11 and r[3] in ["Kazandı_Sonuc", "Kaybetti_Sonuc"]:
+        try:
+            # V300 Final'de Ligler 9. Kolon, Pazarlar 10. Kolonda (Index 9 ve 10)
+            ligler = r[9].split('#') if len(r) > 10 else r[8].split('#')
+            pazarlar = r[10].split('#') if len(r) > 10 else r[9].split('#')
+            for l, p in zip(ligler, pazarlar):
+                key = f"{l}|{p}"
+                if key not in ml_stats: ml_stats[key] = {'w': 0, 'l': 0}
+                if r[3] == "Kazandı_Sonuc": ml_stats[key]['w'] += 1
+                else: ml_stats[key]['l'] += 1
+        except: pass
 st.session_state.ml_stats = ml_stats
 
-# --- 25 YILLIK DEV TARİHSEL VERİTABANI (İLK YARI HT VERİLERİ EKLENDİ) ---
 LIG_MAP = {'T1': 'Türkiye Süper Lig', 'E0': 'İngiltere Premier Lig', 'D1': 'Almanya Bundesliga 1', 'N1': 'Hollanda Eredivisie'}
 API_TO_DIV = {"soccer_turkey_super_league": "T1", "soccer_epl": "E0", "soccer_germany_bundesliga": "D1", "soccer_netherlands_eredivisie": "N1"}
+LEAGUE_IDS = {"Hollanda Eredivisie": 88, "Almanya Bundesliga": 78, "Türkiye Süper Lig": 203, "İngiltere Premier Lig": 39}
 
+# --- TARİHSEL VERİTABANI ---
 @st.cache_data(ttl=3600, show_spinner=False)
 def load_quantum_data():
     seasons = ['2324', '2223', '2122', '2021', '1920'] 
@@ -85,18 +91,16 @@ def load_quantum_data():
             if r.status_code != 200: return pd.DataFrame()
             df = pd.read_csv(io.StringIO(r.text))
             if 'B365>2.5' in df.columns: df.rename(columns={'B365>2.5': 'B365O', 'B365<2.5': 'B365U'}, inplace=True)
-            # İLK YARI (HT) VERİLERİ V300 İÇİN EKLENDİ
             cols = ['Div', 'Date', 'HomeTeam', 'AwayTeam', 'B365H', 'B365D', 'B365A', 'B365O', 'B365U', 'FTR', 'FTHG', 'FTAG', 'HTR', 'HTHG', 'HTAG']
             return df[[c for c in cols if c in df.columns]].dropna(subset=['B365H']).copy()
         except: return pd.DataFrame()
     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor: results = list(executor.map(fetch, urls))
     dfs = [res for res in results if not res.empty]
     return pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
-
 db = load_quantum_data()
 
-# --- V300: API-FOOTBALL CANLI PUAN DURUMU & MOTİVASYON MOTORU ---
-@st.cache_data(ttl=18000, show_spinner=False) # Günde kısıtlı çekim, kotayı korur
+# --- PUAN DURUMU ---
+@st.cache_data(ttl=18000, show_spinner=False)
 def get_live_standings(league_id, season="2023"):
     try:
         url = f"https://v3.football.api-sports.io/standings?league={league_id}&season={season}"
@@ -108,42 +112,60 @@ def get_live_standings(league_id, season="2023"):
     except: pass
     return {}
 
-# LİG ID EŞLEŞTİRMELERİ (API-FOOTBALL)
-LEAGUE_IDS = {"Hollanda Eredivisie": 88, "Almanya Bundesliga": 78, "Türkiye Süper Lig": 203, "İngiltere Premier Lig": 39}
-
-# --- YAPAY ZEKA SÖZEL ANALİSTİ (LLM SİMÜLASYONU) ---
-def generate_ai_report(ev, dep, pazar, oran, ihtimal, ev_form, dep_form, cerrahi_kesinti):
-    rapor = f"**Quant Fonu Yatırım Özeti:** Sistem, İddaa'nın açtığı {oran:.2f} oranında ciddi bir fiyatlama hatası tespit etti. "
-    rapor += f"Tarihsel veriler ve güncel momentum ışığında bu maçın {pazar} bitme ihtimali net olarak %{int(ihtimal*100)} seviyesinde. "
-    if ev_form > 1.0: rapor += f"{ev} son dönemde formda ve xG (Beklenen Gol) kapasitesini sahaya yansıtıyor. "
-    elif dep_form > 1.0: rapor += f"Deplasman ekibi {dep} ise ciddi bir momentum yakalamış durumda. "
-    if cerrahi_kesinti > 0: rapor += f"Sistem, maç öncesi olası eksiklikleri ve riskleri 'Cerrahi Filtre' ile taradı ve ihtimalden %{int(cerrahi_kesinti*100)} güvenlik kesintisi yaptı. Buna rağmen oran değerini (Value) koruyor. "
-    rapor += f"Psikolojik hedefsizlik (Ölü Bölge) riski taşımayan bu eşleşmede, matematiksel avantaj (Edge) tamamen bizim tarafımızda. Hedef net: **{pazar}**."
+def generate_ai_report(ev, dep, pazar, oran, ihtimal, ev_form, cerrahi):
+    rapor = f"**Quant Fonu Yatırım Özeti:** Sistem {oran:.2f} oranında pazar hatası tespit etti. "
+    rapor += f"Tarihsel veriler ve momentum ışığında maçın {pazar} bitme ihtimali net olarak %{int(ihtimal*100)}. "
+    if cerrahi > 0: rapor += f"Sistem olası eksiklikleri ve riskleri tarayarak %{int(cerrahi*100)}'lik 'Cerrahi Güvenlik Kesintisi' yaptı. Buna rağmen oran değerini koruyor. "
+    rapor += f"Matematiksel avantaj (Edge) lehimize. Hedef net: **{pazar}**."
     return rapor
 
+# --- OTONOM SKOR DENETÇİSİ (YENİ EKLENDİ) ---
+def check_match_result(sport_key, home, away, target_market, api_key):
+    url = f"https://api.the-odds-api.com/v4/sports/{sport_key}/scores/?apiKey={api_key}&daysFrom=3"
+    try:
+        resp = requests.get(url).json()
+        for m in resp:
+            if m['home_team'] == home and m['away_team'] == away:
+                if m.get('completed', False):
+                    scores = m.get('scores', [])
+                    if not scores: return "BEKLİYOR", "-"
+                    h_score = int(scores[0]['score']) if scores[0]['name'] == home else int(scores[1]['score'])
+                    a_score = int(scores[1]['score']) if scores[1]['name'] == away else int(scores[0]['score'])
+                    
+                    total = h_score + a_score
+                    won = False
+                    if target_market == "2.5 Üst" and total > 2: won = True
+                    elif target_market == "2.5 Alt" and total < 3: won = True
+                    elif target_market == "MS 1" and h_score > a_score: won = True
+                    elif target_market == "MS 2" and a_score > h_score: won = True
+                    elif target_market == "MS 0" and h_score == a_score: won = True
+                    
+                    return ("KAZANDI" if won else "KAYBETTİ"), f"{h_score}-{a_score}"
+        return "BEKLİYOR", "Maç Bitmedi"
+    except: return "BEKLİYOR", "Hata"
+
 # --- ARAYÜZ ---
-st.markdown("<h1 style='text-align:center; color:#d4af37; font-size:48px; margin-bottom:0;'>🧠 QUANTUM V300 APEX</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:#8b949e; font-size:16px;'>Cerrahi Filtre, HT Momentum & Tam Otonom AI Analist</p><br>", unsafe_allow_html=True)
-tab1, tab2 = st.tabs(["🎯 V300 OTONOM RADAR", "💼 FON YÖNETİMİ"])
+st.markdown("<h1 style='text-align:center; color:#d4af37; font-size:48px; margin-bottom:0;'>🧠 V300 FINAL APEX</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#8b949e; font-size:16px;'>Tam Otonom Fon: Cerrahi Filtre, HT Momentum & Otomatik Skor Kapanışı</p><br>", unsafe_allow_html=True)
+
+tab1, tab2 = st.tabs(["🎯 V300 RADARI", "💼 FON YÖNETİMİ & KONTROL"])
+
+API_LEAGUES = {"Hollanda Eredivisie": "soccer_netherlands_eredivisie", "Almanya Bundesliga": "soccer_germany_bundesliga", "Türkiye Süper Lig": "soccer_turkey_super_league", "İngiltere Premier Lig": "soccer_epl"}
+c1, c2 = st.columns([2, 1])
+with c1: secilen_ligler = st.multiselect("Taranacak Ligleri Seçin:", list(API_LEAGUES.keys()), default=["Hollanda Eredivisie", "Almanya Bundesliga"])
+with c2: api_key = st.text_input("The-Odds-API Anahtarı:", value=st.secrets.get("API_KEY", ""), type="password", key="odds_api_key")
 
 with tab1:
-    API_LEAGUES = {"Hollanda Eredivisie": "soccer_netherlands_eredivisie", "Almanya Bundesliga": "soccer_germany_bundesliga", "Türkiye Süper Lig": "soccer_turkey_super_league", "İngiltere Premier Lig": "soccer_epl"}
-    c1, c2 = st.columns([2, 1])
-    with c1: secilen_ligler = st.multiselect("Taranacak Ligleri Seçin:", list(API_LEAGUES.keys()), default=["Hollanda Eredivisie", "Almanya Bundesliga"])
-    with c2: api_key = st.text_input("The-Odds-API Anahtarı:", value=st.secrets.get("API_KEY", ""), type="password")
-    
-    if st.button("📡 SADECE BUGÜNÜN MAÇLARINI ÇEK (Day-Trade Filtresi)"):
+    if st.button("📡 SADECE BUGÜNÜN MAÇLARINI ÇEK (Day-Trade)"):
         if not api_key: st.error("API Anahtarı eksik!")
         else:
-            with st.spinner("Sadece bugünün maçları küresel piyasalardan ve API-Football'dan çekiliyor..."):
+            with st.spinner("Sadece bugünün maçları küresel piyasalardan çekiliyor..."):
                 toplanan_maclar = []
                 now_utc = datetime.datetime.now(datetime.timezone.utc)
                 now_tr = now_utc + datetime.timedelta(hours=3) # TÜRKİYE SAATİ (UTC+3)
                 
                 for lig in secilen_ligler:
-                    # 1. Puan Durumu Motorunu Çalıştır (Arka Planda)
-                    get_live_standings(LEAGUE_IDS.get(lig, 0))
-                    
+                    get_live_standings(LEAGUE_IDS.get(lig, 0)) # Puan durumu hazırlığı
                     try:
                         url = f"https://api.the-odds-api.com/v4/sports/{API_LEAGUES[lig]}/odds/?apiKey={api_key.strip()}&regions=eu&markets=h2h,totals&oddsFormat=decimal"
                         resp = requests.get(url).json()
@@ -152,48 +174,37 @@ with tab1:
                                 m['kendi_ligi'] = lig
                                 m_time = datetime.datetime.fromisoformat(m['commence_time'].replace('Z', '+00:00'))
                                 m_time_tr = m_time + datetime.timedelta(hours=3)
-                                
-                                # GÜNLÜK FİLTRE: SADECE BUGÜN (TÜRKİYE SAATİYLE) OYNANANLAR
+                                # SADECE BUGÜN FİLTRESİ
                                 if now_utc < m_time and now_tr.date() == m_time_tr.date():
                                     toplanan_maclar.append(m)
                     except: pass
                 st.session_state.raw_api_data = toplanan_maclar
-                st.success(f"✅ Sistem güncellendi! Sadece BUGÜN (Türkiye Saatiyle) oynanacak {len(toplanan_maclar)} maç otonom havuza alındı.")
+                st.success(f"✅ Sistem güncellendi! Sadece BUGÜN (TR Saati) oynanacak {len(toplanan_maclar)} maç otonom havuza alındı.")
+    
     st.divider()
 
     if st.button("🧠 V300: KOLEKTİF MODELİ ÇALIŞTIR"):
         if len(st.session_state.raw_api_data) == 0: st.warning("Önce 'MAÇLARI ÇEK' butonuna basın!")
         else:
-            with st.spinner("HT Momentum, Motivasyon Çarpanı ve Cerrahi Filtre analiz ediliyor..."):
+            with st.spinner("HT Momentum, Motivasyon ve Cerrahi Filtre devrede..."):
                 analiz_edilenler = []
-                
-                def form_ve_ht_hesapla(takim_adi, aktif_db):
-                    takim_kisa = str(takim_adi)[:5]
-                    son_maclar = aktif_db[(aktif_db['HomeTeam'].str.contains(takim_kisa, case=False, na=False)) | (aktif_db['AwayTeam'].str.contains(takim_kisa, case=False, na=False))].tail(5)
-                    if len(son_maclar) == 0: return 1.0, 0 
-                    toplam_puan = 0
-                    ht_ust_sayisi = 0 # İlk Yarı fırtına gibi başlayanlar
-                    for _, mac in son_maclar.iterrows():
-                        ev_mi = takim_kisa.lower() in str(mac['HomeTeam']).lower()
-                        if ev_mi and mac['FTR'] == 'H': toplam_puan += 3
-                        elif not ev_mi and mac['FTR'] == 'A': toplam_puan += 3
-                        elif mac['FTR'] == 'D': toplam_puan += 1
-                        
-                        # İLK YARI (HT) Momentum Tespiti
-                        if 'HTHG' in mac and 'HTAG' in mac and (mac['HTHG'] + mac['HTAG'] > 0.5):
-                            ht_ust_sayisi += 1
-                            
-                    basari_yuzdesi = toplam_puan / (len(son_maclar) * 3)
-                    ht_momentum = 0.05 if ht_ust_sayisi >= 3 else -0.02 # İlk yarı hızlıysa gol ihtimalini %5 artır
-                    return 0.85 + (basari_yuzdesi * 0.30), ht_momentum
+                def form_ve_ht(takim, db_x):
+                    tk = str(takim)[:5]
+                    sm = db_x[(db_x['HomeTeam'].str.contains(tk, case=False, na=False)) | (db_x['AwayTeam'].str.contains(tk, case=False, na=False))].tail(5)
+                    if len(sm) == 0: return 1.0, 0 
+                    tp = 0
+                    ht_ust = 0 
+                    for _, mac in sm.iterrows():
+                        ev_mi = tk.lower() in str(mac['HomeTeam']).lower()
+                        if ev_mi and mac['FTR'] == 'H': tp += 3
+                        elif not ev_mi and mac['FTR'] == 'A': tp += 3
+                        elif mac['FTR'] == 'D': tp += 1
+                        if 'HTHG' in mac and 'HTAG' in mac and (mac['HTHG'] + mac['HTAG'] > 0.5): ht_ust += 1
+                    return 0.85 + ((tp / (len(sm) * 3)) * 0.30), (0.05 if ht_ust >= 3 else -0.02)
 
                 for mac in st.session_state.raw_api_data:
                     lig_kodu = API_TO_DIV.get(mac.get('sport_key'))
                     aktif_db = db[db['Div'] == lig_kodu].copy() if lig_kodu else db.copy()
-                    gercek_lig_adi = mac.get('kendi_ligi', 'Bilinmeyen Lig')
-                    
-                    # API-FOOTBALL STANDINGS VERİSİ
-                    standings = get_live_standings(LEAGUE_IDS.get(gercek_lig_adi, 0))
                     
                     if len(aktif_db) > 100:
                         h_odd, d_odd, a_odd, o25_odd, u25_odd = 2.50, 3.20, 2.80, 1.90, 1.90
@@ -211,7 +222,6 @@ with tab1:
                                             elif out['name'] == 'Under' and out.get('point') == 2.5: u25_odd = out['price']
                         except: pass
                         
-                        # ÖKLİD MESAFESİ (Geçmiş 25 Yıl)
                         aktif_db['diff'] = np.sqrt((aktif_db['B365H']-h_odd)**2 + (aktif_db['B365D']-d_odd)**2 + (aktif_db['B365A']-a_odd)**2)
                         benzer = aktif_db.sort_values('diff').head(80) 
                         
@@ -219,82 +229,84 @@ with tab1:
                         p_o25 = (benzer[(benzer['FTHG']+benzer['FTAG'])>2.5]['FTR'].count() / len(benzer))
                         p_u25 = 1.0 - p_o25
                         
-                        # HT Momentum & Form
-                        ev_formu, ev_ht_mom = form_ve_ht_hesapla(mac['home_team'], aktif_db)
-                        dep_formu, dep_ht_mom = form_ve_ht_hesapla(mac['away_team'], aktif_db)
+                        ev_formu, ev_ht = form_ve_ht(mac['home_team'], aktif_db)
+                        dep_formu, dep_ht = form_ve_ht(mac['away_team'], aktif_db)
                         genel_form = (ev_formu + dep_formu) / 2 
                         
-                        # CERRAHİ FİLTRE (Sakatlık/Risk Törpüsü - Sadece %4'lük ufak bir ceza kesilir)
-                        cerrahi_kesinti = 0.04 
+                        # %4 Cerrahi Sakatlık/Risk Kesintisi
+                        c_kesinti = 0.04 
                         
                         ev_targets = [
-                            ("MS 1", (p_ms1 * ev_formu) - cerrahi_kesinti, h_odd), 
-                            ("2.5 Üst", (p_o25 * genel_form) + ev_ht_mom + dep_ht_mom - cerrahi_kesinti, o25_odd), 
-                            ("2.5 Alt", p_u25 * (2.0 - genel_form) - cerrahi_kesinti, u25_odd)
+                            ("MS 1", (p_ms1 * ev_formu) - c_kesinti, h_odd), 
+                            ("2.5 Üst", (p_o25 * genel_form) + ev_ht + dep_ht - c_kesinti, o25_odd), 
+                            ("2.5 Alt", p_u25 * (2.0 - genel_form) - c_kesinti, u25_odd)
                         ]
                         
-                        en_iyi_ev, en_iyi_pazar, ogrenilmis_ihtimal_son, is_ml_active = -999.0, None, 0.0, False
-                        
-                        for pazar_adi, raw_ihtimal, k_oran in ev_targets:
-                            # EXCEL HAFIZASI (ML KALİBRASYONU)
-                            ml_key = f"{gercek_lig_adi}|{pazar_adi}"
+                        en_iyi_ev, en_iyi_pazar, son_prob, is_ml = -999.0, None, 0.0, False
+                        for pazar, raw_prob, oranim in ev_targets:
+                            # ML Kalibrasyon
+                            ml_key = f"{mac['sport_key']}|{pazar}"
                             stats = st.session_state.ml_stats.get(ml_key, {'w':0, 'l':0})
-                            total_bets = stats['w'] + stats['l']
+                            total = stats['w'] + stats['l']
+                            kalibre = min(0.95, raw_prob)
+                            if total >= 3:
+                                kalibre = (kalibre * 0.70) + ((stats['w'] / total) * 0.30)
+                                is_ml = True
                             
-                            kalibre_ihtimal = min(0.95, raw_ihtimal)
-                            if total_bets >= 3:
-                                kalibre_ihtimal = (kalibre_ihtimal * 0.70) + ((stats['w'] / total_bets) * 0.30)
-                                is_ml_active = True
-                            
-                            hesaplanan_ev = (kalibre_ihtimal * k_oran) - 1
-                            if hesaplanan_ev > en_iyi_ev:
-                                en_iyi_ev, en_iyi_pazar, ogrenilmis_ihtimal_son = hesaplanan_ev, (pazar_adi, raw_ihtimal, hesaplanan_ev), kalibre_ihtimal
+                            hev = (kalibre * oranim) - 1
+                            if hev > en_iyi_ev:
+                                en_iyi_ev, en_iyi_pazar, son_prob = hev, (pazar, raw_prob, hev), kalibre
                                 
-                        # GÜVENLİK BARAJI: En az %55 ihtimal!
-                        if en_iyi_pazar and ogrenilmis_ihtimal_son > 0.55:
+                        if en_iyi_pazar and son_prob > 0.55:
                             mac['hedef_pazar'] = en_iyi_pazar[0]
-                            mac['kalibre_ihtimal'] = ogrenilmis_ihtimal_son
+                            mac['kalibre_ihtimal'] = son_prob
                             mac['_g_score'] = en_iyi_pazar[2] 
-                            mac['ml_kullanildi'] = is_ml_active
-                            mac['ev_form_gosterim'] = int(ev_formu * 100)
+                            mac['ml_kullanildi'] = is_ml
                             mac['ai_rapor'] = generate_ai_report(mac['home_team'], mac['away_team'], en_iyi_pazar[0], 
-                                               [x[2] for x in ev_targets if x[0]==en_iyi_pazar[0]][0], ogrenilmis_ihtimal_son, ev_formu, dep_formu, cerrahi_kesinti)
+                                               [x[2] for x in ev_targets if x[0]==en_iyi_pazar[0]][0], son_prob, ev_formu, c_kesinti)
                             analiz_edilenler.append(mac)
 
                 st.session_state.top_adaylar = sorted(analiz_edilenler, key=lambda x: x.get('_g_score', -999), reverse=True)[:5]
                 st.session_state.pending_slip = None 
-                if len(st.session_state.top_adaylar) > 0: st.success("🔥 V300 Tam Kapasite: Puan Durumu, HT Momentum, Cerrahi Filtre ve AI Analisti devrede!")
+                if len(st.session_state.top_adaylar) > 0: st.success("🔥 V300 Tam Kapasite İle Analizleri Tamamladı!")
 
     if 'top_adaylar' in st.session_state and len(st.session_state.top_adaylar) > 0 and st.session_state.pending_slip is None:
         st.divider()
-        st.markdown("<h3 style='color:#00ffcc;'>🎯 YASAL ORAN DOĞRULAMA & YAPAY ZEKA RAPORU</h3>", unsafe_allow_html=True)
+        st.markdown("<h3 style='color:#00ffcc;'>🎯 OTONOM KOMBİNE & AI RAPORLARI</h3>", unsafe_allow_html=True)
         yasal_oranlar = {}
         for i, m in enumerate(st.session_state.top_adaylar):
             badge = "<span class='ai-badge'>🧠 ML Kalibre Edildi</span>" if m['ml_kullanildi'] else ""
-            st.markdown(f"<div class='match-card'><b>{m['home_team']} - {m['away_team']}</b> {badge}<br><span style='color:#8b949e;'>Kazanma İhtimali: <b>%{int(m['kalibre_ihtimal']*100)}</b> | Cerrahi Filtre: <b>Uygulandı</b></span><br><br><span class='target-market'>Hedef: {m['hedef_pazar']}</span>", unsafe_allow_html=True)
+            st.markdown(f"<div class='match-card'><b>{m['home_team']} - {m['away_team']}</b> {badge}<br><span style='color:#8b949e;'>Kazanma İhtimali: <b>%{int(m['kalibre_ihtimal']*100)}</b></span><br><br><span class='target-market'>Hedef: {m['hedef_pazar']}</span>", unsafe_allow_html=True)
             with st.expander("🤖 Yapay Zeka (Fon Analisti) Raporunu Oku"):
                 st.markdown(f"<div class='ai-report'>{m['ai_rapor']}</div>", unsafe_allow_html=True)
             yasal_oranlar[i] = {'oran': st.number_input(f"İddaa [{m['hedef_pazar']}] Oranını Girin:", min_value=1.01, value=1.50, step=0.05, key=f"y_oran_{i}"), 'match': m}
             st.markdown("</div>", unsafe_allow_html=True)
             
-        if st.button("🧮 YASAL KOMBİNEYİ OLUŞTUR VE OYNA"):
-            gecerli_maclar = [{'match': f"{d['match']['home_team']} - {d['match']['away_team']}", 'tercih': d['match']['hedef_pazar'], 'oran': d['oran'], 'edge': (d['match']['kalibre_ihtimal'] * d['oran']) - 1, 'prob': d['match']['kalibre_ihtimal'], 'lig': d['match']['kendi_ligi']} for d in yasal_oranlar.values() if (d['match']['kalibre_ihtimal'] * d['oran']) - 1 > -0.05]
+        if st.button("🧮 KOMBİNEYİ ONAYLA (Excel'e Yaz)"):
+            gecerli_maclar = [{'isim': f"{d['match']['home_team']} - {d['match']['away_team']}", 'h': d['match']['home_team'], 'a': d['match']['away_team'], 'tercih': d['match']['hedef_pazar'], 'oran': d['oran'], 'prob': d['match']['kalibre_ihtimal'], 'lig': d['match']['sport_key']} for d in yasal_oranlar.values()]
             
             if len(gecerli_maclar) >= 2:
-                secilenler = sorted(gecerli_maclar, key=lambda x: x['edge'], reverse=True)[:2]
+                secilenler = gecerli_maclar[:2] # En iyi 2'liyi al
                 toplam_oran = secilenler[0]['oran'] * secilenler[1]['oran']
                 b, p = toplam_oran - 1, secilenler[0]['prob'] * secilenler[1]['prob']
                 yatirilacak_tutar = max(50.0, st.session_state.lokal_kasa * max(0.01, (((b * p) - (1 - p)) / b) / 4))
                 
-                # Kasadan düş ve Excel'e yaz
                 st.session_state.lokal_kasa -= yatirilacak_tutar
                 st.session_state.bekleyen_tutar += yatirilacak_tutar
+                
                 if sheet:
-                    sheet.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), yatirilacak_tutar, toplam_oran, "Bekliyor", "0", st.session_state.lokal_kasa, st.session_state.bekleyen_tutar, st.session_state.baslangic_kasa, f"{secilenler[0]['lig']}#{secilenler[1]['lig']}", f"{secilenler[0]['tercih']}#{secilenler[1]['tercih']}", f"{secilenler[0]['prob']:.3f}#{secilenler[1]['prob']:.3f}", f"{secilenler[0]['oran']:.2f}#{secilenler[1]['oran']:.2f}"])
+                    # YENİ EXCEL FORMATI (Maç İsimleri dahil)
+                    isimler = f"{secilenler[0]['h']} vs {secilenler[0]['a']}#{secilenler[1]['h']} vs {secilenler[1]['a']}"
+                    ligler = f"{secilenler[0]['lig']}#{secilenler[1]['lig']}"
+                    tercihler = f"{secilenler[0]['tercih']}#{secilenler[1]['tercih']}"
+                    problar = f"{secilenler[0]['prob']:.3f}#{secilenler[1]['prob']:.3f}"
+                    oranlar = f"{secilenler[0]['oran']:.2f}#{secilenler[1]['oran']:.2f}"
+                    
+                    sheet.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), yatirilacak_tutar, toplam_oran, "Bekliyor", "0", st.session_state.lokal_kasa, st.session_state.bekleyen_tutar, st.session_state.baslangic_kasa, isimler, ligler, tercihler, problar, oranlar])
+                
                 st.session_state.top_adaylar = []
-                st.success(f"✅ Otonom Kupon {yatirilacak_tutar:.0f} TL ile işlendi! (Toplam Oran: {toplam_oran:.2f}) Sonucu Fon Yönetimi sekmesinden takip edebilirsiniz.")
+                st.success("✅ Otonom Kupon başarıyla sisteme kilitlendi! Skorlar maç bitiminde kendi kendine çekilecek.")
                 st.rerun()
-            else: st.error("🚨 DİKKAT: Yasal oranlar yetersiz! Matematiksel avantaj bulunamadı.")
 
 with tab2:
     st.markdown("<h2 style='color:#d4af37;'>💼 Fon Bilanço Özeti (V300)</h2>", unsafe_allow_html=True)
@@ -306,24 +318,66 @@ with tab2:
     with m3: st.markdown(f"<div class='metric-box'><div class='metric-title'>ROI (KÂR/ZARAR)</div><div class='metric-value'>% {roi:.1f}</div></div>", unsafe_allow_html=True)
     
     st.divider()
-    st.markdown("<h3>📝 Bekleyen Otonom Kuponlar</h3>", unsafe_allow_html=True)
+    
+    # --- OTONOM SKOR KONTROL BUTONU ---
+    c_btn1, c_btn2 = st.columns([3,1])
+    with c_btn1:
+        st.markdown("<h3>📝 Bekleyen Otonom Kuponlar</h3>", unsafe_allow_html=True)
+    with c_btn2:
+        if st.button("🤖 OTONOM DENETÇİYİ ÇALIŞTIR", use_container_width=True):
+            if not api_key:
+                st.error("Lütfen Ayarlar kısmına Odds API anahtarınızı girin!")
+            else:
+                with st.spinner("Tüm bekleyen maçların canlı skorları ve sonuçları taranıyor..."):
+                    updates_made = False
+                    for idx, r in enumerate(all_vals):
+                        if len(r) > 12 and r[3] == "Bekliyor":
+                            b_tutar = float(str(r[1]).replace(',','.'))
+                            b_oran = float(str(r[2]).replace(',','.'))
+                            
+                            maclar = r[8].split('#')
+                            ligler = r[9].split('#')
+                            pazarlar = r[10].split('#')
+                            
+                            durumlar = []
+                            skorlar = []
+                            for m_isim, m_lig, m_pazar in zip(maclar, ligler, pazarlar):
+                                ev, dep = m_isim.split(' vs ')
+                                res, skor = check_match_result(m_lig, ev, dep, m_pazar, api_key)
+                                durumlar.append(res)
+                                skorlar.append(skor)
+                            
+                            nihai_sonuc = "BEKLİYOR"
+                            if "KAYBETTİ" in durumlar: nihai_sonuc = "KAYBETTİ"
+                            elif all(d == "KAZANDI" for d in durumlar): nihai_sonuc = "KAZANDI"
+                            
+                            if nihai_sonuc != "BEKLİYOR":
+                                updates_made = True
+                                sheet.update_cell(idx+1, 4, "Bekliyor_Kapandı")
+                                yeni_satir = [datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), b_tutar, b_oran]
+                                if nihai_sonuc == "KAZANDI":
+                                    st.session_state.lokal_kasa += (b_tutar * b_oran)
+                                    st.session_state.bekleyen_tutar = max(0.0, st.session_state.bekleyen_tutar - b_tutar)
+                                    yeni_satir.extend(["Kazandı_Sonuc", f"+{(b_tutar * b_oran) - b_tutar}"])
+                                else:
+                                    st.session_state.bekleyen_tutar = max(0.0, st.session_state.bekleyen_tutar - b_tutar)
+                                    yeni_satir.extend(["Kaybetti_Sonuc", f"-{b_tutar}"])
+                                    
+                                yeni_satir.extend([st.session_state.lokal_kasa, st.session_state.bekleyen_tutar, st.session_state.baslangic_kasa])
+                                yeni_satir.extend([r[8] + f" (Skorlar: {' | '.join(skorlar)})"] + r[9:])
+                                sheet.append_row(yeni_satir)
+                    
+                    if updates_made:
+                        st.success("✅ Maçlar sonuçlandırıldı, Kasa güncellendi!")
+                        st.rerun()
+                    else:
+                        st.info("Maçlar henüz bitmemiş veya sonuçlanması bekleniyor.")
+
+    # Listeyi göster
     bekleyenler = [(idx+1, r) for idx, r in enumerate(all_vals) if len(r) > 3 and r[3] == "Bekliyor"]
     if not bekleyenler: st.info("Şu an bekleyen yatırımınız bulunmamaktadır.")
     else:
         for row_idx, r in bekleyenler:
             b_tutar, b_oran = float(str(r[1]).replace(',','.').strip()), float(str(r[2]).replace(',','.').strip())
-            st.markdown(f"<div style='background:#1e2530; padding:15px; border-radius:8px; margin-bottom:10px;'><b>Tutar:</b> {b_tutar:.0f} TL | <b>Oran:</b> {b_oran:.2f}</div>", unsafe_allow_html=True)
-            col1, col2 = st.columns(2)
-            if col1.button(f"✅ KAZANDI", key=f"win_{row_idx}"):
-                st.session_state.lokal_kasa += (b_tutar * b_oran)
-                st.session_state.bekleyen_tutar = max(0.0, st.session_state.bekleyen_tutar - b_tutar)
-                if sheet:
-                    sheet.update_cell(row_idx, 4, "Bekliyor_Kapandı")
-                    sheet.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), b_tutar, b_oran, "Kazandı_Sonuc", f"+{(b_tutar * b_oran) - b_tutar}", st.session_state.lokal_kasa, st.session_state.bekleyen_tutar, st.session_state.baslangic_kasa] + r[8:12])
-                st.rerun()
-            if col2.button(f"❌ KAYBETTİ", key=f"lose_{row_idx}"):
-                st.session_state.bekleyen_tutar = max(0.0, st.session_state.bekleyen_tutar - b_tutar)
-                if sheet:
-                    sheet.update_cell(row_idx, 4, "Bekliyor_Kapandı")
-                    sheet.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), b_tutar, b_oran, "Kaybetti_Sonuc", f"-{b_tutar}", st.session_state.lokal_kasa, st.session_state.bekleyen_tutar, st.session_state.baslangic_kasa] + r[8:12])
-                st.rerun()
+            mac_isimleri = r[8].replace('#', ' | ') if len(r) > 10 else "Eski Format Kupon"
+            st.markdown(f"<div style='background:#1e2530; border-left: 3px solid #ffcc00; padding:15px; border-radius:8px; margin-bottom:10px;'><b>Maçlar:</b> {mac_isimleri}<br><b>Tutar:</b> {b_tutar:.0f} TL | <b>Toplam Oran:</b> {b_oran:.2f} <br><i style='color:#8b949e; font-size:12px;'>Otonom Denetçi bekleniyor...</i></div>", unsafe_allow_html=True)
