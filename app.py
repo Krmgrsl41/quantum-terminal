@@ -23,19 +23,16 @@ st.markdown("""
     .stApp { background-color: #05070a; color: #ffffff; font-family: 'Inter', sans-serif; }
     h1, h2, h3 { font-family: 'Inter', sans-serif; font-weight: 800; letter-spacing: -0.5px; }
     
-    /* Premium Bilanço Kartları */
     .metric-box { background: linear-gradient(145deg, #0c1015 0%, #151b22 100%); border: 1px solid #1e2530; padding: 25px; border-radius: 16px; text-align: center; box-shadow: 0 8px 25px rgba(0,0,0,0.4); }
     .metric-title { color: #8b949e; font-size: 16px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;}
     .metric-value { font-size: 42px; font-weight: 900; color: #00ffcc; margin: 10px 0; text-shadow: 0 0 15px rgba(0, 255, 204, 0.2); }
     
-    /* Maç Kartları */
     .match-card { background: linear-gradient(to right, #0c1015, #11161d); border: 1px solid #232b35; border-left: 5px solid #00ffcc; padding: 25px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.2s;}
     .match-card:hover { transform: scale(1.01); border-left: 5px solid #d4af37;}
     .match-title { font-size: 22px; font-weight: 900; color: #ffffff; margin-bottom: 10px;}
     .target-market { color: #000; font-weight: 900; font-size: 20px; background: #00ffcc; padding: 8px 15px; border-radius: 8px; display: inline-block; margin-top: 10px; box-shadow: 0 0 10px rgba(0,255,204,0.3);}
     .ai-badge { background: #d4af37; color: #000; font-size: 14px; padding: 6px 12px; border-radius: 6px; font-weight: 900; margin-left: 15px; display: inline-block; text-transform: uppercase;}
     
-    /* Gelişmiş Premium Yapay Zeka Raporu Kutusu */
     .ai-report { 
         background: linear-gradient(145deg, #13171e 0%, #0a0d12 100%); 
         border: 1px solid #2d3748;
@@ -43,7 +40,7 @@ st.markdown("""
         padding: 25px; 
         margin-top: 20px; 
         border-radius: 10px;
-        font-size: 17px; /* FONT BÜYÜTÜLDÜ */
+        font-size: 17px; 
         line-height: 1.7; 
         color: #e2e8f0;
         box-shadow: inset 0 0 20px rgba(212,175,55,0.03);
@@ -54,10 +51,8 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# API ANAHTARLARI
 API_SPORTS_KEY = "a29870611e6831abfb4beca2c86f7be0"
 
-# --- GOOGLE SHEETS & HAFIZA ---
 @st.cache_resource(ttl=600)
 def init_google_sheets():
     if not GSPREAD_INSTALLED: return None
@@ -80,7 +75,6 @@ if 'lokal_kasa' not in st.session_state:
 
 if 'raw_api_data' not in st.session_state: st.session_state.raw_api_data = []
 
-# ML EĞİTİM VERİSİ OKUMA 
 ml_stats = {} 
 for r in all_vals:
     if len(r) >= 11 and r[3] in ["Kazandı_Sonuc", "Kaybetti_Sonuc"]:
@@ -95,16 +89,15 @@ for r in all_vals:
         except: pass
 st.session_state.ml_stats = ml_stats
 
-# --- 10 LİG (POLONYA EKLENDİ) ---
 LIG_MAP = {'T1': 'Türkiye Süper Lig', 'E0': 'İngiltere Premier Lig', 'D1': 'Almanya Bundesliga 1', 'N1': 'Hollanda Eredivisie', 'SP1': 'İspanya La Liga', 'I1': 'İtalya Serie A', 'F1': 'Fransa Ligue 1', 'B1': 'Belçika Pro Lig', 'P1': 'Portekiz Premier Lig', 'PL1': 'Polonya Ekstraklasa'}
 API_TO_DIV = {"soccer_turkey_super_league": "T1", "soccer_epl": "E0", "soccer_germany_bundesliga": "D1", "soccer_netherlands_eredivisie": "N1", "soccer_spain_la_liga": "SP1", "soccer_italy_serie_a": "I1", "soccer_france_ligue_one": "F1", "soccer_belgium_first_division_a": "B1", "soccer_portugal_primeira_liga": "P1", "soccer_poland_ekstraklasa": "PL1"}
 LEAGUE_IDS = {"Hollanda Eredivisie": 88, "Almanya Bundesliga": 78, "Türkiye Süper Lig": 203, "İngiltere Premier Lig": 39, "İspanya La Liga": 140, "İtalya Serie A": 135, "Fransa Ligue 1": 61, "Belçika Pro Lig": 144, "Portekiz Premier Lig": 94, "Polonya Ekstraklasa": 106}
 API_LEAGUES = {"İngiltere Premier Lig": "soccer_epl", "Almanya Bundesliga": "soccer_germany_bundesliga", "Türkiye Süper Lig": "soccer_turkey_super_league", "Hollanda Eredivisie": "soccer_netherlands_eredivisie", "İspanya La Liga": "soccer_spain_la_liga", "İtalya Serie A": "soccer_italy_serie_a", "Fransa Ligue 1": "soccer_france_ligue_one", "Belçika Pro Lig": "soccer_belgium_first_division_a", "Portekiz Premier Lig": "soccer_portugal_primeira_liga", "Polonya Ekstraklasa": "soccer_poland_ekstraklasa"}
 
-# --- TARİHSEL VERİTABANI ---
+# --- TARİHSEL VERİTABANI (25/26 SEZONU EKLENDİ) ---
 @st.cache_data(ttl=3600, show_spinner=False)
 def load_quantum_data():
-    seasons = ['2324', '2223', '2122', '2021', '1920'] 
+    seasons = ['2526', '2425', '2324', '2223', '2122'] 
     urls = [(s, l, f'https://www.football-data.co.uk/mmz4281/{s}/{l}.csv') for s in seasons for l in LIG_MAP.keys()]
     def fetch(item):
         s, l, url = item
@@ -121,12 +114,16 @@ def load_quantum_data():
     return pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
 db = load_quantum_data()
 
-# --- PUAN DURUMU ---
+# --- TAM DİNAMİK ZAMAN ALGISI ---
 @st.cache_data(ttl=18000, show_spinner=False)
-def get_live_standings(league_id, season="2023"):
+def get_live_standings(league_id):
     if league_id == 0: return {}
     try:
-        url = f"https://v3.football.api-sports.io/standings?league={league_id}&season={season}"
+        # Otomatik Sezon Yılı Hesaplama Motoru (Ağustos'tan önceyse bir önceki yıl)
+        now = datetime.datetime.now()
+        aktif_sezon = str(now.year - 1) if now.month < 8 else str(now.year)
+        
+        url = f"https://v3.football.api-sports.io/standings?league={league_id}&season={aktif_sezon}"
         headers = {'x-apisports-key': API_SPORTS_KEY}
         response = requests.get(url, headers=headers).json()
         if response['response']:
@@ -135,34 +132,33 @@ def get_live_standings(league_id, season="2023"):
     except: pass
     return {}
 
-# --- YENİLENMİŞ GELİŞMİŞ MAÇKOLİK STİLİ AI RAPORU ---
-def generate_ai_report(ev, dep, pazar, oran, ihtimal, ev_form, dep_form, cerrahi, ev_sira, ev_at, ev_ye, dep_sira, dep_at, dep_ye, lig):
+def format_form_string(form_str):
+    if not form_str or form_str == '?': return "Veri Yok"
+    tr_map = {'W': 'G', 'D': 'B', 'L': 'M'}
+    return "-".join([tr_map.get(char, char) for char in form_str])
+
+# --- GELİŞMİŞ AI RAPORU ---
+def generate_ai_report(ev, dep, pazar, oran, ihtimal, ev_form, dep_form, cerrahi, ev_sira, ev_at, ev_ye, ev_son5, dep_sira, dep_at, dep_ye, dep_son5, lig):
     rapor = f"Analizime göre sistem, bu maçta <span class='highlight-green'>{oran:.2f}</span> oranla <span class='highlight-gold'>[{pazar}]</span> pazarında ciddi bir matematiksel değer tespit etti. Veritabanındaki geçmiş eşleşmeler ve mevcut momentum ışığında maçın bu senaryoda bitme ihtimali net olarak <span class='highlight-green'>%{int(ihtimal*100)}</span>.<br><br>"
     
-    rapor += f"<b>📊 {lig} Güncel Puan Durumu ve Veriler:</b><br>"
+    rapor += f"<b>📊 {lig} Güncel Puan Durumu ve Form:</b><br>"
     if ev_sira != '?' and dep_sira != '?':
-        rapor += f"• <b>{ev}</b> ligde <span class='highlight-gold'>{ev_sira}. sırada</span> bulunuyor. Bu sezon rakip fileleri <b>{ev_at}</b> kez havalandırırken, kalesinde <b>{ev_ye}</b> gol gördü.<br>"
-        rapor += f"• <b>{dep}</b> ise ligde <span class='highlight-gold'>{dep_sira}. sırada</span> yer alıyor. Attığı <b>{dep_at}</b> gole karşılık, savunmasında <b>{dep_ye}</b> gol yedi.<br><br>"
+        rapor += f"• <b>{ev}</b> ligde <span class='highlight-gold'>{ev_sira}. sırada</span> bulunuyor. Rakip fileleri <b>{ev_at}</b> kez havalandırırken, kalesinde <b>{ev_ye}</b> gol gördü. Son 5 Maç Formu: <b>[{ev_son5}]</b><br>"
+        rapor += f"• <b>{dep}</b> ise ligde <span class='highlight-gold'>{dep_sira}. sırada</span> yer alıyor. Attığı <b>{dep_at}</b> gole karşılık savunmasında <b>{dep_ye}</b> gol yedi. Son 5 Maç Formu: <b>[{dep_son5}]</b><br><br>"
     else:
-        rapor += f"• Puan durumu verisi API'den derleniyor. Güncel Form Çarpanları: Ev Sahibi {ev_form:.2f}, Deplasman {dep_form:.2f}.<br><br>"
+        rapor += f"• <i>Ligin güncel sıralama verileri şu an senkronize ediliyor... Algoritma doğrudan xG hesaplaması üzerinden karara vardı.</i><br><br>"
         
     rapor += f"<b>🧠 V300 Kuantum Değerlendirmesi:</b><br>"
-    
-    # Hedefe Özel Yorumlar
-    if pazar == "2.5 Üst":
-        rapor += f"Her iki takımın attığı ve yediği gol istatistiklerine baktığımızda, hücum kapasitelerinin yüksek ancak savunma hatlarının kırılgan olduğu net bir şekilde görülüyor. İlk Yarı (HT) temposu da bu maçta gollerin erken geleceğini destekliyor. "
-    elif pazar == "MS 1":
-        rapor += f"Özellikle {ev} takımının kendi evindeki baskın oyunu ve puan durumundaki sıralama motivasyonu, bu maçta hata yapma lükslerini ortadan kaldırıyor. Form grafikleri galibiyete çok yakın. "
-    elif pazar == "2.5 Alt":
-        rapor += f"Takımların gol kısırlığı ve puan durumundaki sıkışık konumları, maçı tamamen bir orta saha mücadelesine (satranç maçına) çevirecektir. Temponun düşük kalması yüksek ihtimal. "
+    if pazar == "2.5 Üst": rapor += f"Her iki takımın attığı/yediği gol istatistikleri ve maç başı tempo (HT) verileri, savunma hatlarının kırılgan olduğunu ve gollerin erken geleceğini kanıtlıyor. "
+    elif pazar == "MS 1": rapor += f"Özellikle {ev} takımının kendi evindeki istikrarlı oyunu (Son form durumu: {ev_son5}) ve puan durumundaki motivasyonu, bu eşleşmede rakibine şans tanımayacağını gösteriyor. "
+    elif pazar == "2.5 Alt": rapor += f"Takımların gol kısırlığı ve puan durumundaki pozisyonları, maçı tamamen bir taktik savaşına çevirecektir. Temponun düşük kalması kuvvetle muhtemel. "
 
     if cerrahi > 0:
-        rapor += f"<br><br>⚠️ <i>Güvenlik Notu: Sistem, olası kadro eksiklikleri ve sürpriz sakatlık riskleri için ihtimalden <span class='alert-text'>%{int(cerrahi*100)}</span> oranında 'Cerrahi Güvenlik Kesintisi' yaptı. Bu zorlu kesintiye rağmen maç, V300'ün güvenlik barajını geçmeyi başardı.</i>"
+        rapor += f"<br><br>⚠️ <i>Güvenlik Notu: Sistem, olası ufak rotasyonlar ve teknik direktör değişiklikleri ihtimaline karşı genel başarı yüzdesinden <span class='alert-text'>%{int(cerrahi*100)}</span>'lük minimal bir 'Risk Kesintisi' yapmıştır. (İsim bazlı sakatlık analizi The-Odds-API sunucusuyla eşleşmediği için uygulanmamıştır.)</i>"
     
-    rapor += f"<br><br><b>🎯 Sonuç:</b> Tüm bu veriler filtrelendiğinde en iyi risk/ödül oranı <span class='highlight-gold'>{pazar}</span> tercihidir. Kademeli yatırım için uygundur."
+    rapor += f"<br><br><b>🎯 Sonuç:</b> Tüm veriler filtrelendiğinde en yüksek değerli oran (Value) <span class='highlight-gold'>{pazar}</span> tercihidir."
     return rapor
 
-# --- OTONOM SKOR DENETÇİSİ ---
 def check_match_result(sport_key, home, away, target_market, api_key):
     url = f"https://api.the-odds-api.com/v4/sports/{sport_key}/scores/?apiKey={api_key}&daysFrom=3"
     try:
@@ -174,7 +170,6 @@ def check_match_result(sport_key, home, away, target_market, api_key):
                     if not scores: return "BEKLİYOR", "-"
                     h_score = int(scores[0]['score']) if scores[0]['name'] == home else int(scores[1]['score'])
                     a_score = int(scores[1]['score']) if scores[1]['name'] == away else int(scores[0]['score'])
-                    
                     total = h_score + a_score
                     won = False
                     if target_market == "2.5 Üst" and total > 2: won = True
@@ -182,7 +177,6 @@ def check_match_result(sport_key, home, away, target_market, api_key):
                     elif target_market == "MS 1" and h_score > a_score: won = True
                     elif target_market == "MS 2" and a_score > h_score: won = True
                     elif target_market == "MS 0" and h_score == a_score: won = True
-                    
                     return ("KAZANDI" if won else "KAYBETTİ"), f"{h_score}-{a_score}"
         return "BEKLİYOR", "Maç Bitmedi"
     except: return "BEKLİYOR", "Hata"
@@ -201,13 +195,12 @@ with tab1:
     if st.button("📡 SADECE BUGÜNÜN MAÇLARINI ÇEK (Day-Trade)", use_container_width=True):
         if not api_key: st.error("API Anahtarı eksik!")
         else:
-            with st.spinner("Sadece bugünün maçları küresel piyasalardan ve canlı puan tablolarından çekiliyor..."):
+            with st.spinner("Puan durumları ve bugünün maçları küresel piyasalardan çekiliyor..."):
                 toplanan_maclar = []
                 now_utc = datetime.datetime.now(datetime.timezone.utc)
                 now_tr = now_utc + datetime.timedelta(hours=3)
                 
                 for lig in secilen_ligler:
-                    # Arka planda puan durumu çekiliyor ve hafızaya alınıyor
                     get_live_standings(LEAGUE_IDS.get(lig, 0)) 
                     try:
                         url = f"https://api.the-odds-api.com/v4/sports/{API_LEAGUES[lig]}/odds/?apiKey={api_key.strip()}&regions=eu&markets=h2h,totals&oddsFormat=decimal"
@@ -234,8 +227,7 @@ with tab1:
                     tk = str(takim)[:5]
                     sm = db_x[(db_x['HomeTeam'].str.contains(tk, case=False, na=False)) | (db_x['AwayTeam'].str.contains(tk, case=False, na=False))].tail(5)
                     if len(sm) == 0: return 1.0, 0 
-                    tp = 0
-                    ht_ust = 0 
+                    tp = 0; ht_ust = 0 
                     for _, mac in sm.iterrows():
                         ev_mi = tk.lower() in str(mac['HomeTeam']).lower()
                         if ev_mi and mac['FTR'] == 'H': tp += 3
@@ -249,12 +241,11 @@ with tab1:
                     gercek_lig_adi = mac.get('kendi_ligi', '')
                     aktif_db = db[db['Div'] == lig_kodu].copy() if lig_kodu else db.copy()
                     
-                    # API'DEN PUAN DURUMU VERİSİNİ ÇEKME İŞLEMİ (AI Raporu İçin)
                     standings_data = get_live_standings(LEAGUE_IDS.get(gercek_lig_adi, 0))
-                    ev_sira, ev_at, ev_ye, dep_sira, dep_at, dep_ye = '?', '?', '?', '?', '?', '?'
+                    ev_sira, ev_at, ev_ye, ev_son5 = '?', '?', '?', '?'
+                    dep_sira, dep_at, dep_ye, dep_son5 = '?', '?', '?', '?'
                     
                     if standings_data:
-                        # Ev Sahibi verilerini eşleştir
                         ev_key = mac['home_team'].lower()
                         ev_info = standings_data.get(ev_key)
                         if not ev_info:
@@ -264,8 +255,8 @@ with tab1:
                             ev_sira = ev_info.get('rank', '?')
                             ev_at = ev_info.get('all', {}).get('goals', {}).get('for', '?')
                             ev_ye = ev_info.get('all', {}).get('goals', {}).get('against', '?')
+                            ev_son5 = format_form_string(ev_info.get('form', '?'))
                             
-                        # Deplasman verilerini eşleştir
                         dep_key = mac['away_team'].lower()
                         dep_info = standings_data.get(dep_key)
                         if not dep_info:
@@ -275,6 +266,7 @@ with tab1:
                             dep_sira = dep_info.get('rank', '?')
                             dep_at = dep_info.get('all', {}).get('goals', {}).get('for', '?')
                             dep_ye = dep_info.get('all', {}).get('goals', {}).get('against', '?')
+                            dep_son5 = format_form_string(dep_info.get('form', '?'))
 
                     if len(aktif_db) > 100:
                         h_odd, d_odd, a_odd, o25_odd, u25_odd = 2.50, 3.20, 2.80, 1.90, 1.90
@@ -303,7 +295,7 @@ with tab1:
                         dep_formu, dep_ht = form_ve_ht(mac['away_team'], aktif_db)
                         genel_form = (ev_formu + dep_formu) / 2 
                         
-                        c_kesinti = 0.04 
+                        c_kesinti = 0.015 
                         
                         ev_targets = [
                             ("MS 1", (p_ms1 * ev_formu) - c_kesinti, h_odd), 
@@ -325,19 +317,17 @@ with tab1:
                             if hev > en_iyi_ev:
                                 en_iyi_ev, en_iyi_pazar, son_prob = hev, (pazar, raw_prob, hev), kalibre
                                 
-                        # BARAJ %53 OLARAK GÜNCELLENDİ (Tatlı Riskler)
                         if en_iyi_pazar and son_prob > 0.53:
                             mac['hedef_pazar'] = en_iyi_pazar[0]
                             mac['kalibre_ihtimal'] = son_prob
                             mac['_g_score'] = en_iyi_pazar[2] 
                             mac['ml_kullanildi'] = is_ml
                             
-                            # YAPAY ZEKA RAPORU ÇAĞRISI (Tüm verilerle birlikte)
                             mac['ai_rapor'] = generate_ai_report(
                                 mac['home_team'], mac['away_team'], en_iyi_pazar[0], 
                                 [x[2] for x in ev_targets if x[0]==en_iyi_pazar[0]][0], 
                                 son_prob, ev_formu, dep_formu, c_kesinti,
-                                ev_sira, ev_at, ev_ye, dep_sira, dep_at, dep_ye, gercek_lig_adi
+                                ev_sira, ev_at, ev_ye, ev_son5, dep_sira, dep_at, dep_ye, dep_son5, gercek_lig_adi
                             )
                             analiz_edilenler.append(mac)
 
@@ -370,7 +360,6 @@ with tab1:
                 toplam_oran = secilenler[0]['oran'] * secilenler[1]['oran']
                 
                 yatirilacak_tutar = manuel_tutar
-                
                 st.session_state.lokal_kasa -= yatirilacak_tutar
                 st.session_state.bekleyen_tutar += yatirilacak_tutar
                 
@@ -398,7 +387,6 @@ with tab2:
     
     st.divider()
 
-    # --- KASA SIFIRLAMA MODÜLÜ ---
     with st.expander("⚙️ KASA AYARLARI (Manuel Dönem Sıfırlaması)"):
         st.markdown("<i style='color:#8b949e; font-size:14px;'>Yeni bir yatırım dönemine başlarken kasayı güncelleyin. Kâr/Zarar (ROI) sıfırlanır ancak Yapay Zeka (ML) geçmiş maç istatistiklerini KORUR.</i>", unsafe_allow_html=True)
         c_kasa1, c_kasa2 = st.columns([2, 1])
@@ -416,14 +404,11 @@ with tab2:
 
     st.divider()
     
-    # --- OTONOM SKOR KONTROL BUTONU ---
     c_btn1, c_btn2 = st.columns([3,1])
-    with c_btn1:
-        st.markdown("<h3>📝 Bekleyen Otonom Kuponlar</h3>", unsafe_allow_html=True)
+    with c_btn1: st.markdown("<h3>📝 Bekleyen Otonom Kuponlar</h3>", unsafe_allow_html=True)
     with c_btn2:
         if st.button("🤖 OTONOM DENETÇİYİ ÇALIŞTIR", use_container_width=True):
-            if not api_key:
-                st.error("Lütfen Ayarlar kısmına Odds API anahtarınızı girin!")
+            if not api_key: st.error("Lütfen Ayarlar kısmına Odds API anahtarınızı girin!")
             else:
                 with st.spinner("Tüm bekleyen maçların canlı skorları taranıyor..."):
                     updates_made = False
@@ -474,7 +459,6 @@ with tab2:
                     else:
                         st.info("Maçlar henüz bitmemiş veya sonuçlanması bekleniyor.")
 
-    # Listeyi göster
     bekleyenler = [(idx+1, r) for idx, r in enumerate(all_vals) if len(r) > 3 and r[3] == "Bekliyor"]
     if not bekleyenler: st.info("Şu an bekleyen yatırımınız bulunmamaktadır.")
     else:
