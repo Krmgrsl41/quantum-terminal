@@ -51,6 +51,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
+# BURAYA YENİ ALDIĞIN ŞİFREYİ YAPIŞTIR
 API_SPORTS_KEY = "2a3a105efb62cf7033b00e86294814e7"
 
 @st.cache_resource(ttl=600)
@@ -113,16 +114,17 @@ def load_quantum_data():
     return pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
 db = load_quantum_data()
 
-# --- HAFIZASI SIFIRLANMIŞ, DİNAMİK ZAMANLI API MOTORU ---
+# --- v4: DİNAMİK ŞİFRE ALGISI İLE HAFIZA MOTORU ---
+# Fonksiyon artık api_key'i dışarıdan parametre olarak alıyor, böylece şifre değişince hafıza KENDİLİĞİNDEN sıfırlanıyor.
 @st.cache_data(ttl=18000, show_spinner=False)
-def get_live_standings_v3(league_id):
+def get_live_standings_v4(league_id, active_api_key):
     if league_id == 0: return {}
     try:
         now = datetime.datetime.now()
         aktif_sezon = str(now.year - 1) if now.month < 8 else str(now.year)
         
         url = f"https://v3.football.api-sports.io/standings?league={league_id}&season={aktif_sezon}"
-        headers = {'x-apisports-key': API_SPORTS_KEY}
+        headers = {'x-apisports-key': active_api_key}
         r = requests.get(url, headers=headers)
         
         if r.status_code == 200:
@@ -141,9 +143,8 @@ def format_form_string(form_str):
     tr_map = {'W': 'G', 'D': 'B', 'L': 'M'}
     return "-".join([tr_map.get(char, char) for char in form_str])
 
-# --- TÜRKÇE KARAKTER KALKANLI AKILLI EŞLEŞTİRİCİ ---
 def takim_eslestir(hedef_isim, standings_dict):
-    if "API_ERROR" in standings_dict: return None 
+    if not standings_dict or "API_ERROR" in standings_dict: return None 
     
     def normalize_text(text):
         if not isinstance(text, str): return ""
@@ -217,7 +218,13 @@ tab1, tab2 = st.tabs(["🎯 V300 OTONOM RADAR", "💼 FON YÖNETİMİ & KONTROL 
 
 c1, c2 = st.columns([2, 1])
 with c1: secilen_ligler = st.multiselect("Taranacak Ligleri Seçin:", list(API_LEAGUES.keys()), default=["İngiltere Premier Lig", "Türkiye Süper Lig", "Almanya Bundesliga", "İtalya Serie A", "Polonya Ekstraklasa", "Belçika Pro Lig", "Hollanda Eredivisie"])
-with c2: api_key = st.text_input("The-Odds-API Anahtarı:", value=st.secrets.get("API_KEY", ""), type="password", key="odds_api_key")
+with c2: 
+    api_key = st.text_input("The-Odds-API Anahtarı:", value=st.secrets.get("API_KEY", ""), type="password", key="odds_api_key")
+    # YEPYENİ HAFIZA TEMİZLEME BUTONU
+    if st.button("🧹 SİSTEM HAFIZASINI TEMİZLE (Verileri Sıfırla)", use_container_width=True):
+        st.cache_data.clear()
+        st.success("✅ Hafıza başarıyla formatlandı! Lütfen maçları tekrar çekin.")
+        st.rerun()
 
 with tab1:
     if st.button("📡 SADECE BUGÜNÜN MAÇLARINI ÇEK (Day-Trade)", use_container_width=True):
@@ -230,9 +237,10 @@ with tab1:
                 
                 hata_gosterildi = False
                 for lig in secilen_ligler:
-                    s_data = get_live_standings_v3(LEAGUE_IDS.get(lig, 0)) 
+                    # v4 Motoru çalışıyor: API_SPORTS_KEY içine gömülü gidiyor
+                    s_data = get_live_standings_v4(LEAGUE_IDS.get(lig, 0), API_SPORTS_KEY) 
                     if s_data and "API_ERROR" in s_data and not hata_gosterildi:
-                        st.error(f"🚨 DİKKAT: API-Football (Puan Durumu) günlük kotanız dolmuş olabilir! Detay: {s_data['API_ERROR']}")
+                        st.error(f"🚨 DİKKAT: API-Football (Puan Durumu) günlük kotanız dolmuş! Yeni API Key girmeniz gerekli. Detay: {s_data['API_ERROR']}")
                         hata_gosterildi = True
 
                     try:
@@ -275,7 +283,7 @@ with tab1:
                     gercek_lig_adi = mac.get('kendi_ligi', '')
                     aktif_db = db[db['Div'] == lig_kodu].copy() if lig_kodu else db.copy()
                     
-                    standings_data = get_live_standings_v3(LEAGUE_IDS.get(gercek_lig_adi, 0))
+                    standings_data = get_live_standings_v4(LEAGUE_IDS.get(gercek_lig_adi, 0), API_SPORTS_KEY)
                     
                     if standings_data and "API_ERROR" in standings_data and not hata_gosterildi:
                         st.error("🚨 API KOTASI DOLDU! Puan durumları çekilemiyor. Sistem xG hesabı ile devam edecek.")
@@ -379,10 +387,8 @@ with tab1:
             with st.expander("🤖 Gelişmiş Yapay Zeka (Fon Analisti) Raporunu Oku"):
                 st.markdown(f"<div class='ai-report'>{m['ai_rapor']}</div>", unsafe_allow_html=True)
                 
-            # --- ÖZGÜR SEÇİM KUTUCUKLARI ---
             c_sec, c_oran = st.columns([1, 1])
             with c_sec:
-                # Sadece en üstteki 2 maç varsayılan olarak seçili gelsin, ama kullanıcı değiştirebilsin
                 is_selected = st.checkbox(f"✅ KUPONA EKLE", value=(i<2), key=f"sec_mac_{i}")
             with c_oran:
                 oran_val = st.number_input(f"İddaa [{m['hedef_pazar']}] Oranı:", min_value=1.01, value=1.50, step=0.05, key=f"y_oran_{i}")
@@ -394,7 +400,6 @@ with tab1:
         manuel_tutar = st.number_input("💵 Kupona Yatırılacak Tutar (TL):", min_value=10.0, value=100.0, step=10.0)
             
         if st.button("🚀 KOMBİNEYİ ONAYLA (Fon Sistemine Gönder)", use_container_width=True):
-            # SADECE SEÇİLEN MAÇLARI FİLTRELE
             secilen_maclar = []
             for d in yasal_oranlar.values():
                 if d['secildi']:
@@ -409,7 +414,6 @@ with tab1:
                     })
             
             if len(secilen_maclar) > 0:
-                # Seçili maçların toplam oranını dinamik hesapla
                 toplam_oran = 1.0
                 for s in secilen_maclar:
                     toplam_oran *= s['oran']
