@@ -20,8 +20,7 @@ try:
 except ImportError:
     GSPREAD_INSTALLED = False
 
-# --- V2100 KÜRESEL MAI: BIG DATA + DETAYLI RAPORLAMA ---
-st.set_page_config(page_title="V2100 KÜRESEL MAI", layout="wide", page_icon="🌍")
+st.set_page_config(page_title="V2101 ŞEFFAF KÜRESEL MAI", layout="wide", page_icon="🌍")
 
 st.markdown("""
     <style>
@@ -79,10 +78,8 @@ API_LEAGUES = {
     "Hollanda Eredivisie": "soccer_netherlands_eredivisie", "Belçika Pro Lig": "soccer_belgium_first_division_a"
 }
 
-# --- KÜRESEL YAPAY ZEKA MOTORU (TÜM LİGLER) ---
 @st.cache_data(ttl=86400, show_spinner=False)
 def load_and_train_ml_model():
-    # Eğitim havuzunu devasa boyuta çıkardık
     leagues_codes = ['E0', 'T1', 'D1', 'SP1', 'I1', 'F1', 'N1', 'B1']
     urls = []
     for code in leagues_codes:
@@ -99,26 +96,32 @@ def load_and_train_ml_model():
                     dfs.append(df[['B365H', 'B365D', 'B365A', 'FTR', 'FTHG', 'FTAG']].dropna())
         except: pass
     
-    if not dfs: return None, None, None
+    if not dfs: return None, None, None, None, None
     df_train = pd.concat(dfs, ignore_index=True)
     
     X = df_train[['B365H', 'B365D', 'B365A']]
     y_taraf = df_train['FTR'].map({'H': 0, 'D': 1, 'A': 2}) 
-    y_gol = ((df_train['FTHG'] + df_train['FTAG']) > 2.5).astype(int) 
+    y_gol_25 = ((df_train['FTHG'] + df_train['FTAG']) > 2.5).astype(int) 
+    y_gol_15 = ((df_train['FTHG'] + df_train['FTAG']) > 1.5).astype(int) 
+    y_gol_35 = ((df_train['FTHG'] + df_train['FTAG']) > 3.5).astype(int) 
     y_kg = ((df_train['FTHG'] > 0) & (df_train['FTAG'] > 0)).astype(int) 
     
-    # Derin Öğrenme (Daha Karmaşık Karar Ağaçları)
-    rf_taraf = RandomForestClassifier(n_estimators=150, random_state=42, max_depth=6)
-    rf_gol = RandomForestClassifier(n_estimators=150, random_state=42, max_depth=6)
-    rf_kg = RandomForestClassifier(n_estimators=150, random_state=42, max_depth=6)
+    # 5 Ayrı Yapay Zeka Beyni Eğitiliyor
+    rf_taraf = RandomForestClassifier(n_estimators=100, random_state=42, max_depth=5)
+    rf_gol_25 = RandomForestClassifier(n_estimators=100, random_state=42, max_depth=5)
+    rf_gol_15 = RandomForestClassifier(n_estimators=100, random_state=42, max_depth=5)
+    rf_gol_35 = RandomForestClassifier(n_estimators=100, random_state=42, max_depth=5)
+    rf_kg = RandomForestClassifier(n_estimators=100, random_state=42, max_depth=5)
     
     rf_taraf.fit(X, y_taraf)
-    rf_gol.fit(X, y_gol)
+    rf_gol_25.fit(X, y_gol_25)
+    rf_gol_15.fit(X, y_gol_15)
+    rf_gol_35.fit(X, y_gol_35)
     rf_kg.fit(X, y_kg)
     
-    return rf_taraf, rf_gol, rf_kg
+    return rf_taraf, rf_gol_25, rf_gol_15, rf_gol_35, rf_kg
 
-model_taraf, model_gol, model_kg = load_and_train_ml_model()
+model_taraf, model_gol25, model_gol15, model_gol35, model_kg = load_and_train_ml_model()
 
 def check_match_result(sport_key, home, away, target_market, api_key):
     url = f"https://api.the-odds-api.com/v4/sports/{sport_key}/scores/?apiKey={api_key}&daysFrom=3"
@@ -151,13 +154,13 @@ def check_match_result(sport_key, home, away, target_market, api_key):
     except: return "BEKLİYOR", "Hata"
 
 # --- ARAYÜZ ---
-st.markdown("<h1 style='text-align:center; color:#b829ff; font-size:52px; margin-bottom:0; text-shadow: 0 0 20px rgba(184, 41, 255, 0.4);'>🌍 V2100 KÜRESEL MAI</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>Tüm Avrupa Ligleri Hafızası | Çatışma-Uyum Analizli Detaylı Rapor</p><br>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#b829ff; font-size:52px; margin-bottom:0; text-shadow: 0 0 20px rgba(184, 41, 255, 0.4);'>🌍 V2101 ŞEFFAF KÜRESEL MAI</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>Tam Yapay Zeka Eğitimi | %100 Dürüst Raporlama</p><br>", unsafe_allow_html=True)
 
 tab1, tab2, tab3 = st.tabs(["📡 1. MAÇLARI ÇEK", "🧠 2. YAPAY SİNİR AĞI ANALİZİ", "💼 3. BİLANÇO MUHASEBESİ"])
 
 c1, c2 = st.columns([2, 1])
-with c1: secilen_ligler = st.multiselect("Ligleri Seçin:", list(API_LEAGUES.keys()), default=["İngiltere Premier Lig", "Türkiye Süper Lig", "İspanya La Liga", "Almanya Bundesliga"])
+with c1: secilen_ligler = st.multiselect("Ligleri Seçin:", list(API_LEAGUES.keys()), default=["İngiltere Premier Lig", "Türkiye Süper Lig", "İspanya La Liga"])
 with c2: api_key = st.text_input("The-Odds-API Anahtarı:", value=st.secrets.get("API_KEY", ""), type="password", key="odds_api_key")
 
 with tab1:
@@ -219,8 +222,8 @@ with tab2:
             
             st.markdown("</div><br>", unsafe_allow_html=True)
             
-            if st.button("🔮 KÜRESEL MAI - DETAYLI ANALİZİ BAŞLAT", use_container_width=True):
-                with st.spinner("Tüm Avrupa verileri taranıyor, detaylı rapor hazırlanıyor..."):
+            if st.button("🔮 KÜRESEL MAI - ŞEFFAF ANALİZİ BAŞLAT", use_container_width=True):
+                with st.spinner("Modeller devrede. Tüm tahminler şeffaf şekilde analiz ediliyor..."):
                     
                     h_odd, d_odd, a_odd = 2.50, 3.20, 2.80 
                     api_basarili = False
@@ -243,7 +246,7 @@ with tab2:
                                             d_odd = out['price']
                     except: pass
 
-                    # --- SOL BEYİN: SICAK POISSON ---
+                    # --- SOL BEYİN: İSTATİSTİK ---
                     ev_atk_ort = ev_at / ev_mac if ev_mac > 0 else 1.0
                     ev_def_ort = ev_ye / ev_mac if ev_mac > 0 else 1.0
                     dep_atk_ort = dep_at / dep_mac if dep_mac > 0 else 1.0
@@ -282,25 +285,35 @@ with tab2:
                         "Korner 8.5 Üst": p_korner85ust, "Korner 9.5 Üst": p_korner95ust
                     }
 
-                    # --- SAĞ BEYİN: RANDOM FOREST ---
+                    # --- SAĞ BEYİN: GERÇEK YAPAY ZEKA ---
                     input_data = pd.DataFrame([[h_odd, d_odd, a_odd]], columns=['B365H', 'B365D', 'B365A'])
                     ml_taraf_probs = model_taraf.predict_proba(input_data)[0] 
-                    ml_gol_probs = model_gol.predict_proba(input_data)[0]     
+                    ml_gol25_probs = model_gol25.predict_proba(input_data)[0]     
+                    ml_gol15_probs = model_gol15.predict_proba(input_data)[0]
+                    ml_gol35_probs = model_gol35.predict_proba(input_data)[0]
                     ml_kg_probs = model_kg.predict_proba(input_data)[0]       
 
                     ml_probs = {
                         "MS 1": ml_taraf_probs[0], "MS 0": ml_taraf_probs[1], "MS 2": ml_taraf_probs[2],
-                        "2.5 Üst": ml_gol_probs[1], "2.5 Alt": ml_gol_probs[0],
+                        "2.5 Üst": ml_gol25_probs[1], "2.5 Alt": ml_gol25_probs[0],
+                        "1.5 Üst": ml_gol15_probs[1], "1.5 Alt": ml_gol15_probs[0],
+                        "3.5 Üst": ml_gol35_probs[1], "3.5 Alt": ml_gol35_probs[0],
                         "KG Var": ml_kg_probs[1], "KG Yok": ml_kg_probs[0],
-                        "1.5 Üst": p_15ust, "3.5 Üst": p_35ust, "3.5 Alt": (1-p_35ust), 
-                        "Korner 8.5 Üst": p_korner85ust, "Korner 9.5 Üst": p_korner95ust
+                        "Korner 8.5 Üst": -1, "Korner 9.5 Üst": -1 # Kornerler için ML kapalı (Dürüstlük kuralı)
                     }
 
-                    # --- FÜZYON & DETAYLI RAPORLAMA ---
+                    # --- FÜZYON & DÜRÜST RAPORLAMA ---
                     fuzyon_sonuclar = []
                     for pazar in poisson_probs.keys():
-                        ort_ihtimal = (poisson_probs[pazar] + ml_probs[pazar]) / 2.0
-                        fuzyon_sonuclar.append((pazar, ort_ihtimal, poisson_probs[pazar], ml_probs[pazar]))
+                        p_val = poisson_probs[pazar]
+                        ml_val = ml_probs.get(pazar, -1)
+                        
+                        if ml_val == -1: # ML verisi yoksa (Kornerler) sadece istatistiği al
+                            ort_ihtimal = p_val
+                        else:
+                            ort_ihtimal = (p_val + ml_val) / 2.0
+                            
+                        fuzyon_sonuclar.append((pazar, ort_ihtimal, p_val, ml_val))
 
                     THRESHOLD = guven_esigi / 100.0
                     gecen_hedefler = sorted([h for h in fuzyon_sonuclar if h[1] >= THRESHOLD], key=lambda x: x[1], reverse=True)
@@ -310,30 +323,38 @@ with tab2:
                         gol_bahisleri = [h for h in gecen_hedefler if "Üst" in h[0] and "Korner" not in h[0] or "Alt" in h[0] and "Korner" not in h[0] or "KG" in h[0]]
                         korner_bahisleri = [h for h in gecen_hedefler if "Korner" in h[0]]
                         
-                        rapor = f"🧠 <b>V2100 KÜRESEL MAI RÖNTGENİ</b><br><br>"
+                        rapor = f"🧠 <b>V2101 ŞEFFAF MAI RÖNTGENİ</b><br><br>"
                         if api_basarili:
                             rapor += f"📡 İddaa'nın açtığı Ev Sahibi ({h_odd:.2f}) oranı, Avrupa'daki on binlerce geçmiş maçla kıyaslandı.<br><br>"
                         
                         def generate_detailed_report(pazar, final_prob, p_prob, ml_prob):
+                            if ml_prob == -1:
+                                return f"""
+                                <div class='report-card'>
+                                    <div class='report-title'>[{pazar}] ➜ Net İhtimal: %{int(final_prob*100)}</div>
+                                    <b>Detay:</b> <span style='color:#a0aec0;'>⚪ SADECE İSTATİSTİK:</span> Bu pazar için yapay zeka verisi yoktur, sadece matematiksel formül (Poisson) kullanılmıştır.<br>
+                                    <span style='font-size:13px; color:#a0aec0;'>[İstatistik: %{int(p_prob*100)}]</span>
+                                </div>
+                                """
+                                
                             fark = ml_prob - p_prob
                             if abs(fark) < 0.10:
                                 durum = "<span style='color:#00ffcc;'>🟢 SİSTEMLER MUTABIK:</span>"
                                 aciklama = "İstatistikler ile Yapay Zekanın tecrübesi tamamen aynı fikirde. Yüksek güvenilirlik."
                             elif fark > 0.10:
                                 durum = "<span style='color:#b829ff;'>🟣 YAPAY ZEKA DESTEKLİYOR:</span>"
-                                aciklama = "Form durumu vasat olsa da, makine bu oranlarda genelde bu sonucun geldiğini söylüyor."
+                                aciklama = "İstatistiksel form durumu vasat olsa da, yapay zeka geçmiş tecrübesine dayanarak bu seçeneği güçlü görüyor."
                             else:
                                 durum = "<span style='color:#ffcc00;'>🟡 YAPAY ZEKA UYARIYOR:</span>"
-                                aciklama = "Takımın istatistikleri çok iyi ama makine geçmişte bu oranlardan çok sürpriz/hayal kırıklığı çıktığını tespit etti. Riski göze alın."
+                                aciklama = "Takımın güncel istatistikleri yüksek çıksa da, makine geçmişte bu şartlarda çok fazla hayal kırıklığı yaşandığını söylüyor."
                                 
-                            html = f"""
+                            return f"""
                             <div class='report-card'>
                                 <div class='report-title'>[{pazar}] ➜ Net İhtimal: %{int(final_prob*100)}</div>
                                 <b>Detay:</b> {durum} {aciklama}<br>
                                 <span style='font-size:13px; color:#a0aec0;'>[İstatistik: %{int(p_prob*100)} | Yapay Zeka: %{int(ml_prob*100)}]</span>
                             </div>
                             """
-                            return html
 
                         if len(taraf_bahisleri) > 0:
                             rapor += "<div class='category-title'>🏆 TARAF (Kazanma Olasılıkları)</div>"
@@ -344,14 +365,14 @@ with tab2:
                             for h in gol_bahisleri: rapor += generate_detailed_report(*h)
                                 
                         if len(korner_bahisleri) > 0:
-                            rapor += "<div class='category-title'>🚩 KORNER TAHMİNİ</div>"
+                            rapor += "<div class='category-title'>🚩 KORNER TAHMİNİ (Makine Öğrenimi Hariç)</div>"
                             for h in korner_bahisleri: rapor += generate_detailed_report(*h)
 
                         secilen_mac['gecen_hedefler'] = gecen_hedefler
                         secilen_mac['ai_rapor'] = rapor
                         
                         st.session_state.aktif_mac = secilen_mac 
-                        st.success(f"🔮 Küresel Analiz Tamamlandı! Raporu aşağıdan inceleyin.")
+                        st.success(f"🔮 Dürüst Analiz Tamamlandı! Gerçek ML sonuçları aşağıda.")
                     else:
                         st.session_state.aktif_mac = None
                         st.error(f"🚨 UYARI: Her iki beyin de bu maçta risksiz bir oran bulamadı. Pas geçin.")
