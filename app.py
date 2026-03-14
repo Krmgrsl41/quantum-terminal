@@ -13,8 +13,8 @@ try:
 except ImportError:
     GSPREAD_INSTALLED = False
 
-# --- V1601 KARNELİ RADAR: SAF VERİ + YAPAY ZEKA İSTATİSTİK PANELİ ---
-st.set_page_config(page_title="V1601 SAF VERİ RADARI", layout="wide", page_icon="🎯")
+# --- V1700 SICAK FORM RADARI: MOMENTUM (SON 5 MAÇ) ODAKLI ---
+st.set_page_config(page_title="V1700 SICAK FORM RADARI", layout="wide", page_icon="🔥")
 
 st.markdown("""
     <style>
@@ -24,12 +24,12 @@ st.markdown("""
     
     .metric-box { background: linear-gradient(145deg, #0c1015 0%, #151b22 100%); border: 1px solid #1e2530; padding: 25px; border-radius: 16px; text-align: center; box-shadow: 0 8px 25px rgba(0,0,0,0.4); }
     .metric-title { color: #8b949e; font-size: 16px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;}
-    .metric-value { font-size: 42px; font-weight: 900; color: #00ffcc; margin: 10px 0; text-shadow: 0 0 15px rgba(0, 255, 204, 0.2); }
+    .metric-value { font-size: 42px; font-weight: 900; color: #ff4b4b; margin: 10px 0; text-shadow: 0 0 15px rgba(255, 75, 75, 0.2); }
     
-    .match-card { background: linear-gradient(to right, #0c1015, #11161d); border: 1px solid #232b35; border-left: 5px solid #00ffcc; padding: 25px; border-radius: 12px; margin-top: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.2s;}
-    .target-market { color: #000; font-weight: 900; font-size: 22px; background: #00ffcc; padding: 8px 15px; border-radius: 8px; display: inline-block; margin-top: 10px; box-shadow: 0 0 10px rgba(0,255,204,0.3);}
+    .match-card { background: linear-gradient(to right, #0c1015, #11161d); border: 1px solid #232b35; border-left: 5px solid #ff4b4b; padding: 25px; border-radius: 12px; margin-top: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.2s;}
+    .target-market { color: #fff; font-weight: 900; font-size: 22px; background: #ff4b4b; padding: 8px 15px; border-radius: 8px; display: inline-block; margin-top: 10px; box-shadow: 0 0 10px rgba(255,75,75,0.3);}
     
-    .ai-report { background: linear-gradient(145deg, #13171e 0%, #0a0d12 100%); border: 1px solid #2d3748; border-top: 3px solid #00ffcc; padding: 25px; margin-top: 20px; border-radius: 10px; font-size: 16px; line-height: 1.7; color: #e2e8f0; }
+    .ai-report { background: linear-gradient(145deg, #13171e 0%, #0a0d12 100%); border: 1px solid #2d3748; border-top: 3px solid #ff4b4b; padding: 25px; margin-top: 20px; border-radius: 10px; font-size: 16px; line-height: 1.7; color: #e2e8f0; }
     .highlight-gold { color: #ffcc00; font-weight: 900; font-size: 17px;}
     .highlight-green { color: #00ffcc; font-weight: 900; font-size: 17px;}
     .manual-panel { background: #11161d; border: 1px dashed #4a5568; padding: 20px; border-radius: 10px; margin-top: 15px; }
@@ -106,10 +106,10 @@ def check_match_result(sport_key, home, away, target_market, api_key):
     except: return "BEKLİYOR", "Hata"
 
 # --- ARAYÜZ ---
-st.markdown("<h1 style='text-align:center; color:#00ffcc; font-size:52px; margin-bottom:0; text-shadow: 0 0 20px rgba(0,255,204,0.3);'>🎯 V1601 SAF VERİ RADARI</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>Sıfır Manipülasyon | Çıplak İstatistik | Otonom Öğrenme Raporu</p><br>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#ff4b4b; font-size:52px; margin-bottom:0; text-shadow: 0 0 20px rgba(255,75,75,0.3);'>🔥 V1700 SICAK FORM RADARI</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>Sezonluk Çöpleri Unut | Sadece Son Maçlardaki Momentum</p><br>", unsafe_allow_html=True)
 
-tab1, tab2, tab3 = st.tabs(["📡 1. MAÇLARI ÇEK", "🔬 2. ANALİZ VE VUR-KAÇ", "💼 3. BİLANÇO MUHASEBESİ"])
+tab1, tab2, tab3 = st.tabs(["📡 1. MAÇLARI ÇEK", "🔬 2. SICAK FORM ANALİZİ", "💼 3. BİLANÇO MUHASEBESİ"])
 
 c1, c2 = st.columns([2, 1])
 with c1: secilen_ligler = st.multiselect("Ligleri Seçin:", list(API_LEAGUES.keys()), default=["İngiltere Premier Lig", "Türkiye Süper Lig", "Almanya Bundesliga"])
@@ -150,31 +150,31 @@ with tab2:
             secilen_mac = next(m for m in st.session_state.raw_api_data if f"{m['home_team']} vs {m['away_team']} ({m['kendi_ligi']})" == secilen_mac_str)
             
             st.markdown("<div class='manual-panel'>", unsafe_allow_html=True)
-            st.markdown(f"<h3 style='color:#00ffcc;'>⚙️ Saf İstihbarat Verisi (Sadece Rakamlar)</h3>", unsafe_allow_html=True)
-            st.markdown("<i style='color:#8b949e;'>Makinenin suni torpil yapmasını engellemek için sıralama verisi kaldırılmıştır. Sadece attığı/yediği maç verisini giriniz.</i><br><br>", unsafe_allow_html=True)
+            st.markdown(f"<h3 style='color:#ff4b4b;'>⚙️ Momentum Verisi (Sadece Son Maçlar!)</h3>", unsafe_allow_html=True)
+            st.markdown("<i style='color:#8b949e;'>Lütfen takımların sezonluk gollerini DEĞİL, sadece SON 5 veya SON 3 maçtaki performanslarını girin.</i><br><br>", unsafe_allow_html=True)
             
-            guven_esigi = st.slider("Güvenlik Eşiği Belirle (%):", min_value=50, max_value=90, value=65, step=1)
+            guven_esigi = st.slider("Güvenlik Eşiği Belirle (%):", min_value=50, max_value=90, value=60, step=1)
             st.divider()
 
             c_ev, c_dep = st.columns(2)
             with c_ev:
                 st.markdown(f"**🏠 {secilen_mac['home_team']} (Ev Sahibi)**")
-                ev_mac = st.number_input("Oynadığı Maç:", min_value=1, value=29, key="ev_mac")
-                ev_at = st.number_input("Attığı Gol:", min_value=0, value=60, key="ev_at")
-                ev_ye = st.number_input("Yediği Gol:", min_value=0, value=18, key="ev_ye")
-                ev_kor_kul = st.number_input("Ort. Korner:", min_value=0.0, value=6.0, step=0.5, key="ev_kor_kul")
+                ev_mac = st.number_input("Baz Alınan Form Maçı (Örn: Son 5):", min_value=1, value=5, key="ev_mac")
+                ev_at = st.number_input("Bu Periyotta Attığı Gol:", min_value=0, value=8, key="ev_at")
+                ev_ye = st.number_input("Bu Periyotta Yediği Gol:", min_value=0, value=4, key="ev_ye")
+                ev_kor_kul = st.number_input("Son Maçlardaki Ort. Korner:", min_value=0.0, value=5.5, step=0.5, key="ev_kor_kul")
                 
             with c_dep:
                 st.markdown(f"**✈️ {secilen_mac['away_team']} (Deplasman)**")
-                dep_mac = st.number_input("Oynadığı Maç:", min_value=1, value=29, key="dep_mac")
-                dep_at = st.number_input("Attığı Gol:", min_value=0, value=40, key="dep_at")
-                dep_ye = st.number_input("Yediği Gol:", min_value=0, value=35, key="dep_ye")
-                dep_kor_kul = st.number_input("Ort. Korner:", min_value=0.0, value=4.5, step=0.5, key="dep_kor_kul")
+                dep_mac = st.number_input("Baz Alınan Form Maçı (Örn: Son 5):", min_value=1, value=5, key="dep_mac")
+                dep_at = st.number_input("Bu Periyotta Attığı Gol:", min_value=0, value=5, key="dep_at")
+                dep_ye = st.number_input("Bu Periyotta Yediği Gol:", min_value=0, value=7, key="dep_ye")
+                dep_kor_kul = st.number_input("Son Maçlardaki Ort. Korner:", min_value=0.0, value=4.5, step=0.5, key="dep_kor_kul")
             
             st.markdown("</div><br>", unsafe_allow_html=True)
             
-            if st.button("☢️ SAF VERİ İLE ANALİZİ BAŞLAT", use_container_width=True):
-                with st.spinner("Çıplak verilerle matris çiziliyor, manipülasyonlar silindi..."):
+            if st.button("🔥 SICAK FORM ANALİZİNİ BAŞLAT", use_container_width=True):
+                with st.spinner("Güncel momentum hesaplanıyor..."):
                     
                     h_odd, d_odd, a_odd = 2.50, 3.20, 2.80 
                     api_basarili = False
@@ -197,7 +197,7 @@ with tab2:
                                             d_odd = out['price']
                     except: pass
 
-                    # MOTOR A: SAF POISSON
+                    # MOTOR A: SICAK POISSON
                     ev_atk_ort = ev_at / ev_mac if ev_mac > 0 else 1.0
                     ev_def_ort = ev_ye / ev_mac if ev_mac > 0 else 1.0
                     dep_atk_ort = dep_at / dep_mac if dep_mac > 0 else 1.0
@@ -280,14 +280,12 @@ with tab2:
                     gecen_hedefler = sorted([h for h in fuzyon_sonuclar if h[1] >= THRESHOLD], key=lambda x: x[1], reverse=True)
                     
                     if len(gecen_hedefler) > 0:
-                        rapor = f"🔥 <b>V1601 SAF VERİ RADARI ÇALIŞTI!</b><br><br>"
+                        rapor = f"🔥 <b>V1700 SICAK FORM RADARI ÇALIŞTI!</b><br><br>"
                         
                         if api_basarili:
-                            rapor += f"📡 <span style='color:#00ffcc;'>API BAZLI RÖNTGEN BAŞARILI:</span> Sistem, İddaa'nın açtığı güncel taraf oranlarını (Ev: <b>{h_odd:.2f}</b>) yakaladı ve Oranexcel'i bu gerçek değere göre süzdü.<br><br>"
-                        else:
-                            rapor += f"📡 <span style='color:#ff4b4b;'>API KÖRLÜK UYARISI:</span> API bu maça ait güncel oranları çekemedi. Sistem güvenlik gereği Ev Sahibi Oranını varsayılan olarak (<b>2.50</b>) baz aldı. <i>(Lütfen sonuçları buna göre değerlendirin).</i><br><br>"
+                            rapor += f"📡 <span style='color:#ff4b4b;'>API BAZLI RÖNTGEN BAŞARILI:</span> Sistem güncel oranı (Ev: <b>{h_odd:.2f}</b>) baz aldı.<br><br>"
 
-                        rapor += f"Eşiği (%{guven_esigi}) geçmeyi başaran <b>TÜM PAZARLAR</b> sadece senin girdiğin net gol/korner rakamlarına göre (Sıfır Manipülasyon) hesaplanmış ve en yüksek ihtimalden en düşüğe doğru aşağıda listelenmiştir.<br><br>"
+                        rapor += f"Eşiği (%{guven_esigi}) geçmeyi başaran hedefler, takımların <b>SADECE SON MAÇLARDAKİ MOMENTUMUNA</b> göre hesaplanmıştır:<br><br>"
                         
                         for i, hedef in enumerate(gecen_hedefler):
                             pazar, final_prob, p_prob, o_prob = hedef
@@ -302,7 +300,7 @@ with tab2:
                         secilen_mac['ai_rapor'] = rapor
                         
                         st.session_state.aktif_mac = secilen_mac 
-                        st.success(f"☢️ Hedefler Bulundu! Saf veriyle hesaplandı.")
+                        st.success(f"☢️ Hedefler Bulundu! Sıcak formla hesaplandı.")
                     else:
                         st.session_state.aktif_mac = None
                         st.error(f"🚨 UYARI: Verilere göre hiçbir ihtimal %{guven_esigi} barajını geçemedi. Pas geçin.")
@@ -317,7 +315,8 @@ with tab2:
             hedef_opsiyonlari = [f"{h[0]} (İhtimal: %{int(h[1]*100)} - Adil Oran: {(1/h[1]):.2f})" for h in m['gecen_hedefler']]
             secilen_hedef_str = st.selectbox("📌 KASAYA İŞLENECEK HEDEFİ SEÇİN:", hedef_opsiyonlari, key="nihai_hedef_secim")
             
-            nihai_pazar = secilen_hedef_str.split(' (')[0]
+            # FORMAT KORUMASI (0.637 Hatasını Önler)
+            nihai_pazar = secilen_hedef_str.split(' (')[0].strip()
             nihai_prob_str = secilen_hedef_str.split('%')[1].split(' ')[0]
             nihai_prob = float(nihai_prob_str) / 100.0
             
@@ -401,7 +400,7 @@ with tab3:
                             for m_isim, m_lig, m_pazar in zip(maclar, ligler, pazarlar):
                                 if ' vs ' in m_isim:
                                     ev, dep = m_isim.split(' vs ')
-                                    res, skor = check_match_result(m_lig, ev, dep, m_pazar, api_key)
+                                    res, skor = check_match_result(m_lig, ev, dep, m_pazar.strip(), api_key) # Strip eklendi
                                 else:
                                     res, skor = "BEKLİYOR", "Eski Format"
                                     
@@ -409,7 +408,7 @@ with tab3:
                                 skorlar.append(skor)
                             
                             nihai_sonuc = "BEKLİYOR"
-                            if "BEKLİYOR" not in durumlar and "Korner Manuel Denetim" not in skorlar:
+                            if "BEKLİYOR" not in durumlar and "Korner Manuel" not in skorlar:
                                 if "KAYBETTİ" in durumlar: nihai_sonuc = "KAYBETTİ"
                                 elif all(d == "KAZANDI" for d in durumlar): nihai_sonuc = "KAZANDI"
                             
@@ -446,10 +445,9 @@ with tab3:
             b_tutar, b_oran = float(str(r[1]).replace(',','.').strip()), float(str(r[2]).replace(',','.').strip())
             mac_isimleri = r[8].replace('#', ' | ') if len(r) > 10 else "Eski Format"
             border_color = "#4a5568" if is_sanal else "#ff4b4b"
-            tutar_text = "<span style='color:#a0aec0;'>0 TL (Sanal)</span>" if is_sanal else f"<span style='color:#00ffcc;'>{b_tutar:.0f} TL</span>"
+            tutar_text = "<span style='color:#a0aec0;'>0 TL (Sanal)</span>" if is_sanal else f"<span style='color:#ff4b4b;'>{b_tutar:.0f} TL</span>"
             st.markdown(f"<div style='background: #11161d; border-left: 4px solid {border_color}; padding:20px; border-radius:10px; margin-bottom:15px;'><b style='font-size:18px;'>Maçlar:</b> <span style='color:#e2e8f0;'>{mac_isimleri}</span><br><br><b style='font-size:16px;'>Tutar:</b> <span style='font-size:18px;'>{tutar_text}</span> &nbsp;|&nbsp; <b style='font-size:16px;'>Oran:</b> <span style='color:#d4af37; font-size:18px; font-weight:bold;'>{b_oran:.2f}</span></div>", unsafe_allow_html=True)
 
-    # --- YENİ EKLENEN YAPAY ZEKA ÖĞRENME İSTATİSTİKLERİ MODÜLÜ ---
     st.divider()
     st.markdown("### 📊 Yapay Zeka Öğrenme İstatistikleri (Analitik Merkezi)")
     
@@ -461,7 +459,10 @@ with tab3:
                 won = status in ["Kazandı_Sonuc", "Sanal_Kazandı"]
                 pazarlar = r[10].split('#')
                 for p in pazarlar:
-                    ai_stats.append({"Pazar": p.strip(), "Sonuc": won})
+                    # Buglı verileri (örn: 0.637) tablodan dışlamak için ufak bir filtre
+                    pazar_adi = p.strip()
+                    if not pazar_adi[0].isdigit() or "Üst" in pazar_adi or "Alt" in pazar_adi or "MS" in pazar_adi:
+                        ai_stats.append({"Pazar": pazar_adi, "Sonuc": won})
 
     if ai_stats:
         df_stats = pd.DataFrame(ai_stats)
@@ -477,7 +478,7 @@ with tab3:
         c_stat4.metric("🎯 Genel İsabet Oranı", f"%{win_rate:.1f}")
         
         st.markdown("#### 🎯 Pazar (Market) Bazlı Analiz Tablosu")
-        st.markdown("<i style='color:#8b949e; font-size:14px;'>Aşağıdaki tablo, yapay zekanın geçmişte en çok hangi bahis türlerinde başarılı olduğunu gösterir. Oynayacağınız hedefi seçerken bu tabloyu referans alabilirsiniz.</i><br><br>", unsafe_allow_html=True)
+        st.markdown("<i style='color:#8b949e; font-size:14px;'>Sadece geçerli pazarlar listelenmektedir. Eski buglı kayıtlar tablodan gizlenmiştir.</i><br><br>", unsafe_allow_html=True)
         
         market_stats = df_stats.groupby('Pazar')['Sonuc'].agg(['count', 'sum']).reset_index()
         market_stats.columns = ['Bahis Pazarı', 'Toplam Oynanan', 'Kazanan']
@@ -488,4 +489,4 @@ with tab3:
         market_stats['İsabet Oranı (%)'] = market_stats['İsabet Oranı (%)'].apply(lambda x: f"%{x:.1f}")
         st.dataframe(market_stats, use_container_width=True, hide_index=True)
     else:
-        st.info("Henüz 'Otonom Denetçi' tarafından sonuçlandırılmış ve hafızaya işlenmiş bir maç bulunmuyor. Sanal veya gerçek birkaç maç oynayıp sonuçlandığında tablo burada oluşacaktır.")
+        st.info("Henüz 'Otonom Denetçi' tarafından sonuçlandırılmış geçerli bir maç bulunmuyor.")
