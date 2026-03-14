@@ -13,8 +13,8 @@ try:
 except ImportError:
     GSPREAD_INSTALLED = False
 
-# --- V1500 ŞEFFAF RADAR: TÜM ALTERNATİFLERİ LİSTELEME ---
-st.set_page_config(page_title="V1500 ŞEFFAF RADAR", layout="wide", page_icon="🎯")
+# --- V1600 SAF VERİ RADARI: SIFIR MANİPÜLASYON, SADECE ÇIPLAK RAKAMLAR ---
+st.set_page_config(page_title="V1600 SAF VERİ RADARI", layout="wide", page_icon="🎯")
 
 st.markdown("""
     <style>
@@ -106,10 +106,10 @@ def check_match_result(sport_key, home, away, target_market, api_key):
     except: return "BEKLİYOR", "Hata"
 
 # --- ARAYÜZ ---
-st.markdown("<h1 style='text-align:center; color:#00ffcc; font-size:52px; margin-bottom:0; text-shadow: 0 0 20px rgba(0,255,204,0.3);'>🎯 V1500 ŞEFFAF RADAR</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>Tüm Alternatifleri Listeler | Kararı Sana Bırakır | Tek Maç Vur-Kaç</p><br>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#00ffcc; font-size:52px; margin-bottom:0; text-shadow: 0 0 20px rgba(0,255,204,0.3);'>🎯 V1600 SAF VERİ RADARI</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>Sıfır Manipülasyon | Çıplak İstatistik (Gol/Korner) | Şeffaf Sonuçlar</p><br>", unsafe_allow_html=True)
 
-tab1, tab2, tab3 = st.tabs(["📡 1. MAÇLARI ÇEK", "🔬 2. ANALİZ VE VUR-KAÇ (TEK EKRAN)", "💼 3. BİLANÇO MUHASEBESİ"])
+tab1, tab2, tab3 = st.tabs(["📡 1. MAÇLARI ÇEK", "🔬 2. ANALİZ VE VUR-KAÇ", "💼 3. BİLANÇO MUHASEBESİ"])
 
 c1, c2 = st.columns([2, 1])
 with c1: secilen_ligler = st.multiselect("Ligleri Seçin:", list(API_LEAGUES.keys()), default=["İngiltere Premier Lig", "Türkiye Süper Lig", "Almanya Bundesliga"])
@@ -150,53 +150,63 @@ with tab2:
             secilen_mac = next(m for m in st.session_state.raw_api_data if f"{m['home_team']} vs {m['away_team']} ({m['kendi_ligi']})" == secilen_mac_str)
             
             st.markdown("<div class='manual-panel'>", unsafe_allow_html=True)
-            st.markdown(f"<h3 style='color:#00ffcc;'>⚙️ Objektif İstihbarat (Maçkolik)</h3>", unsafe_allow_html=True)
+            st.markdown(f"<h3 style='color:#00ffcc;'>⚙️ Saf İstihbarat Verisi (Sadece Rakamlar)</h3>", unsafe_allow_html=True)
+            st.markdown("<i style='color:#8b949e;'>Makinenin suni torpil yapmasını engellemek için sıralama verisi kaldırılmıştır. Sadece attığı/yediği maç verisini giriniz.</i><br><br>", unsafe_allow_html=True)
             
-            guven_esigi = st.slider("Güvenlik Eşiği Belirle (%):", min_value=50, max_value=90, value=70, step=1)
+            guven_esigi = st.slider("Güvenlik Eşiği Belirle (%):", min_value=50, max_value=90, value=65, step=1)
             st.divider()
 
             c_ev, c_dep = st.columns(2)
             with c_ev:
                 st.markdown(f"**🏠 {secilen_mac['home_team']} (Ev Sahibi)**")
-                ev_sira = st.number_input("Lig Sıralaması:", min_value=1, max_value=24, value=5, key="ev_sira")
-                ev_mac = st.number_input("Oynadığı Maç:", min_value=1, value=10, key="ev_mac")
-                ev_at = st.number_input("Attığı Gol:", min_value=0, value=15, key="ev_at")
-                ev_ye = st.number_input("Yediği Gol:", min_value=0, value=10, key="ev_ye")
-                ev_kor_kul = st.number_input("Ort. Korner:", min_value=0.0, value=5.0, step=0.5, key="ev_kor_kul")
+                ev_mac = st.number_input("Oynadığı Maç:", min_value=1, value=29, key="ev_mac")
+                ev_at = st.number_input("Attığı Gol:", min_value=0, value=60, key="ev_at")
+                ev_ye = st.number_input("Yediği Gol:", min_value=0, value=18, key="ev_ye")
+                ev_kor_kul = st.number_input("Ort. Korner:", min_value=0.0, value=6.0, step=0.5, key="ev_kor_kul")
                 
             with c_dep:
                 st.markdown(f"**✈️ {secilen_mac['away_team']} (Deplasman)**")
-                dep_sira = st.number_input("Lig Sıralaması:", min_value=1, max_value=24, value=12, key="dep_sira")
-                dep_mac = st.number_input("Oynadığı Maç:", min_value=1, value=10, key="dep_mac")
-                dep_at = st.number_input("Attığı Gol:", min_value=0, value=10, key="dep_at")
-                dep_ye = st.number_input("Yediği Gol:", min_value=0, value=15, key="dep_ye")
+                dep_mac = st.number_input("Oynadığı Maç:", min_value=1, value=29, key="dep_mac")
+                dep_at = st.number_input("Attığı Gol:", min_value=0, value=40, key="dep_at")
+                dep_ye = st.number_input("Yediği Gol:", min_value=0, value=35, key="dep_ye")
                 dep_kor_kul = st.number_input("Ort. Korner:", min_value=0.0, value=4.5, step=0.5, key="dep_kor_kul")
             
             st.markdown("</div><br>", unsafe_allow_html=True)
             
-            if st.button("☢️ ŞEFFAF ANALİZİ BAŞLAT", use_container_width=True):
-                with st.spinner("Tüm alternatifler taranıyor ve sıralanıyor..."):
+            if st.button("☢️ SAF VERİ İLE ANALİZİ BAŞLAT", use_container_width=True):
+                with st.spinner("Çıplak verilerle matris çiziliyor, manipülasyonlar silindi..."):
                     
-                    h_odd, d_odd, a_odd = 2.50, 3.20, 2.80
+                    # API'DEN ŞEFFAF ORAN ÇEKİMİ
+                    h_odd, d_odd, a_odd = 2.50, 3.20, 2.80 
+                    api_basarili = False
+                    
                     try:
                         for bkm in secilen_mac.get('bookmakers', []):
                             for mkt in bkm.get('markets', []):
                                 if mkt['key'] == 'h2h':
                                     for out in mkt['outcomes']:
-                                        if out['name'] == secilen_mac['home_team']: h_odd = out['price']
-                                        elif out['name'] == secilen_mac['away_team']: a_odd = out['price']
-                                        elif out['name'] == 'Draw': d_odd = out['price']
+                                        out_name = str(out['name']).lower()
+                                        home_name = str(secilen_mac['home_team']).lower()
+                                        away_name = str(secilen_mac['away_team']).lower()
+                                        
+                                        if out_name in home_name or home_name in out_name: 
+                                            h_odd = out['price']
+                                            api_basarili = True
+                                        elif out_name in away_name or away_name in out_name: 
+                                            a_odd = out['price']
+                                        elif out_name == 'draw': 
+                                            d_odd = out['price']
                     except: pass
 
-                    # MOTOR A: POISSON
+                    # MOTOR A: SAF POISSON (SUNI ÇARPANLAR TAMAMEN SİLİNDİ)
                     ev_atk_ort = ev_at / ev_mac if ev_mac > 0 else 1.0
                     ev_def_ort = ev_ye / ev_mac if ev_mac > 0 else 1.0
                     dep_atk_ort = dep_at / dep_mac if dep_mac > 0 else 1.0
                     dep_def_ort = dep_ye / dep_mac if dep_mac > 0 else 1.0
                     
-                    sira_farki = dep_sira - ev_sira 
-                    lambda_home = max(0.1, ((ev_atk_ort + dep_def_ort) / 2.0) + (sira_farki * 0.02))
-                    lambda_away = max(0.1, ((dep_atk_ort + ev_def_ort) / 2.0) - (sira_farki * 0.02))
+                    # SADECE NET VERİ: Atma ve Yeme ortalamalarının direkt ortalaması
+                    lambda_home = max(0.1, (ev_atk_ort + dep_def_ort) / 2.0)
+                    lambda_away = max(0.1, (dep_atk_ort + ev_def_ort) / 2.0)
                     
                     lambda_ht_home = lambda_home * 0.45
                     lambda_ht_away = lambda_away * 0.45
@@ -271,12 +281,18 @@ with tab2:
                         fuzyon_sonuclar.append((pazar, ort_ihtimal, poisson_olasiliklar[pazar], oranexcel_olasiliklar[pazar]))
 
                     THRESHOLD = guven_esigi / 100.0
-                    # Barajı geçenleri ihtimallerine göre BÜYÜKTEN KÜÇÜĞE sırala
                     gecen_hedefler = sorted([h for h in fuzyon_sonuclar if h[1] >= THRESHOLD], key=lambda x: x[1], reverse=True)
                     
                     if len(gecen_hedefler) > 0:
-                        rapor = f"🔥 <b>V1500 ŞEFFAF RADAR ÇALIŞTI!</b><br><br>"
-                        rapor += f"Eşiği (%{guven_esigi}) geçmeyi başaran <b>TÜM PAZARLAR</b> en yüksek ihtimalden en düşüğe doğru aşağıda listelenmiştir. İddaa oranlarına bakarak sana en değerli (Value) geleni kendin seçebilirsin.<br><br>"
+                        rapor = f"🔥 <b>V1600 SAF VERİ RADARI ÇALIŞTI!</b><br><br>"
+                        
+                        # API TEŞHİS MESAJI
+                        if api_basarili:
+                            rapor += f"📡 <span style='color:#00ffcc;'>API BAZLI RÖNTGEN BAŞARILI:</span> Sistem, İddaa'nın açtığı güncel taraf oranlarını (Ev: <b>{h_odd:.2f}</b>) yakaladı ve Oranexcel'i bu gerçek değere göre süzdü.<br><br>"
+                        else:
+                            rapor += f"📡 <span style='color:#ff4b4b;'>API KÖRLÜK UYARISI:</span> API bu maça ait güncel oranları çekemedi. Sistem güvenlik gereği Ev Sahibi Oranını varsayılan olarak (<b>2.50</b>) baz aldı. <i>(Lütfen sonuçları buna göre değerlendirin).</i><br><br>"
+
+                        rapor += f"Eşiği (%{guven_esigi}) geçmeyi başaran <b>TÜM PAZARLAR</b> sadece senin girdiğin net gol/korner rakamlarına göre (Sıfır Manipülasyon) hesaplanmış ve en yüksek ihtimalden en düşüğe doğru aşağıda listelenmiştir.<br><br>"
                         
                         for i, hedef in enumerate(gecen_hedefler):
                             pazar, final_prob, p_prob, o_prob = hedef
@@ -291,24 +307,21 @@ with tab2:
                         secilen_mac['ai_rapor'] = rapor
                         
                         st.session_state.aktif_mac = secilen_mac 
-                        st.success(f"☢️ Hedefler Bulundu! Seçim senin.")
+                        st.success(f"☢️ Hedefler Bulundu! Saf veriyle hesaplandı.")
                     else:
                         st.session_state.aktif_mac = None
-                        st.error(f"🚨 UYARI: Motorlar Anlaşamadı! Verilere göre hiçbir ihtimal %{guven_esigi} barajını geçemedi. Pas geçin.")
+                        st.error(f"🚨 UYARI: Verilere göre hiçbir ihtimal %{guven_esigi} barajını geçemedi. Pas geçin.")
 
         if 'aktif_mac' in st.session_state and st.session_state.aktif_mac is not None:
             m = st.session_state.aktif_mac
             st.divider()
             
-            # --- YENİ ŞEFFAF ARAYÜZ ---
             st.markdown(f"<div class='match-card'><div class='match-title'>{m['home_team']} ⚡ {m['away_team']}</div><br>", unsafe_allow_html=True)
             st.markdown(f"<div class='ai-report'>{m['ai_rapor']}</div><br>", unsafe_allow_html=True)
             
-            # Seçim Kutusunu Çok Net Hale Getirdik
             hedef_opsiyonlari = [f"{h[0]} (İhtimal: %{int(h[1]*100)} - Adil Oran: {(1/h[1]):.2f})" for h in m['gecen_hedefler']]
-            secilen_hedef_str = st.selectbox("📌 KASAYA İŞLENECEK HEDEFİ SEÇİN (Hangisinin oranı kafana yattıysa):", hedef_opsiyonlari, key="nihai_hedef_secim")
+            secilen_hedef_str = st.selectbox("📌 KASAYA İŞLENECEK HEDEFİ SEÇİN:", hedef_opsiyonlari, key="nihai_hedef_secim")
             
-            # Metinden sadece pazarın adını ve ihtimalini çektik
             nihai_pazar = secilen_hedef_str.split(' (')[0]
             nihai_prob_str = secilen_hedef_str.split('%')[1].split(' ')[0]
             nihai_prob = float(nihai_prob_str) / 100.0
@@ -338,7 +351,7 @@ with tab2:
                 if sheet:
                     isimler = f"{m['home_team']} vs {m['away_team']}"
                     ligler = m['sport_key']
-                    tercihler = nihai_pazar  # Seçtiğin pazarı direkt excel'e yazıyoruz
+                    tercihler = nihai_pazar 
                     problar = f"{nihai_prob:.3f}"
                     oranlar = f"{m.get('manuel_oran', 1.50):.2f}"
                     
