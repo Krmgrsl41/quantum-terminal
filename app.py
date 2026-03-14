@@ -13,8 +13,8 @@ try:
 except ImportError:
     GSPREAD_INSTALLED = False
 
-# --- V1200 KUSURSUZ TERMİNAL: FÜZYON MOTORU + TEK EKRAN AKSİYON ---
-st.set_page_config(page_title="V1200 KUSURSUZ TERMİNAL", layout="wide", page_icon="☢️")
+# --- V1300 ALTERNATİF RADAR: ÇOKLU HEDEF SEÇİMİ ---
+st.set_page_config(page_title="V1300 FÜZYON RADARI", layout="wide", page_icon="☢️")
 
 st.markdown("""
     <style>
@@ -26,10 +26,10 @@ st.markdown("""
     .metric-title { color: #8b949e; font-size: 16px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;}
     .metric-value { font-size: 42px; font-weight: 900; color: #00ffcc; margin: 10px 0; text-shadow: 0 0 15px rgba(0, 255, 204, 0.2); }
     
-    .match-card { background: linear-gradient(to right, #0c1015, #11161d); border: 1px solid #232b35; border-left: 5px solid #ff4b4b; padding: 25px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.2s;}
-    .target-market { color: #fff; font-weight: 900; font-size: 20px; background: #ff4b4b; padding: 8px 15px; border-radius: 8px; display: inline-block; margin-top: 10px; box-shadow: 0 0 10px rgba(255,75,75,0.3);}
+    .match-card { background: linear-gradient(to right, #0c1015, #11161d); border: 1px solid #232b35; border-left: 5px solid #00ffcc; padding: 25px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.2s;}
+    .target-market { color: #000; font-weight: 900; font-size: 18px; background: #00ffcc; padding: 5px 12px; border-radius: 8px; display: inline-block; margin-top: 10px; box-shadow: 0 0 10px rgba(0,255,204,0.3);}
     
-    .ai-report { background: linear-gradient(145deg, #13171e 0%, #0a0d12 100%); border: 1px solid #2d3748; border-top: 3px solid #ff4b4b; padding: 25px; margin-top: 20px; border-radius: 10px; font-size: 16px; line-height: 1.7; color: #e2e8f0; }
+    .ai-report { background: linear-gradient(145deg, #13171e 0%, #0a0d12 100%); border: 1px solid #2d3748; border-top: 3px solid #00ffcc; padding: 25px; margin-top: 20px; border-radius: 10px; font-size: 16px; line-height: 1.7; color: #e2e8f0; }
     .highlight-gold { color: #ffcc00; font-weight: 900; font-size: 17px;}
     .highlight-green { color: #00ffcc; font-weight: 900; font-size: 17px;}
     .manual-panel { background: #11161d; border: 1px dashed #4a5568; padding: 20px; border-radius: 10px; margin-top: 15px; }
@@ -107,8 +107,8 @@ def check_match_result(sport_key, home, away, target_market, api_key):
     except: return "BEKLİYOR", "Hata"
 
 # --- ARAYÜZ ---
-st.markdown("<h1 style='text-align:center; color:#ff4b4b; font-size:52px; margin-bottom:0; text-shadow: 0 0 20px rgba(255,75,75,0.3);'>☢️ V1200 KUSURSUZ TERMİNAL</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>Oranexcel (Şifre) + Objektif Veri (Sıralama, Gol, Korner) | Tek Ekran Aksiyon</p><br>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#00ffcc; font-size:52px; margin-bottom:0; text-shadow: 0 0 20px rgba(0,255,204,0.3);'>☢️ V1300 ALTERNATİF RADAR</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>Oranexcel + Poisson | Çoklu Hedef Gösterimi</p><br>", unsafe_allow_html=True)
 
 tab1, tab2, tab3 = st.tabs(["📡 1. LİSTE ÇEK", "🔬 2. FÜZYON SİMÜLASYONU VE ONAY", "💼 3. BİLANÇO MUHASEBESİ"])
 
@@ -153,9 +153,8 @@ with tab2:
             
             st.markdown("<div class='manual-panel'>", unsafe_allow_html=True)
             st.markdown(f"<h3 style='color:#00ffcc;'>⚙️ Objektif İstihbarat (Sadece Sayılar - Maçkolik)</h3>", unsafe_allow_html=True)
-            st.markdown("<i style='color:#8b949e;'>Sadece Sıralama, Gol ve Korner sayılarını giriniz. Sistem subjektif verilerden arındırılmıştır.</i><br><br>", unsafe_allow_html=True)
             
-            guven_esigi = st.slider("Hedef Güvenlik Eşiği Belirle (%):", min_value=60, max_value=90, value=73, step=1)
+            guven_esigi = st.slider("Hedef Güvenlik Eşiği Belirle (%):", min_value=50, max_value=90, value=73, step=1)
             st.divider()
 
             c_ev, c_dep = st.columns(2)
@@ -191,9 +190,7 @@ with tab2:
                                         elif out['name'] == 'Draw': d_odd = out['price']
                     except: pass
 
-                    # ==========================================
-                    # MOTOR A: POISSON SİMÜLATÖRÜ
-                    # ==========================================
+                    # MOTOR A: POISSON
                     ev_atk_ort = ev_at / ev_mac if ev_mac > 0 else 1.0
                     ev_def_ort = ev_ye / ev_mac if ev_mac > 0 else 1.0
                     dep_atk_ort = dep_at / dep_mac if dep_mac > 0 else 1.0
@@ -243,9 +240,7 @@ with tab2:
                         "Korner 8.5 Üst": p_korner85ust, "Korner 9.5 Üst": p_korner95ust
                     }
 
-                    # ==========================================
                     # MOTOR B: ORANEXCEL
-                    # ==========================================
                     oranexcel_olasiliklar = {k: 0.50 for k in poisson_olasiliklar.keys()} 
                     
                     if len(db_odds) > 50:
@@ -272,9 +267,7 @@ with tab2:
                             oranexcel_olasiliklar["Korner 8.5 Üst"] = poisson_olasiliklar["Korner 8.5 Üst"] 
                             oranexcel_olasiliklar["Korner 9.5 Üst"] = poisson_olasiliklar["Korner 9.5 Üst"]
 
-                    # ==========================================
-                    # FÜZYON (İki Motorun Birleşimi)
-                    # ==========================================
+                    # FÜZYON & ÇOKLU SEÇİM
                     fuzyon_sonuclar = []
                     for pazar in poisson_olasiliklar.keys():
                         ort_ihtimal = (poisson_olasiliklar[pazar] + oranexcel_olasiliklar[pazar]) / 2.0
@@ -284,40 +277,57 @@ with tab2:
                     gecen_hedefler = [h for h in fuzyon_sonuclar if h[1] >= THRESHOLD]
                     
                     if len(gecen_hedefler) > 0:
-                        en_iyi_hedef = max(gecen_hedefler, key=lambda item: item[1])
-                        en_iyi_pazar, final_prob, p_prob, o_prob = en_iyi_hedef
+                        # İhtimallere göre en yüksekten en düşüğe sırala
+                        sirali_hedefler = sorted(gecen_hedefler, key=lambda item: item[1], reverse=True)
                         
-                        rapor = f"🔥 <b>V1200 NİHAİ FÜZYON BAŞARIYLA ÇALIŞTI!</b><br><br>"
-                        rapor += f"Sistem, sadece Sıralama, Gol ve Korner sayılarıyla tam 10.000 sanal simülasyon yaptı.<br><br>"
+                        rapor = f"🔥 <b>V1300 ALTERNATİF RADAR BAŞARIYLA ÇALIŞTI!</b><br><br>"
+                        rapor += f"Eşik değerini (%{guven_esigi}) aşan <b>TÜM</b> güvenli pazarlar listelenmiştir. İddaa'da açık olanı veya oranı en tatmin edici olanı menüden seçebilirsiniz:<br><br>"
                         
-                        rapor += f"🧠 <b>Objektif Motor 1 (Poisson/xG):</b> %{int(p_prob*100)} İhtimal Onayı<br>"
-                        rapor += f"📊 <b>Tarihsel Motor 2 (Oranexcel):</b> %{int(o_prob*100)} İhtimal Onayı<br><br>"
-                        
-                        rapor += f"🎯 <span class='highlight-gold'>%{guven_esigi} GÜVEN EŞİĞİ AŞILDI!</span><br>"
-                        rapor += f"Her iki motorun onayıyla bu maçtaki EN GÜVENLİ LİMAN: <span class='highlight-gold'>[{en_iyi_pazar}]</span><br>"
-                        rapor += f"Birleşik Füzyon Net İhtimali: <span class='highlight-green'>%{int(final_prob*100)}</span>"
+                        for rank, hedef in enumerate(sirali_hedefler):
+                            pazar, f_prob, p_p, o_p = hedef
+                            rapor += f"{rank+1}. <b>{pazar}</b> (Füzyon İhtimali: <span class='highlight-green'>%{int(f_prob*100)}</span>) <br> <span style='color:#8b949e; font-size:13px;'>&nbsp;&nbsp;&nbsp;↳ Poisson: %{int(p_p*100)} | Oranexcel: %{int(o_p*100)}</span><br>"
 
-                        secilen_mac['hedef_pazar'] = en_iyi_pazar
-                        secilen_mac['kalibre_ihtimal'] = final_prob
+                        secilen_mac['gecen_hedefler'] = sirali_hedefler
                         secilen_mac['ai_rapor'] = rapor
                         
                         st.session_state.sepet.append(secilen_mac)
-                        st.success(f"☢️ Kusursuz Füzyon Başarılı! Hedef analiz edildi.")
+                        st.success(f"☢️ Kusursuz Füzyon Başarılı! Eşiği geçen tüm alternatifler bulundu.")
                     else:
                         st.error(f"🚨 FÜZYON UYARISI: Motorlar Anlaşamadı! Verilere göre hiçbir ihtimal %{guven_esigi} barajını geçemedi. Kasanızı korumak için pas geçin.")
 
         if len(st.session_state.sepet) > 0:
             st.divider()
             st.markdown("### 🛒 MUTLAK GÜVEN SEPETİ VE ONAY")
+            
+            # Seçimleri takip etmek için bir sözlük oluşturalım
+            kullanici_secimleri = {}
+            
             for i, m in enumerate(st.session_state.sepet):
-                st.markdown(f"<div class='match-card'><div class='match-title'>{m['home_team']} ⚡ {m['away_team']}</div><span style='color:#8b949e; font-size:16px;'>Birleşik Füzyon İhtimali: <b style='color:#fff;'>%{int(m['kalibre_ihtimal']*100)}</b></span><br><div class='target-market'>Hedef: {m['hedef_pazar']}</div>", unsafe_allow_html=True)
-                with st.expander("🔬 Kusursuz Füzyon Raporunu Oku"):
+                st.markdown(f"<div class='match-card'><div class='match-title'>{m['home_team']} ⚡ {m['away_team']}</div>", unsafe_allow_html=True)
+                
+                # ÇOKLU HEDEF SEÇİM MENÜSÜ EKLENDİ!
+                hedef_opsiyonlari = [f"{h[0]} (%{int(h[1]*100)})" for h in m['gecen_hedefler']]
+                secilen_pazar_str = st.selectbox("📌 Oynamak İstediğiniz Pazarı Seçin (Sadece eşiği geçenler):", hedef_opsiyonlari, key=f"pazar_sec_{i}")
+                
+                # Menüden seçilen değeri ayrıştır
+                secili_pazar_adi = secilen_pazar_str.split(' (')[0]
+                secili_pazar_ihtimali = float(secilen_pazar_str.split('%')[1].replace(')','')) / 100.0
+                
+                # Güncel seçimleri sakla
+                kullanici_secimleri[i] = {
+                    'pazar': secili_pazar_adi,
+                    'ihtimal': secili_pazar_ihtimali
+                }
+                
+                st.markdown(f"<div class='target-market'>Hedef: {secili_pazar_adi}</div>", unsafe_allow_html=True)
+                
+                with st.expander("🔬 Tüm Hedefleri ve Detaylı Raporu Oku"):
                     st.markdown(f"<div class='ai-report'>{m['ai_rapor']}</div>", unsafe_allow_html=True)
                 
                 m['manuel_oran'] = st.number_input("Bu seçeneğin İddaa'daki güncel oranını girin:", min_value=1.01, value=1.50, step=0.01, key=f"manuel_oran_{i}")
                 st.markdown("</div>", unsafe_allow_html=True)
             
-            # --- AKSİYON BUTONLARI BURADA (Kopya Hatası Giderildi) ---
+            # --- AKSİYON BUTONLARI ---
             st.markdown("<hr style='border:1px solid #2d3748;'>", unsafe_allow_html=True)
             manuel_tutar = st.number_input("💵 Kupona Yatırılacak Tutar:", min_value=10.0, value=100.0, step=10.0, key="tutar_hizli_islem")
             
@@ -341,10 +351,15 @@ with tab2:
                     durum_text = "Sanal_Bekliyor"
                 
                 if sheet:
+                    # Kullanıcının dropdown menüsünden o an seçtiği verileri çek!
                     isimler = "#".join([f"{s['home_team']} vs {s['away_team']}" for s in st.session_state.sepet])
                     ligler = "#".join([s['sport_key'] for s in st.session_state.sepet])
-                    tercihler = "#".join([s['hedef_pazar'] for s in st.session_state.sepet])
-                    problar = "#".join([f"{s['kalibre_ihtimal']:.3f}" for s in st.session_state.sepet])
+                    
+                    tercihler_list = [kullanici_secimleri[i]['pazar'] for i in range(len(st.session_state.sepet))]
+                    problar_list = [f"{kullanici_secimleri[i]['ihtimal']:.3f}" for i in range(len(st.session_state.sepet))]
+                    
+                    tercihler = "#".join(tercihler_list)
+                    problar = "#".join(problar_list)
                     oranlar = "#".join([f"{s.get('manuel_oran', 1.50):.2f}" for s in st.session_state.sepet])
                     
                     sheet.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), yatirilacak_tutar, toplam_oran, durum_text, "0", st.session_state.lokal_kasa, st.session_state.bekleyen_tutar, st.session_state.baslangic_kasa, isimler, ligler, tercihler, problar, oranlar])
@@ -368,12 +383,10 @@ with tab3:
     
     st.divider()
     
-    # --- SADECE KASA GÜNCELLEME ALANI ---
     st.markdown("### 🔄 Manuel Kasa Güncelleme")
     yeni_kasa_tutari = st.number_input("Sisteme yeni bir kasa (sermaye) tutarı tanımlayın:", min_value=0.0, value=float(st.session_state.lokal_kasa), step=100.0, key="yeni_kasa_guncelle")
     if st.button("💾 KASAYI GÜNCELLE", key="btn_kasa_guncelle"):
         st.session_state.lokal_kasa = yeni_kasa_tutari
-        # İstersen başlangıç kasasını da eşitleyebilirsin, şimdilik sadece lokali güncelliyoruz
         if sheet:
             sheet.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), 0, 1, "Kasa_Guncellendi", "0", st.session_state.lokal_kasa, st.session_state.bekleyen_tutar, st.session_state.baslangic_kasa, "Kasa Yenilendi", "-", "-", "-", "-"])
         st.success("Kasa tutarı başarıyla güncellendi!")
@@ -381,7 +394,6 @@ with tab3:
 
     st.divider()
     
-    # --- OTONOM DENETÇİ VE LİSTE ---
     c_btn1, c_btn2 = st.columns([3,1])
     with c_btn1: st.markdown("<h3>📝 Bekleyen Kuponlar (Makine Öğrenimi)</h3>", unsafe_allow_html=True)
     with c_btn2:
@@ -449,6 +461,6 @@ with tab3:
             is_sanal = (r[3] == "Sanal_Bekliyor")
             b_tutar, b_oran = float(str(r[1]).replace(',','.').strip()), float(str(r[2]).replace(',','.').strip())
             mac_isimleri = r[8].replace('#', ' | ') if len(r) > 10 else "Eski Format"
-            border_color = "#4a5568" if is_sanal else "#ff4b4b"
+            border_color = "#4a5568" if is_sanal else "#00ffcc"
             tutar_text = "<span style='color:#a0aec0;'>0 TL (Sanal)</span>" if is_sanal else f"<span style='color:#00ffcc;'>{b_tutar:.0f} TL</span>"
             st.markdown(f"<div style='background: #11161d; border-left: 4px solid {border_color}; padding:20px; border-radius:10px; margin-bottom:15px;'><b style='font-size:18px;'>Maçlar:</b> <span style='color:#e2e8f0;'>{mac_isimleri}</span><br><br><b style='font-size:16px;'>Tutar:</b> <span style='font-size:18px;'>{tutar_text}</span> &nbsp;|&nbsp; <b style='font-size:16px;'>Oran:</b> <span style='color:#d4af37; font-size:18px; font-weight:bold;'>{b_oran:.2f}</span></div>", unsafe_allow_html=True)
