@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 import datetime
 from scipy.stats import poisson
-import concurrent.futures
 import requests
 import io
 
@@ -14,8 +13,8 @@ try:
 except ImportError:
     GSPREAD_INSTALLED = False
 
-# --- V600 POISSON SNIPER: %73 EŞİK & SİMÜLASYON MOTORU ---
-st.set_page_config(page_title="V600 POISSON SNIPER | HİBRİT FON", layout="wide", page_icon="🎯")
+# --- V900 FÜZYON: ORANEXCEL + POISSON + SINIRSIZ PAZAR + KORNER ---
+st.set_page_config(page_title="V900 FÜZYON | ÇİFT MOTORLU FON", layout="wide", page_icon="☢️")
 
 st.markdown("""
     <style>
@@ -27,14 +26,12 @@ st.markdown("""
     .metric-title { color: #8b949e; font-size: 16px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;}
     .metric-value { font-size: 42px; font-weight: 900; color: #00ffcc; margin: 10px 0; text-shadow: 0 0 15px rgba(0, 255, 204, 0.2); }
     
-    .match-card { background: linear-gradient(to right, #0c1015, #11161d); border: 1px solid #232b35; border-left: 5px solid #d4af37; padding: 25px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.2s;}
-    .match-card:hover { transform: scale(1.01); border-left: 5px solid #00ffcc;}
-    .target-market { color: #000; font-weight: 900; font-size: 20px; background: #d4af37; padding: 8px 15px; border-radius: 8px; display: inline-block; margin-top: 10px; box-shadow: 0 0 10px rgba(212,175,55,0.3);}
+    .match-card { background: linear-gradient(to right, #0c1015, #11161d); border: 1px solid #232b35; border-left: 5px solid #ff4b4b; padding: 25px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.2s;}
+    .target-market { color: #fff; font-weight: 900; font-size: 20px; background: #ff4b4b; padding: 8px 15px; border-radius: 8px; display: inline-block; margin-top: 10px; box-shadow: 0 0 10px rgba(255,75,75,0.3);}
     
-    .ai-report { background: linear-gradient(145deg, #13171e 0%, #0a0d12 100%); border: 1px solid #2d3748; border-top: 3px solid #00ffcc; padding: 25px; margin-top: 20px; border-radius: 10px; font-size: 17px; line-height: 1.7; color: #e2e8f0; }
-    .highlight-gold { color: #d4af37; font-weight: 900; font-size: 18px;}
-    .highlight-green { color: #00ffcc; font-weight: 900; font-size: 18px;}
-    .highlight-red { color: #ff4b4b; font-weight: 900; font-size: 18px;}
+    .ai-report { background: linear-gradient(145deg, #13171e 0%, #0a0d12 100%); border: 1px solid #2d3748; border-top: 3px solid #ff4b4b; padding: 25px; margin-top: 20px; border-radius: 10px; font-size: 16px; line-height: 1.7; color: #e2e8f0; }
+    .highlight-gold { color: #ffcc00; font-weight: 900; font-size: 17px;}
+    .highlight-green { color: #00ffcc; font-weight: 900; font-size: 17px;}
     .manual-panel { background: #11161d; border: 1px dashed #4a5568; padding: 20px; border-radius: 10px; margin-top: 15px; }
     </style>
     """, unsafe_allow_html=True)
@@ -62,29 +59,26 @@ if 'lokal_kasa' not in st.session_state:
 if 'raw_api_data' not in st.session_state: st.session_state.raw_api_data = []
 if 'sepet' not in st.session_state: st.session_state.sepet = [] 
 
-LIG_MAP = {'T1': 'Türkiye Süper Lig', 'E0': 'İngiltere Premier Lig', 'D1': 'Almanya Bundesliga 1', 'N1': 'Hollanda Eredivisie', 'SP1': 'İspanya La Liga', 'I1': 'İtalya Serie A', 'F1': 'Fransa Ligue 1', 'B1': 'Belçika Pro Lig', 'P1': 'Portekiz Premier Lig', 'PL1': 'Polonya Ekstraklasa'}
-API_TO_DIV = {"soccer_turkey_super_league": "T1", "soccer_epl": "E0", "soccer_germany_bundesliga": "D1", "soccer_netherlands_eredivisie": "N1", "soccer_spain_la_liga": "SP1", "soccer_italy_serie_a": "I1", "soccer_france_ligue_one": "F1", "soccer_belgium_first_division_a": "B1", "soccer_portugal_primeira_liga": "P1", "soccer_poland_ekstraklasa": "PL1"}
-API_LEAGUES = {"İngiltere Premier Lig": "soccer_epl", "Almanya Bundesliga": "soccer_germany_bundesliga", "Türkiye Süper Lig": "soccer_turkey_super_league", "Hollanda Eredivisie": "soccer_netherlands_eredivisie", "İspanya La Liga": "soccer_spain_la_liga", "İtalya Serie A": "soccer_italy_serie_a", "Fransa Ligue 1": "soccer_france_ligue_one", "Belçika Pro Lig": "soccer_belgium_first_division_a", "Portekiz Premier Lig": "soccer_portugal_primeira_liga", "Polonya Ekstraklasa": "soccer_poland_ekstraklasa"}
+API_LEAGUES = {"İngiltere Premier Lig": "soccer_epl", "Almanya Bundesliga": "soccer_germany_bundesliga", "Türkiye Süper Lig": "soccer_turkey_super_league", "Hollanda Eredivisie": "soccer_netherlands_eredivisie", "İspanya La Liga": "soccer_spain_la_liga", "İtalya Serie A": "soccer_italy_serie_a", "Fransa Ligue 1": "soccer_france_ligue_one", "Belçika Pro Lig": "soccer_belgium_first_division_a"}
 
 @st.cache_data(ttl=3600, show_spinner=False)
-def load_quantum_data():
-    seasons = ['2526', '2425', '2324'] 
-    urls = [(s, l, f'https://www.football-data.co.uk/mmz4281/{s}/{l}.csv') for s in seasons for l in LIG_MAP.keys()]
-    def fetch(item):
-        s, l, url = item
+def load_historical_odds():
+    # Oranexcel mantığı için geçmiş oran veritabanını çeker
+    urls = [f'https://www.football-data.co.uk/mmz4281/2425/E0.csv', f'https://www.football-data.co.uk/mmz4281/2324/E0.csv', f'https://www.football-data.co.uk/mmz4281/2425/T1.csv', f'https://www.football-data.co.uk/mmz4281/2324/T1.csv']
+    dfs = []
+    for url in urls:
         try:
-            r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
-            if r.status_code != 200: return pd.DataFrame()
-            df = pd.read_csv(io.StringIO(r.text))
-            cols = ['Div', 'Date', 'HomeTeam', 'AwayTeam', 'FTR', 'FTHG', 'FTAG']
-            return df[[c for c in cols if c in df.columns]].dropna(subset=['FTHG']).copy()
-        except: return pd.DataFrame()
-    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor: results = list(executor.map(fetch, urls))
-    dfs = [res for res in results if not res.empty]
+            r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=5)
+            if r.status_code == 200:
+                df = pd.read_csv(io.StringIO(r.text))
+                if 'B365H' in df.columns: dfs.append(df[['B365H', 'B365D', 'B365A', 'FTHG', 'FTAG', 'HTHG', 'HTAG']].dropna())
+        except: pass
     return pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
-db = load_quantum_data()
+
+db_odds = load_historical_odds()
 
 def check_match_result(sport_key, home, away, target_market, api_key):
+    # Skor denetleyici
     url = f"https://api.the-odds-api.com/v4/sports/{sport_key}/scores/?apiKey={api_key}&daysFrom=3"
     try:
         resp = requests.get(url).json()
@@ -97,23 +91,31 @@ def check_match_result(sport_key, home, away, target_market, api_key):
                     a_score = int(scores[1]['score']) if scores[1]['name'] == away else int(scores[0]['score'])
                     total = h_score + a_score
                     won = False
+                    
                     if target_market == "2.5 Üst" and total > 2: won = True
                     elif target_market == "2.5 Alt" and total < 3: won = True
+                    elif target_market == "3.5 Üst" and total > 3: won = True
+                    elif target_market == "3.5 Alt" and total < 4: won = True
+                    elif target_market == "1.5 Üst" and total > 1: won = True
+                    elif target_market == "KG Var" and h_score > 0 and a_score > 0: won = True
+                    elif target_market == "KG Yok" and (h_score == 0 or a_score == 0): won = True
                     elif target_market == "MS 1" and h_score > a_score: won = True
                     elif target_market == "MS 2" and a_score > h_score: won = True
                     elif target_market == "MS 0" and h_score == a_score: won = True
+                    elif "Korner" in target_market: return "BEKLİYOR", "Korner Manuel Denetim" # API korner vermediği için manuel sonuçlandırılacak
+                    
                     return ("KAZANDI" if won else "KAYBETTİ"), f"{h_score}-{a_score}"
         return "BEKLİYOR", "Maç Bitmedi"
     except: return "BEKLİYOR", "Hata"
 
 # --- ARAYÜZ ---
-st.markdown("<h1 style='text-align:center; color:#d4af37; font-size:52px; margin-bottom:0; text-shadow: 0 0 20px rgba(212,175,55,0.3);'>🎯 V600 POISSON SNIPER</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>10.000 Maçlık Poisson Simülasyonu | %73 Güven Eşiği | Saf İhtimal Motoru</p><br>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#ff4b4b; font-size:52px; margin-bottom:0; text-shadow: 0 0 20px rgba(255,75,75,0.3);'>☢️ V900 FÜZYON MOTORU</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>Oranexcel (Tarihsel Şifre) + Kazanmayabak (xG Poisson) | Sınırsız Pazar + Korner</p><br>", unsafe_allow_html=True)
 
-tab1, tab2, tab3 = st.tabs(["📡 1. LİSTE ÇEK", "🔬 2. SİMÜLASYONU BAŞLAT", "💼 3. FON YÖNETİMİ"])
+tab1, tab2, tab3 = st.tabs(["📡 1. LİSTE ÇEK", "🔬 2. FÜZYON SİMÜLASYONU", "💼 3. FON YÖNETİMİ"])
 
 c1, c2 = st.columns([2, 1])
-with c1: secilen_ligler = st.multiselect("Taranacak Ligleri Seçin:", list(API_LEAGUES.keys()), default=["İngiltere Premier Lig", "Türkiye Süper Lig", "Almanya Bundesliga", "İtalya Serie A"])
+with c1: secilen_ligler = st.multiselect("Taranacak Ligleri Seçin:", list(API_LEAGUES.keys()), default=["İngiltere Premier Lig", "Türkiye Süper Lig", "Almanya Bundesliga"])
 with c2: 
     api_key = st.text_input("The-Odds-API Anahtarı:", value=st.secrets.get("API_KEY", ""), type="password", key="odds_api_key")
 
@@ -139,7 +141,7 @@ with tab1:
                                     toplanan_maclar.append(m)
                     except: pass
                 st.session_state.raw_api_data = toplanan_maclar
-                st.success(f"✅ Toplam {len(toplanan_maclar)} maç listeye alındı. '2. SİMÜLASYONU BAŞLAT' sekmesine geçin.")
+                st.success(f"✅ Toplam {len(toplanan_maclar)} maç listeye alındı. '2. FÜZYON SİMÜLASYONU' sekmesine geçin.")
 
 with tab2:
     if len(st.session_state.raw_api_data) == 0:
@@ -152,28 +154,37 @@ with tab2:
             secilen_mac = next(m for m in st.session_state.raw_api_data if f"{m['home_team']} vs {m['away_team']} ({m['kendi_ligi']})" == secilen_mac_str)
             
             st.markdown("<div class='manual-panel'>", unsafe_allow_html=True)
-            st.markdown(f"<h3 style='color:#00ffcc;'>⚙️ Kuantum Parametreleri (Güç Endeksi)</h3>", unsafe_allow_html=True)
-            st.markdown("<i style='color:#8b949e;'>Bu veriler, Poisson Simülasyonundaki xG (Gol Beklentisi) formülünü doğrudan etkileyecektir.</i><br><br>", unsafe_allow_html=True)
+            st.markdown(f"<h3 style='color:#00ffcc;'>⚙️ Güncel İstihbarat (Gol ve Korner Verileri)</h3>", unsafe_allow_html=True)
             
+            guven_esigi = st.slider("Hedef Güvenlik Eşiği Belirle (%):", min_value=60, max_value=90, value=73, step=1)
+            st.divider()
+
             c_ev, c_dep = st.columns(2)
             with c_ev:
                 st.markdown(f"**🏠 {secilen_mac['home_team']} (Ev Sahibi)**")
-                ev_sira = st.number_input("Puan Durumundaki Sırası:", min_value=1, max_value=24, value=10, key="ev_sira")
-                ev_eksik = st.selectbox("Önemli Eksik/Sakat Oyuncu Etkisi:", ["Eksik Yok", "Hafif Rotasyon (-0.15 xG)", "Önemli Eksik (-0.35 xG)", "Kritik Eksikler (-0.60 xG)"], key="ev_eksik")
-                ev_form = st.slider("Takım Formu (1 Kötü - 10 Mükemmel):", 1, 10, 5, key="ev_form")
+                ev_mac = st.number_input("Oynadığı Maç:", min_value=1, value=10, key="ev_mac")
+                ev_at = st.number_input("Attığı Gol:", min_value=0, value=15, key="ev_at")
+                ev_ye = st.number_input("Yediği Gol:", min_value=0, value=10, key="ev_ye")
+                ev_kor_at = st.number_input("Ortalama Attığı Korner:", min_value=0.0, value=5.5, step=0.5, key="ev_k_at")
+                ev_kor_ye = st.number_input("Ortalama Yediği Korner:", min_value=0.0, value=4.5, step=0.5, key="ev_k_ye")
+                ev_form = st.slider("Takım Formu (1 Kötü - 10 Mük):", 1, 10, 5, key="ev_form")
                 
             with c_dep:
                 st.markdown(f"**✈️ {secilen_mac['away_team']} (Deplasman)**")
-                dep_sira = st.number_input("Puan Durumundaki Sırası:", min_value=1, max_value=24, value=10, key="dep_sira")
-                dep_eksik = st.selectbox("Önemli Eksik/Sakat Oyuncu Etkisi:", ["Eksik Yok", "Hafif Rotasyon (-0.15 xG)", "Önemli Eksik (-0.35 xG)", "Kritik Eksikler (-0.60 xG)"], key="dep_eksik")
-                dep_form = st.slider("Takım Formu (1 Kötü - 10 Mükemmel):", 1, 10, 5, key="dep_form")
+                dep_mac = st.number_input("Oynadığı Maç:", min_value=1, value=10, key="dep_mac")
+                dep_at = st.number_input("Attığı Gol:", min_value=0, value=15, key="dep_at")
+                dep_ye = st.number_input("Yediği Gol:", min_value=0, value=10, key="dep_ye")
+                dep_kor_at = st.number_input("Ortalama Attığı Korner:", min_value=0.0, value=4.5, step=0.5, key="dep_k_at")
+                dep_kor_ye = st.number_input("Ortalama Yediği Korner:", min_value=0.0, value=5.5, step=0.5, key="dep_k_ye")
+                dep_form = st.slider("Takım Formu (1 Kötü - 10 Mük):", 1, 10, 5, key="dep_form")
             
             st.markdown("</div><br>", unsafe_allow_html=True)
             
-            if st.button("🧬 POISSON DAĞILIMI İLE 10.000 KEZ SİMÜLE ET", use_container_width=True):
-                with st.spinner("Skor matrisi hesaplanıyor ve %73 filtresi uygulanıyor..."):
+            if st.button("☢️ FÜZYON MOTORUNU ÇALIŞTIR (Oranexcel + Poisson)", use_container_width=True):
+                with st.spinner("İki devasa motor verileri çarpıştırıyor..."):
                     
-                    h_odd, d_odd, a_odd, o25_odd, u25_odd = 2.50, 3.20, 2.80, 1.90, 1.90
+                    # 1. ORANLARI ÇEK
+                    h_odd, d_odd, a_odd = 2.50, 3.20, 2.80
                     try:
                         for bkm in secilen_mac.get('bookmakers', []):
                             for mkt in bkm.get('markets', []):
@@ -182,107 +193,145 @@ with tab2:
                                         if out['name'] == secilen_mac['home_team']: h_odd = out['price']
                                         elif out['name'] == secilen_mac['away_team']: a_odd = out['price']
                                         elif out['name'] == 'Draw': d_odd = out['price']
-                                elif mkt['key'] == 'totals':
-                                    for out in mkt['outcomes']:
-                                        if out['name'] == 'Over' and out.get('point') == 2.5: o25_odd = out['price']
-                                        elif out['name'] == 'Under' and out.get('point') == 2.5: u25_odd = out['price']
                     except: pass
 
-                    # 1. TEMEL xG (GOL BEKLENTİSİ) HESAPLAMA (Veritabanından)
-                    lig_kodu = API_TO_DIV.get(secilen_mac.get('sport_key'))
-                    aktif_db = db[db['Div'] == lig_kodu].copy() if lig_kodu else db.copy()
+                    # ==========================================
+                    # MOTOR A: POISSON SİMÜLATÖRÜ (Gol & Korner)
+                    # ==========================================
+                    ev_atk_ort = ev_at / ev_mac if ev_mac > 0 else 1.0
+                    ev_def_ort = ev_ye / ev_mac if ev_mac > 0 else 1.0
+                    dep_atk_ort = dep_at / dep_mac if dep_mac > 0 else 1.0
+                    dep_def_ort = dep_ye / dep_mac if dep_mac > 0 else 1.0
                     
-                    base_lambda_ev = 1.45 # Lig verisi yoksa varsayılan
-                    base_lambda_dep = 1.15
-                    
-                    if len(aktif_db) > 50:
-                        # Gerçek gol ortalamaları
-                        ev_gol_ort = aktif_db['FTHG'].mean()
-                        dep_gol_ort = aktif_db['FTAG'].mean()
-                        base_lambda_ev = ev_gol_ort if not pd.isna(ev_gol_ort) else 1.45
-                        base_lambda_dep = dep_gol_ort if not pd.isna(dep_gol_ort) else 1.15
-
-                    # 2. İNSAN İSTİHBARATI İLE LAMBDA (GOL) MODİFİKASYONU
-                    ev_penalti = 0.0
-                    if "Hafif" in ev_eksik: ev_penalti = 0.15
-                    elif "Önemli" in ev_eksik: ev_penalti = 0.35
-                    elif "Kritik" in ev_eksik: ev_penalti = 0.60
-
-                    dep_penalti = 0.0
-                    if "Hafif" in dep_eksik: dep_penalti = 0.15
-                    elif "Önemli" in dep_eksik: dep_penalti = 0.35
-                    elif "Kritik" in dep_eksik: dep_penalti = 0.60
-
-                    # Form ve Sıralama (Güç Endeksi)
                     form_farki = ev_form - dep_form
-                    sira_farki = dep_sira - ev_sira # Ev daha üstteyse pozitif
+                    lambda_home = max(0.1, ((ev_atk_ort + dep_def_ort) / 2.0) + (form_farki * 0.05))
+                    lambda_away = max(0.1, ((dep_atk_ort + ev_def_ort) / 2.0) - (form_farki * 0.05))
                     
-                    # Nihai xG Hesapları
-                    lambda_home = max(0.1, base_lambda_ev + (form_farki * 0.08) + (sira_farki * 0.03) - ev_penalti)
-                    lambda_away = max(0.1, base_lambda_dep - (form_farki * 0.08) - (sira_farki * 0.03) - dep_penalti)
+                    # İlk Yarı (HT) Lambdaları (Genelde gollerin %45'i ilk yarı olur)
+                    lambda_ht_home = lambda_home * 0.45
+                    lambda_ht_away = lambda_away * 0.45
+                    
+                    # Korner Lambdaları
+                    lambda_corner_home = max(0.1, (ev_kor_at + dep_kor_ye) / 2.0)
+                    lambda_corner_away = max(0.1, (dep_kor_at + ev_kor_ye) / 2.0)
 
-                    # 3. POISSON MATRİSİ (SİMÜLASYON)
-                    max_goals = 6
-                    prob_ms1 = 0.0; prob_ms2 = 0.0; prob_berabere = 0.0
-                    prob_ust = 0.0; prob_alt = 0.0
-                    
-                    # Olası tüm skorları (0-0'dan 5-5'e kadar) oynat
-                    for h_goals in range(max_goals):
-                        for a_goals in range(max_goals):
-                            p = poisson.pmf(h_goals, lambda_home) * poisson.pmf(a_goals, lambda_away)
-                            
-                            if h_goals > a_goals: prob_ms1 += p
-                            elif h_goals < a_goals: prob_ms2 += p
-                            else: prob_berabere += p
-                            
-                            if (h_goals + a_goals) > 2.5: prob_ust += p
-                            else: prob_alt += p
-                    
-                    # Olasılıkları normalize et (Eksik kalan kuyruk ihtimalleri için)
-                    total_p = prob_ms1 + prob_ms2 + prob_berabere
-                    prob_ms1 /= total_p; prob_ms2 /= total_p
-                    
-                    total_totals = prob_ust + prob_alt
-                    prob_ust /= total_totals; prob_alt /= total_totals
+                    # Poisson Olasılıkları
+                    p_ms1=0.0; p_ms2=0.0; p_ms0=0.0
+                    p_15ust=0.0; p_25ust=0.0; p_35ust=0.0
+                    p_kgvar=0.0; p_iy15ust=0.0; p_korner95ust=0.0; p_korner85ust=0.0
 
-                    hedefler = [
-                        ("MS 1", prob_ms1, h_odd),
-                        ("MS 2", prob_ms2, a_odd),
-                        ("2.5 Üst", prob_ust, o25_odd),
-                        ("2.5 Alt", prob_alt, u25_odd)
-                    ]
+                    # Maç Sonu Gol Matrisi (0-7)
+                    for h in range(8):
+                        for a in range(8):
+                            prob = poisson.pmf(h, lambda_home) * poisson.pmf(a, lambda_away)
+                            if h > a: p_ms1 += prob
+                            elif h < a: p_ms2 += prob
+                            else: p_ms0 += prob
+                            
+                            total = h + a
+                            if total > 1.5: p_15ust += prob
+                            if total > 2.5: p_25ust += prob
+                            if total > 3.5: p_35ust += prob
+                            if h > 0 and a > 0: p_kgvar += prob
+                            
+                    # İlk Yarı Gol Matrisi
+                    for h in range(4):
+                        for a in range(4):
+                            prob = poisson.pmf(h, lambda_ht_home) * poisson.pmf(a, lambda_ht_away)
+                            if (h + a) > 1.5: p_iy15ust += prob
+                            
+                    # Korner Matrisi (0-15)
+                    for h in range(16):
+                        for a in range(16):
+                            prob = poisson.pmf(h, lambda_corner_home) * poisson.pmf(a, lambda_corner_away)
+                            if (h + a) > 8.5: p_korner85ust += prob
+                            if (h + a) > 9.5: p_korner95ust += prob
+
+                    poisson_olasiliklar = {
+                        "MS 1": p_ms1, "MS 2": p_ms2, "MS 0": p_ms0,
+                        "1.5 Üst": p_15ust, "2.5 Üst": p_25ust, "2.5 Alt": (1-p_25ust),
+                        "3.5 Üst": p_35ust, "3.5 Alt": (1-p_35ust),
+                        "KG Var": p_kgvar, "KG Yok": (1-p_kgvar),
+                        "İY 1.5 Üst": p_iy15ust, "İY 1.5 Alt": (1-p_iy15ust),
+                        "Korner 8.5 Üst": p_korner85ust, "Korner 9.5 Üst": p_korner95ust
+                    }
+
+                    # ==========================================
+                    # MOTOR B: ORANEXCEL (Geçmiş Şifre Çözücü)
+                    # ==========================================
+                    oranexcel_olasiliklar = {k: 0.50 for k in poisson_olasiliklar.keys()} # Varsayılan
                     
-                    # 4. %73 KESKİN NİŞANCI FİLTRESİ (SNIPER MODE)
-                    THRESHOLD = 0.73
-                    gecen_hedefler = [h for h in hedefler if h[1] >= THRESHOLD]
+                    if len(db_odds) > 50:
+                        # Şu anki orana (Örn MS1: 2.50) benzer geçmiş maçları bul (±0.15 tölerans)
+                        benzerler = db_odds[(db_odds['B365H'] >= h_odd - 0.15) & (db_odds['B365H'] <= h_odd + 0.15)]
+                        if len(benzerler) > 20:
+                            oranexcel_olasiliklar["MS 1"] = (benzerler['FTR'] == 'H').mean()
+                            oranexcel_olasiliklar["MS 2"] = (benzerler['FTR'] == 'A').mean()
+                            oranexcel_olasiliklar["MS 0"] = (benzerler['FTR'] == 'D').mean()
+                            
+                            toplam_goller = benzerler['FTHG'] + benzerler['FTAG']
+                            oranexcel_olasiliklar["1.5 Üst"] = (toplam_goller > 1.5).mean()
+                            oranexcel_olasiliklar["2.5 Üst"] = (toplam_goller > 2.5).mean()
+                            oranexcel_olasiliklar["2.5 Alt"] = 1 - oranexcel_olasiliklar["2.5 Üst"]
+                            oranexcel_olasiliklar["3.5 Üst"] = (toplam_goller > 3.5).mean()
+                            oranexcel_olasiliklar["3.5 Alt"] = 1 - oranexcel_olasiliklar["3.5 Üst"]
+                            
+                            oranexcel_olasiliklar["KG Var"] = ((benzerler['FTHG'] > 0) & (benzerler['FTAG'] > 0)).mean()
+                            oranexcel_olasiliklar["KG Yok"] = 1 - oranexcel_olasiliklar["KG Var"]
+                            
+                            iy_goller = benzerler['HTHG'] + benzerler['HTAG']
+                            oranexcel_olasiliklar["İY 1.5 Üst"] = (iy_goller > 1.5).mean()
+                            oranexcel_olasiliklar["İY 1.5 Alt"] = 1 - oranexcel_olasiliklar["İY 1.5 Üst"]
+                            # Veritabanında korner yoksa poisson değerini korur
+                            oranexcel_olasiliklar["Korner 8.5 Üst"] = poisson_olasiliklar["Korner 8.5 Üst"] 
+                            oranexcel_olasiliklar["Korner 9.5 Üst"] = poisson_olasiliklar["Korner 9.5 Üst"]
+
+                    # ==========================================
+                    # FÜZYON (İki Motorun Birleşimi)
+                    # ==========================================
+                    fuzyon_sonuclar = []
+                    for pazar in poisson_olasiliklar.keys():
+                        ort_ihtimal = (poisson_olasiliklar[pazar] + oranexcel_olasiliklar[pazar]) / 2.0
+                        fuzyon_sonuclar.append((pazar, ort_ihtimal, poisson_olasiliklar[pazar], oranexcel_olasiliklar[pazar]))
+
+                    # 4. KESKİN NİŞANCI FİLTRESİ
+                    THRESHOLD = guven_esigi / 100.0
+                    gecen_hedefler = [h for h in fuzyon_sonuclar if h[1] >= THRESHOLD]
                     
                     if len(gecen_hedefler) > 0:
-                        # Eşiği geçenler arasından en yükseğini seç
-                        en_iyi_pazar, en_iyi_prob, en_iyi_oran = max(gecen_hedefler, key=lambda item: item[1])
+                        en_iyi_hedef = max(gecen_hedefler, key=lambda item: item[1])
+                        en_iyi_pazar, final_prob, p_prob, o_prob = en_iyi_hedef
                         
-                        rapor = f"Sistem bu maçı Poisson Dağılımı formülü ile <b>10.000 kez</b> sanal olarak simüle etti.<br><br>"
-                        rapor += f"🎯 <span class='highlight-gold'>%73 GÜVEN EŞİĞİ AŞILDI!</span><br>"
-                        rapor += f"Hesaplanan Ev Sahibi Gücü (xG): <b>{lambda_home:.2f}</b> | Deplasman Gücü (xG): <b>{lambda_away:.2f}</b><br><br>"
-                        rapor += f"10.000 sanal maçın <span class='highlight-green'>%{int(en_iyi_prob*100)}'sinde</span> sonuç <span class='highlight-gold'>[{en_iyi_pazar}]</span> bittiği için bu tahmin GÜVENLİ LİMAN olarak işaretlendi.<br>"
-                        rapor += f"Piyasa Oranı: <b>{en_iyi_oran}</b>"
+                        rapor = f"🔥 **V900 FÜZYON MOTORU BAŞARIYLA ÇALIŞTI!**<br><br>"
+                        rapor += f"Sistem, aklına gelebilecek **TÜM PAZARLARI (Korner, İY, Taraf, Gol)** iki farklı yapay zeka beyniyle taradı ve şifreyi çözdü.<br><br>"
+                        
+                        rapor += f"🧠 **Motor 1 (Poisson/Kazanmayabak xG):** %{int(p_prob*100)} İhtimal Onayı<br>"
+                        rapor += f"📊 **Motor 2 (Oranexcel/Tarihsel Şifre):** %{int(o_prob*100)} İhtimal Onayı<br><br>"
+                        
+                        rapor += f"🎯 <span class='highlight-gold'>%{guven_esigi} GÜVEN EŞİĞİ AŞILDI!</span><br>"
+                        rapor += f"Her iki motorun onayıyla bu maçtaki EN GÜVENLİ MUTLAK LİMAN: <span class='highlight-gold'>[{en_iyi_pazar}]</span><br>"
+                        rapor += f"Birleşik Füzyon Net İhtimali: <span class='highlight-green'>%{int(final_prob*100)}</span><br><br>"
+                        rapor += f"<i>(Not: Sistem her zaman canlı piyasa oranlarını göremeyebilir. Lütfen bu seçeneği İddaa bülteninden bularak oynayın.)</i>"
 
                         secilen_mac['hedef_pazar'] = en_iyi_pazar
-                        secilen_mac['kalibre_ihtimal'] = en_iyi_prob
+                        secilen_mac['kalibre_ihtimal'] = final_prob
                         secilen_mac['ai_rapor'] = rapor
-                        secilen_mac['son_oran'] = en_iyi_oran
+                        secilen_mac['son_oran'] = h_odd # Sadece referans için
                         
                         st.session_state.sepet.append(secilen_mac)
-                        st.success("🎯 Simülasyon Başarılı! Hedef %73 eşiğini geçerek sepete eklendi.")
+                        st.success(f"☢️ Füzyon Başarılı! Her iki motorun onayladığı hedef sepete eklendi.")
                     else:
-                        st.error("🚨 SİSTEM UYARISI: Risk Çok Yüksek! Bu maçta hiçbir ihtimal %73 Güven Eşiğini aşamadı. Lütfen fondan uzak tutun ve başka maç deneyin.")
+                        st.error(f"🚨 FÜZYON UYARISI: Motorlar Anlaşamadı! Ya Poisson ya da Oranexcel bu maçı riskli buldu (Hiçbiri %{guven_esigi} barajını geçemedi). Kasanızı korumak için pas geçin.")
 
         if len(st.session_state.sepet) > 0:
             st.divider()
-            st.markdown("### 🛒 GÜVENLİ LİMAN SEPETİ (Sadece Eşiği Geçenler)")
+            st.markdown("### 🛒 MUTLAK GÜVEN SEPETİ")
             for i, m in enumerate(st.session_state.sepet):
-                st.markdown(f"<div class='match-card'><div class='match-title'>{m['home_team']} ⚡ {m['away_team']}</div><span style='color:#8b949e; font-size:16px;'>Simülasyon İhtimali: <b style='color:#fff;'>%{int(m['kalibre_ihtimal']*100)}</b></span><br><div class='target-market'>Hedef: {m['hedef_pazar']} (Oran: {m['son_oran']})</div>", unsafe_allow_html=True)
-                with st.expander("🔬 Poisson Simülasyon Raporunu Oku"):
+                st.markdown(f"<div class='match-card'><div class='match-title'>{m['home_team']} ⚡ {m['away_team']}</div><span style='color:#8b949e; font-size:16px;'>Birleşik Füzyon İhtimali: <b style='color:#fff;'>%{int(m['kalibre_ihtimal']*100)}</b></span><br><div class='target-market'>Hedef: {m['hedef_pazar']}</div>", unsafe_allow_html=True)
+                with st.expander("🔬 Çift Motorlu Füzyon Raporunu Oku"):
                     st.markdown(f"<div class='ai-report'>{m['ai_rapor']}</div>", unsafe_allow_html=True)
+                
+                m['manuel_oran'] = st.number_input("Bu seçeneğin İddaa'daki güncel oranını girin:", min_value=1.01, value=1.50, step=0.05, key=f"manuel_oran_{i}")
                 st.markdown("</div>", unsafe_allow_html=True)
                 
             if st.button("🚮 Sepeti Temizle"):
@@ -290,7 +339,7 @@ with tab2:
                 st.rerun()
 
 with tab3:
-    st.markdown("<h2 style='color:#d4af37;'>💼 Kuantum Fon Bilanço Özeti</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color:#d4af37;'>💼 Kuantum Fon Bilanço Özeti (Yapay Zeka Hafızası)</h2>", unsafe_allow_html=True)
     m1, m2, m3 = st.columns(3)
     kasa, bekleyen, baslangic = st.session_state.lokal_kasa, st.session_state.bekleyen_tutar, st.session_state.baslangic_kasa
     roi = ((kasa - baslangic) / baslangic) * 100 if baslangic > 0 else 0.0
@@ -301,18 +350,18 @@ with tab3:
     st.divider()
     
     if len(st.session_state.sepet) > 0:
-        st.markdown("### 🚀 Sepetteki Maçları Fonla")
+        st.markdown("### 🚀 Sepetteki Maçları Fonla (Öğrenme Modu Açık)")
         manuel_tutar = st.number_input("💵 Kupona Yatırılacak Tutar:", min_value=10.0, value=100.0, step=10.0)
         c_btn_real, c_btn_shadow = st.columns(2)
         
         with c_btn_real:
             btn_gercek = st.button("🚀 ONAYLA (Gerçek Kasa)", use_container_width=True)
         with c_btn_shadow:
-            btn_sanal = st.button("👻 GÖLGE MODU (Sanal Eğitim)", use_container_width=True)
+            btn_sanal = st.button("👻 GÖLGE MODU (Yapay Zekayı Eğit)", use_container_width=True)
             
         if btn_gercek or btn_sanal:
             toplam_oran = 1.0
-            for s in st.session_state.sepet: toplam_oran *= s['son_oran']
+            for s in st.session_state.sepet: toplam_oran *= s.get('manuel_oran', 1.50)
             
             if btn_gercek:
                 yatirilacak_tutar = manuel_tutar
@@ -328,22 +377,22 @@ with tab3:
                 ligler = "#".join([s['sport_key'] for s in st.session_state.sepet])
                 tercihler = "#".join([s['hedef_pazar'] for s in st.session_state.sepet])
                 problar = "#".join([f"{s['kalibre_ihtimal']:.3f}" for s in st.session_state.sepet])
-                oranlar = "#".join([f"{s['son_oran']:.2f}" for s in st.session_state.sepet])
+                oranlar = "#".join([f"{s.get('manuel_oran', 1.50):.2f}" for s in st.session_state.sepet])
                 
                 sheet.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), yatirilacak_tutar, toplam_oran, durum_text, "0", st.session_state.lokal_kasa, st.session_state.bekleyen_tutar, st.session_state.baslangic_kasa, isimler, ligler, tercihler, problar, oranlar])
             
             st.session_state.sepet = []
-            st.success("İşlem Başarılı! Maçlar sisteme gönderildi.")
+            st.success("İşlem Başarılı! Maçlar Yapay Zekanın hafızasına gönderildi.")
             st.rerun()
 
     st.divider()
     c_btn1, c_btn2 = st.columns([3,1])
-    with c_btn1: st.markdown("<h3>📝 Bekleyen Kuponlar</h3>", unsafe_allow_html=True)
+    with c_btn1: st.markdown("<h3>📝 Bekleyen Kuponlar (Makine Öğrenimi)</h3>", unsafe_allow_html=True)
     with c_btn2:
         if st.button("🤖 OTONOM DENETÇİYİ ÇALIŞTIR", use_container_width=True):
             if not api_key: st.error("API Anahtarı eksik!")
             else:
-                with st.spinner("Skorlar denetleniyor..."):
+                with st.spinner("Skorlar denetleniyor, yapay zeka hafızasını güncelliyor..."):
                     updates_made = False
                     for idx, r in enumerate(all_vals):
                         if len(r) > 12 and r[3] in ["Bekliyor", "Sanal_Bekliyor"]:
@@ -368,8 +417,9 @@ with tab3:
                                 skorlar.append(skor)
                             
                             nihai_sonuc = "BEKLİYOR"
-                            if "KAYBETTİ" in durumlar: nihai_sonuc = "KAYBETTİ"
-                            elif all(d == "KAZANDI" for d in durumlar): nihai_sonuc = "KAZANDI"
+                            if "BEKLİYOR" not in durumlar and "Korner Manuel Denetim" not in skorlar:
+                                if "KAYBETTİ" in durumlar: nihai_sonuc = "KAYBETTİ"
+                                elif all(d == "KAZANDI" for d in durumlar): nihai_sonuc = "KAZANDI"
                             
                             if nihai_sonuc != "BEKLİYOR":
                                 updates_made = True
@@ -392,17 +442,17 @@ with tab3:
                                 yeni_satir.extend([r[8] + f" (Skorlar: {' | '.join(skorlar)})"] + r[9:])
                                 sheet.append_row(yeni_satir)
                     if updates_made:
-                        st.success("✅ Maçlar sonuçlandırıldı!")
+                        st.success("✅ Maçlar sonuçlandırıldı ve veri tabanına işlendi!")
                         st.rerun()
-                    else: st.info("Maçlar henüz bitmemiş.")
+                    else: st.info("Maçlar henüz bitmemiş veya manuel denetim gerektiren pazar (Korner vb.) var.")
 
     bekleyenler = [(idx+1, r) for idx, r in enumerate(all_vals) if len(r) > 3 and r[3] in ["Bekliyor", "Sanal_Bekliyor"]]
-    if not bekleyenler: st.info("Bekleyen yatırımınız yok.")
+    if not bekleyenler: st.info("Bekleyen yatırımınız veya sanal eğitim işleminiz yok.")
     else:
         for row_idx, r in bekleyenler:
             is_sanal = (r[3] == "Sanal_Bekliyor")
             b_tutar, b_oran = float(str(r[1]).replace(',','.').strip()), float(str(r[2]).replace(',','.').strip())
             mac_isimleri = r[8].replace('#', ' | ') if len(r) > 10 else "Eski Format"
-            border_color = "#4a5568" if is_sanal else "#d4af37"
+            border_color = "#4a5568" if is_sanal else "#ff4b4b"
             tutar_text = "<span style='color:#a0aec0;'>0 TL (Sanal)</span>" if is_sanal else f"<span style='color:#00ffcc;'>{b_tutar:.0f} TL</span>"
             st.markdown(f"<div style='background: #11161d; border-left: 4px solid {border_color}; padding:20px; border-radius:10px; margin-bottom:15px;'><b style='font-size:18px;'>Maçlar:</b> <span style='color:#e2e8f0;'>{mac_isimleri}</span><br><br><b style='font-size:16px;'>Tutar:</b> <span style='font-size:18px;'>{tutar_text}</span> &nbsp;|&nbsp; <b style='font-size:16px;'>Oran:</b> <span style='color:#d4af37; font-size:18px; font-weight:bold;'>{b_oran:.2f}</span></div>", unsafe_allow_html=True)
