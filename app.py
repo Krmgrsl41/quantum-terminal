@@ -13,8 +13,8 @@ try:
 except ImportError:
     GSPREAD_INSTALLED = False
 
-# --- V1700 SICAK FORM RADARI: MOMENTUM (SON 5 MAÇ) ODAKLI ---
-st.set_page_config(page_title="V1700 SICAK FORM RADARI", layout="wide", page_icon="🔥")
+# --- V1800 KATEGORİK RADAR: TEKDÜZELİĞİ BİTİREN KATEGORİ SİSTEMİ ---
+st.set_page_config(page_title="V1800 KATEGORİK RADAR", layout="wide", page_icon="🎯")
 
 st.markdown("""
     <style>
@@ -33,6 +33,8 @@ st.markdown("""
     .highlight-gold { color: #ffcc00; font-weight: 900; font-size: 17px;}
     .highlight-green { color: #00ffcc; font-weight: 900; font-size: 17px;}
     .manual-panel { background: #11161d; border: 1px dashed #4a5568; padding: 20px; border-radius: 10px; margin-top: 15px; }
+    
+    .category-title { color: #00ffcc; font-weight: 800; font-size: 18px; margin-top: 15px; border-bottom: 1px solid #2d3748; padding-bottom: 5px;}
     </style>
     """, unsafe_allow_html=True)
 
@@ -106,8 +108,8 @@ def check_match_result(sport_key, home, away, target_market, api_key):
     except: return "BEKLİYOR", "Hata"
 
 # --- ARAYÜZ ---
-st.markdown("<h1 style='text-align:center; color:#ff4b4b; font-size:52px; margin-bottom:0; text-shadow: 0 0 20px rgba(255,75,75,0.3);'>🔥 V1700 SICAK FORM RADARI</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>Sezonluk Çöpleri Unut | Sadece Son Maçlardaki Momentum</p><br>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#ff4b4b; font-size:52px; margin-bottom:0; text-shadow: 0 0 20px rgba(255,75,75,0.3);'>🎯 V1800 KATEGORİK RADAR</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>Tekdüzeliğe Son | Taraf, Gol ve Korner Fırsatlarını Ayrı Ayrı Gör</p><br>", unsafe_allow_html=True)
 
 tab1, tab2, tab3 = st.tabs(["📡 1. MAÇLARI ÇEK", "🔬 2. SICAK FORM ANALİZİ", "💼 3. BİLANÇO MUHASEBESİ"])
 
@@ -151,9 +153,8 @@ with tab2:
             
             st.markdown("<div class='manual-panel'>", unsafe_allow_html=True)
             st.markdown(f"<h3 style='color:#ff4b4b;'>⚙️ Momentum Verisi (Sadece Son Maçlar!)</h3>", unsafe_allow_html=True)
-            st.markdown("<i style='color:#8b949e;'>Lütfen takımların sezonluk gollerini DEĞİL, sadece SON 5 veya SON 3 maçtaki performanslarını girin.</i><br><br>", unsafe_allow_html=True)
             
-            guven_esigi = st.slider("Güvenlik Eşiği Belirle (%):", min_value=50, max_value=90, value=60, step=1)
+            guven_esigi = st.slider("Güvenlik Eşiği Belirle (%):", min_value=30, max_value=90, value=50, step=1)
             st.divider()
 
             c_ev, c_dep = st.columns(2)
@@ -173,8 +174,8 @@ with tab2:
             
             st.markdown("</div><br>", unsafe_allow_html=True)
             
-            if st.button("🔥 SICAK FORM ANALİZİNİ BAŞLAT", use_container_width=True):
-                with st.spinner("Güncel momentum hesaplanıyor..."):
+            if st.button("🔥 KATEGORİK ANALİZİ BAŞLAT", use_container_width=True):
+                with st.spinner("Pazarlar ayrıştırılıyor..."):
                     
                     h_odd, d_odd, a_odd = 2.50, 3.20, 2.80 
                     api_basarili = False
@@ -280,27 +281,35 @@ with tab2:
                     gecen_hedefler = sorted([h for h in fuzyon_sonuclar if h[1] >= THRESHOLD], key=lambda x: x[1], reverse=True)
                     
                     if len(gecen_hedefler) > 0:
-                        rapor = f"🔥 <b>V1700 SICAK FORM RADARI ÇALIŞTI!</b><br><br>"
                         
-                        if api_basarili:
-                            rapor += f"📡 <span style='color:#ff4b4b;'>API BAZLI RÖNTGEN BAŞARILI:</span> Sistem güncel oranı (Ev: <b>{h_odd:.2f}</b>) baz aldı.<br><br>"
-
-                        rapor += f"Eşiği (%{guven_esigi}) geçmeyi başaran hedefler, takımların <b>SADECE SON MAÇLARDAKİ MOMENTUMUNA</b> göre hesaplanmıştır:<br><br>"
+                        # HEDEFLERİ KATEGORİLERİNE AYIRIYORUZ
+                        taraf_bahisleri = [h for h in gecen_hedefler if "MS" in h[0]]
+                        gol_bahisleri = [h for h in gecen_hedefler if "Üst" in h[0] and "Korner" not in h[0] or "Alt" in h[0] and "Korner" not in h[0] or "KG" in h[0]]
+                        korner_bahisleri = [h for h in gecen_hedefler if "Korner" in h[0]]
                         
-                        for i, hedef in enumerate(gecen_hedefler):
-                            pazar, final_prob, p_prob, o_prob = hedef
-                            adil_oran = 1.0 / final_prob if final_prob > 0 else 0
-                            
-                            if i == 0:
-                                rapor += f"🥇 <span class='highlight-gold'><b>[{pazar}]</b></span> -> İhtimal: <span class='highlight-green'>%{int(final_prob*100)}</span> | Adil Oran: <b>{adil_oran:.2f}</b><br>"
-                            else:
-                                rapor += f"• <b>[{pazar}]</b> -> İhtimal: %{int(final_prob*100)} | Adil Oran: {adil_oran:.2f}<br>"
+                        rapor = f"🔥 <b>V1800 KATEGORİK RADAR ÇALIŞTI!</b><br><br>"
+                        rapor += f"Eşiği (%{guven_esigi}) geçmeyi başaran hedefler, <b>kategorilerine göre (Taraf, Gol, Korner)</b> ayrı ayrı listelenmiştir. Böylece 1.5 Üst gibi oranların taraf bahislerini gizlemesi engellenmiştir.<br><br>"
+                        
+                        if len(taraf_bahisleri) > 0:
+                            rapor += "<div class='category-title'>🏆 TARAF BAHİSLERİ (Kazanma Olasılıkları)</div>"
+                            for pazar, final_prob, _, _ in taraf_bahisleri:
+                                rapor += f"• <b>[{pazar}]</b> -> İhtimal: %{int(final_prob*100)}<br>"
+                                
+                        if len(gol_bahisleri) > 0:
+                            rapor += "<div class='category-title'>⚽ GOL BAHİSLERİ (Alt/Üst & KG)</div>"
+                            for pazar, final_prob, _, _ in gol_bahisleri:
+                                rapor += f"• <b>[{pazar}]</b> -> İhtimal: %{int(final_prob*100)}<br>"
+                                
+                        if len(korner_bahisleri) > 0:
+                            rapor += "<div class='category-title'>🚩 KORNER BAHİSLERİ</div>"
+                            for pazar, final_prob, _, _ in korner_bahisleri:
+                                rapor += f"• <b>[{pazar}]</b> -> İhtimal: %{int(final_prob*100)}<br>"
 
                         secilen_mac['gecen_hedefler'] = gecen_hedefler
                         secilen_mac['ai_rapor'] = rapor
                         
                         st.session_state.aktif_mac = secilen_mac 
-                        st.success(f"☢️ Hedefler Bulundu! Sıcak formla hesaplandı.")
+                        st.success(f"☢️ Kategoriler Ayrıştırıldı! Tüm fırsatlar ekranda.")
                     else:
                         st.session_state.aktif_mac = None
                         st.error(f"🚨 UYARI: Verilere göre hiçbir ihtimal %{guven_esigi} barajını geçemedi. Pas geçin.")
@@ -312,12 +321,11 @@ with tab2:
             st.markdown(f"<div class='match-card'><div class='match-title'>{m['home_team']} ⚡ {m['away_team']}</div><br>", unsafe_allow_html=True)
             st.markdown(f"<div class='ai-report'>{m['ai_rapor']}</div><br>", unsafe_allow_html=True)
             
-            hedef_opsiyonlari = [f"{h[0]} (İhtimal: %{int(h[1]*100)} - Adil Oran: {(1/h[1]):.2f})" for h in m['gecen_hedefler']]
+            hedef_opsiyonlari = [f"{h[0]} (İhtimal: %{int(h[1]*100)})" for h in m['gecen_hedefler']]
             secilen_hedef_str = st.selectbox("📌 KASAYA İŞLENECEK HEDEFİ SEÇİN:", hedef_opsiyonlari, key="nihai_hedef_secim")
             
-            # FORMAT KORUMASI (0.637 Hatasını Önler)
             nihai_pazar = secilen_hedef_str.split(' (')[0].strip()
-            nihai_prob_str = secilen_hedef_str.split('%')[1].split(' ')[0]
+            nihai_prob_str = secilen_hedef_str.split('%')[1].split(')')[0]
             nihai_prob = float(nihai_prob_str) / 100.0
             
             c_oran, c_bos = st.columns([1, 1])
@@ -400,7 +408,7 @@ with tab3:
                             for m_isim, m_lig, m_pazar in zip(maclar, ligler, pazarlar):
                                 if ' vs ' in m_isim:
                                     ev, dep = m_isim.split(' vs ')
-                                    res, skor = check_match_result(m_lig, ev, dep, m_pazar.strip(), api_key) # Strip eklendi
+                                    res, skor = check_match_result(m_lig, ev, dep, m_pazar.strip(), api_key) 
                                 else:
                                     res, skor = "BEKLİYOR", "Eski Format"
                                     
@@ -459,7 +467,6 @@ with tab3:
                 won = status in ["Kazandı_Sonuc", "Sanal_Kazandı"]
                 pazarlar = r[10].split('#')
                 for p in pazarlar:
-                    # Buglı verileri (örn: 0.637) tablodan dışlamak için ufak bir filtre
                     pazar_adi = p.strip()
                     if not pazar_adi[0].isdigit() or "Üst" in pazar_adi or "Alt" in pazar_adi or "MS" in pazar_adi:
                         ai_stats.append({"Pazar": pazar_adi, "Sonuc": won})
