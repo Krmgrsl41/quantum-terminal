@@ -13,8 +13,8 @@ try:
 except ImportError:
     GSPREAD_INSTALLED = False
 
-# --- V1600 SAF VERİ RADARI: SIFIR MANİPÜLASYON, SADECE ÇIPLAK RAKAMLAR ---
-st.set_page_config(page_title="V1600 SAF VERİ RADARI", layout="wide", page_icon="🎯")
+# --- V1601 KARNELİ RADAR: SAF VERİ + YAPAY ZEKA İSTATİSTİK PANELİ ---
+st.set_page_config(page_title="V1601 SAF VERİ RADARI", layout="wide", page_icon="🎯")
 
 st.markdown("""
     <style>
@@ -106,8 +106,8 @@ def check_match_result(sport_key, home, away, target_market, api_key):
     except: return "BEKLİYOR", "Hata"
 
 # --- ARAYÜZ ---
-st.markdown("<h1 style='text-align:center; color:#00ffcc; font-size:52px; margin-bottom:0; text-shadow: 0 0 20px rgba(0,255,204,0.3);'>🎯 V1600 SAF VERİ RADARI</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>Sıfır Manipülasyon | Çıplak İstatistik (Gol/Korner) | Şeffaf Sonuçlar</p><br>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#00ffcc; font-size:52px; margin-bottom:0; text-shadow: 0 0 20px rgba(0,255,204,0.3);'>🎯 V1601 SAF VERİ RADARI</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>Sıfır Manipülasyon | Çıplak İstatistik | Otonom Öğrenme Raporu</p><br>", unsafe_allow_html=True)
 
 tab1, tab2, tab3 = st.tabs(["📡 1. MAÇLARI ÇEK", "🔬 2. ANALİZ VE VUR-KAÇ", "💼 3. BİLANÇO MUHASEBESİ"])
 
@@ -176,7 +176,6 @@ with tab2:
             if st.button("☢️ SAF VERİ İLE ANALİZİ BAŞLAT", use_container_width=True):
                 with st.spinner("Çıplak verilerle matris çiziliyor, manipülasyonlar silindi..."):
                     
-                    # API'DEN ŞEFFAF ORAN ÇEKİMİ
                     h_odd, d_odd, a_odd = 2.50, 3.20, 2.80 
                     api_basarili = False
                     
@@ -198,13 +197,12 @@ with tab2:
                                             d_odd = out['price']
                     except: pass
 
-                    # MOTOR A: SAF POISSON (SUNI ÇARPANLAR TAMAMEN SİLİNDİ)
+                    # MOTOR A: SAF POISSON
                     ev_atk_ort = ev_at / ev_mac if ev_mac > 0 else 1.0
                     ev_def_ort = ev_ye / ev_mac if ev_mac > 0 else 1.0
                     dep_atk_ort = dep_at / dep_mac if dep_mac > 0 else 1.0
                     dep_def_ort = dep_ye / dep_mac if dep_mac > 0 else 1.0
                     
-                    # SADECE NET VERİ: Atma ve Yeme ortalamalarının direkt ortalaması
                     lambda_home = max(0.1, (ev_atk_ort + dep_def_ort) / 2.0)
                     lambda_away = max(0.1, (dep_atk_ort + ev_def_ort) / 2.0)
                     
@@ -248,7 +246,6 @@ with tab2:
                         "Korner 8.5 Üst": p_korner85ust, "Korner 9.5 Üst": p_korner95ust
                     }
 
-                    # MOTOR B: ORANEXCEL
                     oranexcel_olasiliklar = {k: 0.50 for k in poisson_olasiliklar.keys()} 
                     if len(db_odds) > 50:
                         benzerler = db_odds[(db_odds['B365H'] >= h_odd - 0.15) & (db_odds['B365H'] <= h_odd + 0.15)]
@@ -274,7 +271,6 @@ with tab2:
                             oranexcel_olasiliklar["Korner 8.5 Üst"] = poisson_olasiliklar["Korner 8.5 Üst"] 
                             oranexcel_olasiliklar["Korner 9.5 Üst"] = poisson_olasiliklar["Korner 9.5 Üst"]
 
-                    # FÜZYON
                     fuzyon_sonuclar = []
                     for pazar in poisson_olasiliklar.keys():
                         ort_ihtimal = (poisson_olasiliklar[pazar] + oranexcel_olasiliklar[pazar]) / 2.0
@@ -284,9 +280,8 @@ with tab2:
                     gecen_hedefler = sorted([h for h in fuzyon_sonuclar if h[1] >= THRESHOLD], key=lambda x: x[1], reverse=True)
                     
                     if len(gecen_hedefler) > 0:
-                        rapor = f"🔥 <b>V1600 SAF VERİ RADARI ÇALIŞTI!</b><br><br>"
+                        rapor = f"🔥 <b>V1601 SAF VERİ RADARI ÇALIŞTI!</b><br><br>"
                         
-                        # API TEŞHİS MESAJI
                         if api_basarili:
                             rapor += f"📡 <span style='color:#00ffcc;'>API BAZLI RÖNTGEN BAŞARILI:</span> Sistem, İddaa'nın açtığı güncel taraf oranlarını (Ev: <b>{h_odd:.2f}</b>) yakaladı ve Oranexcel'i bu gerçek değere göre süzdü.<br><br>"
                         else:
@@ -362,7 +357,7 @@ with tab2:
                 st.rerun()
 
 with tab3:
-    st.markdown("<h2 style='color:#d4af37;'>💼 Kuantum Fon Bilanço Özeti (Yapay Zeka Hafızası)</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color:#d4af37;'>💼 Kuantum Fon Bilanço Özeti</h2>", unsafe_allow_html=True)
     m1, m2, m3 = st.columns(3)
     kasa, bekleyen, baslangic = st.session_state.lokal_kasa, st.session_state.bekleyen_tutar, st.session_state.baslangic_kasa
     roi = ((kasa - baslangic) / baslangic) * 100 if baslangic > 0 else 0.0
@@ -384,7 +379,7 @@ with tab3:
     st.divider()
     
     c_btn1, c_btn2 = st.columns([3,1])
-    with c_btn1: st.markdown("<h3>📝 Bekleyen Kuponlar (Makine Öğrenimi)</h3>", unsafe_allow_html=True)
+    with c_btn1: st.markdown("<h3>📝 Bekleyen Kuponlar</h3>", unsafe_allow_html=True)
     with c_btn2:
         if st.button("🤖 OTONOM DENETÇİYİ ÇALIŞTIR", use_container_width=True, key="otonom_denetci_btn"):
             if not api_key: st.error("API Anahtarı eksik!")
@@ -453,3 +448,44 @@ with tab3:
             border_color = "#4a5568" if is_sanal else "#ff4b4b"
             tutar_text = "<span style='color:#a0aec0;'>0 TL (Sanal)</span>" if is_sanal else f"<span style='color:#00ffcc;'>{b_tutar:.0f} TL</span>"
             st.markdown(f"<div style='background: #11161d; border-left: 4px solid {border_color}; padding:20px; border-radius:10px; margin-bottom:15px;'><b style='font-size:18px;'>Maçlar:</b> <span style='color:#e2e8f0;'>{mac_isimleri}</span><br><br><b style='font-size:16px;'>Tutar:</b> <span style='font-size:18px;'>{tutar_text}</span> &nbsp;|&nbsp; <b style='font-size:16px;'>Oran:</b> <span style='color:#d4af37; font-size:18px; font-weight:bold;'>{b_oran:.2f}</span></div>", unsafe_allow_html=True)
+
+    # --- YENİ EKLENEN YAPAY ZEKA ÖĞRENME İSTATİSTİKLERİ MODÜLÜ ---
+    st.divider()
+    st.markdown("### 📊 Yapay Zeka Öğrenme İstatistikleri (Analitik Merkezi)")
+    
+    ai_stats = []
+    for r in all_vals:
+        if len(r) > 10:
+            status = r[3]
+            if status in ["Kazandı_Sonuc", "Sanal_Kazandı", "Kaybetti_Sonuc", "Sanal_Kaybetti"]:
+                won = status in ["Kazandı_Sonuc", "Sanal_Kazandı"]
+                pazarlar = r[10].split('#')
+                for p in pazarlar:
+                    ai_stats.append({"Pazar": p.strip(), "Sonuc": won})
+
+    if ai_stats:
+        df_stats = pd.DataFrame(ai_stats)
+        toplam_mac = len(df_stats)
+        kazanan = df_stats['Sonuc'].sum()
+        kaybeden = toplam_mac - kazanan
+        win_rate = (kazanan / toplam_mac) * 100 if toplam_mac > 0 else 0
+        
+        c_stat1, c_stat2, c_stat3, c_stat4 = st.columns(4)
+        c_stat1.metric("Toplam Sonuçlanan", f"{toplam_mac} Maç")
+        c_stat2.metric("✅ Başarılı Tahmin", f"{kazanan}")
+        c_stat3.metric("❌ Hatalı Tahmin", f"{kaybeden}")
+        c_stat4.metric("🎯 Genel İsabet Oranı", f"%{win_rate:.1f}")
+        
+        st.markdown("#### 🎯 Pazar (Market) Bazlı Analiz Tablosu")
+        st.markdown("<i style='color:#8b949e; font-size:14px;'>Aşağıdaki tablo, yapay zekanın geçmişte en çok hangi bahis türlerinde başarılı olduğunu gösterir. Oynayacağınız hedefi seçerken bu tabloyu referans alabilirsiniz.</i><br><br>", unsafe_allow_html=True)
+        
+        market_stats = df_stats.groupby('Pazar')['Sonuc'].agg(['count', 'sum']).reset_index()
+        market_stats.columns = ['Bahis Pazarı', 'Toplam Oynanan', 'Kazanan']
+        market_stats['Kaybeden'] = market_stats['Toplam Oynanan'] - market_stats['Kazanan']
+        market_stats['İsabet Oranı (%)'] = (market_stats['Kazanan'] / market_stats['Toplam Oynanan']) * 100
+        market_stats = market_stats.sort_values(by='İsabet Oranı (%)', ascending=False)
+        
+        market_stats['İsabet Oranı (%)'] = market_stats['İsabet Oranı (%)'].apply(lambda x: f"%{x:.1f}")
+        st.dataframe(market_stats, use_container_width=True, hide_index=True)
+    else:
+        st.info("Henüz 'Otonom Denetçi' tarafından sonuçlandırılmış ve hafızaya işlenmiş bir maç bulunmuyor. Sanal veya gerçek birkaç maç oynayıp sonuçlandığında tablo burada oluşacaktır.")
