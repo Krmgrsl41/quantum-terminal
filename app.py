@@ -13,8 +13,8 @@ try:
 except ImportError:
     GSPREAD_INSTALLED = False
 
-# --- V1100 NİHAİ FÜZYON: ORANEXCEL + POISSON (SAF OBJEKTİF VERİ) ---
-st.set_page_config(page_title="V1100 NİHAİ FÜZYON | ÇİFT MOTORLU FON", layout="wide", page_icon="☢️")
+# --- V1200 KUSURSUZ TERMİNAL: FÜZYON MOTORU + TEK EKRAN AKSİYON ---
+st.set_page_config(page_title="V1200 KUSURSUZ TERMİNAL", layout="wide", page_icon="☢️")
 
 st.markdown("""
     <style>
@@ -70,7 +70,6 @@ def load_historical_odds():
             r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=5)
             if r.status_code == 200:
                 df = pd.read_csv(io.StringIO(r.text))
-                # FTR Sütunu eklendi! Sorunsuz okuma yapar.
                 if 'B365H' in df.columns: dfs.append(df[['B365H', 'B365D', 'B365A', 'FTR', 'FTHG', 'FTAG', 'HTHG', 'HTAG']].dropna())
         except: pass
     return pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
@@ -108,10 +107,10 @@ def check_match_result(sport_key, home, away, target_market, api_key):
     except: return "BEKLİYOR", "Hata"
 
 # --- ARAYÜZ ---
-st.markdown("<h1 style='text-align:center; color:#ff4b4b; font-size:52px; margin-bottom:0; text-shadow: 0 0 20px rgba(255,75,75,0.3);'>☢️ V1100 NİHAİ FÜZYON</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>Oranexcel (Tarihsel Şifre) + Objektif Matematik (Sıralama, Gol, Korner)</p><br>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#ff4b4b; font-size:52px; margin-bottom:0; text-shadow: 0 0 20px rgba(255,75,75,0.3);'>☢️ V1200 KUSURSUZ TERMİNAL</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>Oranexcel (Şifre) + Objektif Veri (Sıralama, Gol, Korner) | Tek Ekran Aksiyon</p><br>", unsafe_allow_html=True)
 
-tab1, tab2, tab3 = st.tabs(["📡 1. LİSTE ÇEK", "🔬 2. FÜZYON SİMÜLASYONU", "💼 3. FON YÖNETİMİ"])
+tab1, tab2, tab3 = st.tabs(["📡 1. LİSTE ÇEK", "🔬 2. FÜZYON SİMÜLASYONU VE ONAY", "💼 3. BİLANÇO MUHASEBESİ"])
 
 c1, c2 = st.columns([2, 1])
 with c1: secilen_ligler = st.multiselect("Taranacak Ligleri Seçin:", list(API_LEAGUES.keys()), default=["İngiltere Premier Lig", "Türkiye Süper Lig", "Almanya Bundesliga"])
@@ -154,7 +153,7 @@ with tab2:
             
             st.markdown("<div class='manual-panel'>", unsafe_allow_html=True)
             st.markdown(f"<h3 style='color:#00ffcc;'>⚙️ Objektif İstihbarat (Sadece Sayılar - Maçkolik)</h3>", unsafe_allow_html=True)
-            st.markdown("<i style='color:#8b949e;'>Sakatlık ve Form gibi subjektif veriler sistemden kaldırılmıştır. Sadece Sıralama, Gol ve Korner sayılarını giriniz.</i><br><br>", unsafe_allow_html=True)
+            st.markdown("<i style='color:#8b949e;'>Sadece Sıralama, Gol ve Korner sayılarını giriniz. Sistem subjektif verilerden arındırılmıştır.</i><br><br>", unsafe_allow_html=True)
             
             guven_esigi = st.slider("Hedef Güvenlik Eşiği Belirle (%):", min_value=60, max_value=90, value=73, step=1)
             st.divider()
@@ -178,7 +177,7 @@ with tab2:
             
             st.markdown("</div><br>", unsafe_allow_html=True)
             
-            if st.button("☢️ FÜZYON MOTORUNU ÇALIŞTIR (Kusursuz Veri)", use_container_width=True):
+            if st.button("☢️ FÜZYON MOTORUNU ÇALIŞTIR", use_container_width=True):
                 with st.spinner("Excalibur işlemcisi devrede... Çift Motorlu Füzyon hesaplanıyor..."):
                     
                     h_odd, d_odd, a_odd = 2.50, 3.20, 2.80
@@ -193,24 +192,20 @@ with tab2:
                     except: pass
 
                     # ==========================================
-                    # MOTOR A: POISSON SİMÜLATÖRÜ (Sıralama + Gol + Korner)
+                    # MOTOR A: POISSON SİMÜLATÖRÜ
                     # ==========================================
                     ev_atk_ort = ev_at / ev_mac if ev_mac > 0 else 1.0
                     ev_def_ort = ev_ye / ev_mac if ev_mac > 0 else 1.0
                     dep_atk_ort = dep_at / dep_mac if dep_mac > 0 else 1.0
                     dep_def_ort = dep_ye / dep_mac if dep_mac > 0 else 1.0
                     
-                    # Sıralama Farkı Güç Endeksi (Sakatlık ve Form kaldırıldı)
                     sira_farki = dep_sira - ev_sira 
-                    
-                    # Gelişmiş xG (Sadece objektif veri)
                     lambda_home = max(0.1, ((ev_atk_ort + dep_def_ort) / 2.0) + (sira_farki * 0.02))
                     lambda_away = max(0.1, ((dep_atk_ort + ev_def_ort) / 2.0) - (sira_farki * 0.02))
                     
                     lambda_ht_home = lambda_home * 0.45
                     lambda_ht_away = lambda_away * 0.45
 
-                    # Poisson Olasılıkları Matrisi
                     p_ms1=0.0; p_ms2=0.0; p_ms0=0.0
                     p_15ust=0.0; p_25ust=0.0; p_35ust=0.0
                     p_kgvar=0.0; p_iy15ust=0.0; p_korner95ust=0.0; p_korner85ust=0.0
@@ -233,7 +228,6 @@ with tab2:
                             prob = poisson.pmf(h, lambda_ht_home) * poisson.pmf(a, lambda_ht_away)
                             if (h + a) > 1.5: p_iy15ust += prob
                             
-                    # KORNER MATRİSİ 
                     for h in range(16):
                         for a in range(16):
                             prob = poisson.pmf(h, ev_kor_kul) * poisson.pmf(a, dep_kor_kul)
@@ -250,7 +244,7 @@ with tab2:
                     }
 
                     # ==========================================
-                    # MOTOR B: ORANEXCEL (Geçmiş Şifre Çözücü - FTR Hatası Giderildi)
+                    # MOTOR B: ORANEXCEL
                     # ==========================================
                     oranexcel_olasiliklar = {k: 0.50 for k in poisson_olasiliklar.keys()} 
                     
@@ -286,7 +280,6 @@ with tab2:
                         ort_ihtimal = (poisson_olasiliklar[pazar] + oranexcel_olasiliklar[pazar]) / 2.0
                         fuzyon_sonuclar.append((pazar, ort_ihtimal, poisson_olasiliklar[pazar], oranexcel_olasiliklar[pazar]))
 
-                    # 4. KESKİN NİŞANCI FİLTRESİ
                     THRESHOLD = guven_esigi / 100.0
                     gecen_hedefler = [h for h in fuzyon_sonuclar if h[1] >= THRESHOLD]
                     
@@ -294,8 +287,8 @@ with tab2:
                         en_iyi_hedef = max(gecen_hedefler, key=lambda item: item[1])
                         en_iyi_pazar, final_prob, p_prob, o_prob = en_iyi_hedef
                         
-                        rapor = f"🔥 <b>V1100 NİHAİ FÜZYON BAŞARIYLA ÇALIŞTI!</b><br><br>"
-                        rapor += f"Sistem, subjektif eksik/form verilerini dışarıda bırakarak sadece Sıralama, Gol ve Korner sayılarıyla tam 10.000 sanal simülasyon yaptı.<br><br>"
+                        rapor = f"🔥 <b>V1200 NİHAİ FÜZYON BAŞARIYLA ÇALIŞTI!</b><br><br>"
+                        rapor += f"Sistem, sadece Sıralama, Gol ve Korner sayılarıyla tam 10.000 sanal simülasyon yaptı.<br><br>"
                         
                         rapor += f"🧠 <b>Objektif Motor 1 (Poisson/xG):</b> %{int(p_prob*100)} İhtimal Onayı<br>"
                         rapor += f"📊 <b>Tarihsel Motor 2 (Oranexcel):</b> %{int(o_prob*100)} İhtimal Onayı<br><br>"
@@ -309,7 +302,7 @@ with tab2:
                         secilen_mac['ai_rapor'] = rapor
                         
                         st.session_state.sepet.append(secilen_mac)
-                        st.success(f"☢️ Kusursuz Füzyon Başarılı! En mantıklı hedef sepete eklendi.")
+                        st.success(f"☢️ Kusursuz Füzyon Başarılı! Hedef analiz edildi.")
                     else:
                         st.error(f"🚨 FÜZYON UYARISI: Motorlar Anlaşamadı! Verilere göre hiçbir ihtimal %{guven_esigi} barajını geçemedi. Kasanızı korumak için pas geçin.")
 
@@ -324,14 +317,15 @@ with tab2:
                 m['manuel_oran'] = st.number_input("Bu seçeneğin İddaa'daki güncel oranını girin:", min_value=1.01, value=1.50, step=0.01, key=f"manuel_oran_{i}")
                 st.markdown("</div>", unsafe_allow_html=True)
             
-            # Aksiyon Butonlarını Direkt Buraya Aldık!
-            manuel_tutar = st.number_input("💵 Kupona Yatırılacak Tutar:", min_value=10.0, value=100.0, step=10.0)
-            c_btn_real, c_btn_shadow = st.columns(2)
+            # --- AKSİYON BUTONLARI BURADA (Kopya Hatası Giderildi) ---
+            st.markdown("<hr style='border:1px solid #2d3748;'>", unsafe_allow_html=True)
+            manuel_tutar = st.number_input("💵 Kupona Yatırılacak Tutar:", min_value=10.0, value=100.0, step=10.0, key="tutar_hizli_islem")
             
+            c_btn_real, c_btn_shadow = st.columns(2)
             with c_btn_real:
-                btn_gercek = st.button("🚀 ONAYLA (Gerçek Kasa)", use_container_width=True)
+                btn_gercek = st.button("🚀 ONAYLA (Gerçek Kasa)", use_container_width=True, key="onay_gercek_hizli")
             with c_btn_shadow:
-                btn_sanal = st.button("👻 GÖLGE MODU (Yapay Zekayı Eğit)", use_container_width=True)
+                btn_sanal = st.button("👻 GÖLGE MODU (Yapay Zekayı Eğit)", use_container_width=True, key="onay_sanal_hizli")
                 
             if btn_gercek or btn_sanal:
                 toplam_oran = 1.0
@@ -359,7 +353,7 @@ with tab2:
                 st.success("İşlem Başarılı! Maçlar Yapay Zekanın hafızasına gönderildi.")
                 st.rerun()
                 
-            if st.button("🚮 Sepeti Temizle", key="temizle_btn"):
+            if st.button("🚮 Sepeti Temizle", key="temizle_btn_hizli"):
                 st.session_state.sepet = []
                 st.rerun()
 
@@ -374,47 +368,24 @@ with tab3:
     
     st.divider()
     
-    if len(st.session_state.sepet) > 0:
-        st.markdown("### 🚀 Sepetteki Maçları Fonla (Öğrenme Modu Açık)")
-        manuel_tutar = st.number_input("💵 Kupona Yatırılacak Tutar:", min_value=10.0, value=100.0, step=10.0)
-        c_btn_real, c_btn_shadow = st.columns(2)
-        
-        with c_btn_real:
-            btn_gercek = st.button("🚀 ONAYLA (Gerçek Kasa)", use_container_width=True)
-        with c_btn_shadow:
-            btn_sanal = st.button("👻 GÖLGE MODU (Yapay Zekayı Eğit)", use_container_width=True)
-            
-        if btn_gercek or btn_sanal:
-            toplam_oran = 1.0
-            for s in st.session_state.sepet: toplam_oran *= s.get('manuel_oran', 1.50)
-            
-            if btn_gercek:
-                yatirilacak_tutar = manuel_tutar
-                st.session_state.lokal_kasa -= yatirilacak_tutar
-                st.session_state.bekleyen_tutar += yatirilacak_tutar
-                durum_text = "Bekliyor"
-            else:
-                yatirilacak_tutar = 0.0 
-                durum_text = "Sanal_Bekliyor"
-            
-            if sheet:
-                isimler = "#".join([f"{s['home_team']} vs {s['away_team']}" for s in st.session_state.sepet])
-                ligler = "#".join([s['sport_key'] for s in st.session_state.sepet])
-                tercihler = "#".join([s['hedef_pazar'] for s in st.session_state.sepet])
-                problar = "#".join([f"{s['kalibre_ihtimal']:.3f}" for s in st.session_state.sepet])
-                oranlar = "#".join([f"{s.get('manuel_oran', 1.50):.2f}" for s in st.session_state.sepet])
-                
-                sheet.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), yatirilacak_tutar, toplam_oran, durum_text, "0", st.session_state.lokal_kasa, st.session_state.bekleyen_tutar, st.session_state.baslangic_kasa, isimler, ligler, tercihler, problar, oranlar])
-            
-            st.session_state.sepet = []
-            st.success("İşlem Başarılı! Maçlar Yapay Zekanın hafızasına gönderildi.")
-            st.rerun()
+    # --- SADECE KASA GÜNCELLEME ALANI ---
+    st.markdown("### 🔄 Manuel Kasa Güncelleme")
+    yeni_kasa_tutari = st.number_input("Sisteme yeni bir kasa (sermaye) tutarı tanımlayın:", min_value=0.0, value=float(st.session_state.lokal_kasa), step=100.0, key="yeni_kasa_guncelle")
+    if st.button("💾 KASAYI GÜNCELLE", key="btn_kasa_guncelle"):
+        st.session_state.lokal_kasa = yeni_kasa_tutari
+        # İstersen başlangıç kasasını da eşitleyebilirsin, şimdilik sadece lokali güncelliyoruz
+        if sheet:
+            sheet.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), 0, 1, "Kasa_Guncellendi", "0", st.session_state.lokal_kasa, st.session_state.bekleyen_tutar, st.session_state.baslangic_kasa, "Kasa Yenilendi", "-", "-", "-", "-"])
+        st.success("Kasa tutarı başarıyla güncellendi!")
+        st.rerun()
 
     st.divider()
+    
+    # --- OTONOM DENETÇİ VE LİSTE ---
     c_btn1, c_btn2 = st.columns([3,1])
     with c_btn1: st.markdown("<h3>📝 Bekleyen Kuponlar (Makine Öğrenimi)</h3>", unsafe_allow_html=True)
     with c_btn2:
-        if st.button("🤖 OTONOM DENETÇİYİ ÇALIŞTIR", use_container_width=True):
+        if st.button("🤖 OTONOM DENETÇİYİ ÇALIŞTIR", use_container_width=True, key="otonom_denetci_btn"):
             if not api_key: st.error("API Anahtarı eksik!")
             else:
                 with st.spinner("Skorlar denetleniyor, yapay zeka hafızasını güncelliyor..."):
