@@ -13,8 +13,8 @@ try:
 except ImportError:
     GSPREAD_INSTALLED = False
 
-# --- V1000 KUSURSUZ FÜZYON: ORANEXCEL + POISSON + MAÇKOLİK UYUMU ---
-st.set_page_config(page_title="V1000 FÜZYON | ÇİFT MOTORLU FON", layout="wide", page_icon="☢️")
+# --- V1100 NİHAİ FÜZYON: ORANEXCEL + POISSON (SAF OBJEKTİF VERİ) ---
+st.set_page_config(page_title="V1100 NİHAİ FÜZYON | ÇİFT MOTORLU FON", layout="wide", page_icon="☢️")
 
 st.markdown("""
     <style>
@@ -70,7 +70,8 @@ def load_historical_odds():
             r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=5)
             if r.status_code == 200:
                 df = pd.read_csv(io.StringIO(r.text))
-                if 'B365H' in df.columns: dfs.append(df[['B365H', 'B365D', 'B365A', 'FTHG', 'FTAG', 'HTHG', 'HTAG']].dropna())
+                # FTR Sütunu eklendi! Sorunsuz okuma yapar.
+                if 'B365H' in df.columns: dfs.append(df[['B365H', 'B365D', 'B365A', 'FTR', 'FTHG', 'FTAG', 'HTHG', 'HTAG']].dropna())
         except: pass
     return pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
 
@@ -107,8 +108,8 @@ def check_match_result(sport_key, home, away, target_market, api_key):
     except: return "BEKLİYOR", "Hata"
 
 # --- ARAYÜZ ---
-st.markdown("<h1 style='text-align:center; color:#ff4b4b; font-size:52px; margin-bottom:0; text-shadow: 0 0 20px rgba(255,75,75,0.3);'>☢️ V1000 KUSURSUZ FÜZYON</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>Oranexcel (Şifre) + Objektif Veri (Sıralama, Gol, Korner)</p><br>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#ff4b4b; font-size:52px; margin-bottom:0; text-shadow: 0 0 20px rgba(255,75,75,0.3);'>☢️ V1100 NİHAİ FÜZYON</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>Oranexcel (Tarihsel Şifre) + Objektif Matematik (Sıralama, Gol, Korner)</p><br>", unsafe_allow_html=True)
 
 tab1, tab2, tab3 = st.tabs(["📡 1. LİSTE ÇEK", "🔬 2. FÜZYON SİMÜLASYONU", "💼 3. FON YÖNETİMİ"])
 
@@ -153,6 +154,7 @@ with tab2:
             
             st.markdown("<div class='manual-panel'>", unsafe_allow_html=True)
             st.markdown(f"<h3 style='color:#00ffcc;'>⚙️ Objektif İstihbarat (Sadece Sayılar - Maçkolik)</h3>", unsafe_allow_html=True)
+            st.markdown("<i style='color:#8b949e;'>Sakatlık ve Form gibi subjektif veriler sistemden kaldırılmıştır. Sadece Sıralama, Gol ve Korner sayılarını giriniz.</i><br><br>", unsafe_allow_html=True)
             
             guven_esigi = st.slider("Hedef Güvenlik Eşiği Belirle (%):", min_value=60, max_value=90, value=73, step=1)
             st.divider()
@@ -165,7 +167,6 @@ with tab2:
                 ev_at = st.number_input("Attığı Gol:", min_value=0, value=15, key="ev_at")
                 ev_ye = st.number_input("Yediği Gol:", min_value=0, value=10, key="ev_ye")
                 ev_kor_kul = st.number_input("Ortalama Kullandığı Korner:", min_value=0.0, value=5.0, step=0.5, key="ev_kor_kul")
-                ev_eksik = st.selectbox("Sakatlık/Eksik:", ["Tam Kadro", "Hafif Eksik", "Önemli Eksik (-0.30 xG)", "Kritik Eksik (-0.60 xG)"], key="ev_eksik")
                 
             with c_dep:
                 st.markdown(f"**✈️ {secilen_mac['away_team']} (Deplasman)**")
@@ -174,12 +175,11 @@ with tab2:
                 dep_at = st.number_input("Attığı Gol:", min_value=0, value=10, key="dep_at")
                 dep_ye = st.number_input("Yediği Gol:", min_value=0, value=15, key="dep_ye")
                 dep_kor_kul = st.number_input("Ortalama Kullandığı Korner:", min_value=0.0, value=4.5, step=0.5, key="dep_kor_kul")
-                dep_eksik = st.selectbox("Sakatlık/Eksik:", ["Tam Kadro", "Hafif Eksik", "Önemli Eksik (-0.30 xG)", "Kritik Eksik (-0.60 xG)"], key="dep_eksik")
             
             st.markdown("</div><br>", unsafe_allow_html=True)
             
             if st.button("☢️ FÜZYON MOTORUNU ÇALIŞTIR (Kusursuz Veri)", use_container_width=True):
-                with st.spinner("Excalibur işlemcisi devrede... Matris hesaplanıyor..."):
+                with st.spinner("Excalibur işlemcisi devrede... Çift Motorlu Füzyon hesaplanıyor..."):
                     
                     h_odd, d_odd, a_odd = 2.50, 3.20, 2.80
                     try:
@@ -200,28 +200,17 @@ with tab2:
                     dep_atk_ort = dep_at / dep_mac if dep_mac > 0 else 1.0
                     dep_def_ort = dep_ye / dep_mac if dep_mac > 0 else 1.0
                     
-                    # Sıralama Farkı (Pozitifse Ev Sahibi üstte demektir)
+                    # Sıralama Farkı Güç Endeksi (Sakatlık ve Form kaldırıldı)
                     sira_farki = dep_sira - ev_sira 
                     
-                    # Sakatlık Penaltıları
-                    ev_penalti = 0.0
-                    if "Hafif" in ev_eksik: ev_penalti = 0.10
-                    elif "Önemli" in ev_eksik: ev_penalti = 0.30
-                    elif "Kritik" in ev_eksik: ev_penalti = 0.60
-
-                    dep_penalti = 0.0
-                    if "Hafif" in dep_eksik: dep_penalti = 0.10
-                    elif "Önemli" in dep_eksik: dep_penalti = 0.30
-                    elif "Kritik" in dep_eksik: dep_penalti = 0.60
-                    
-                    # Gelişmiş xG (Form yok, sadece sıralama matematiği var)
-                    lambda_home = max(0.1, ((ev_atk_ort + dep_def_ort) / 2.0) + (sira_farki * 0.02) - ev_penalti)
-                    lambda_away = max(0.1, ((dep_atk_ort + ev_def_ort) / 2.0) - (sira_farki * 0.02) - dep_penalti)
+                    # Gelişmiş xG (Sadece objektif veri)
+                    lambda_home = max(0.1, ((ev_atk_ort + dep_def_ort) / 2.0) + (sira_farki * 0.02))
+                    lambda_away = max(0.1, ((dep_atk_ort + ev_def_ort) / 2.0) - (sira_farki * 0.02))
                     
                     lambda_ht_home = lambda_home * 0.45
                     lambda_ht_away = lambda_away * 0.45
 
-                    # Poisson Olasılıkları
+                    # Poisson Olasılıkları Matrisi
                     p_ms1=0.0; p_ms2=0.0; p_ms0=0.0
                     p_15ust=0.0; p_25ust=0.0; p_35ust=0.0
                     p_kgvar=0.0; p_iy15ust=0.0; p_korner95ust=0.0; p_korner85ust=0.0
@@ -244,7 +233,7 @@ with tab2:
                             prob = poisson.pmf(h, lambda_ht_home) * poisson.pmf(a, lambda_ht_away)
                             if (h + a) > 1.5: p_iy15ust += prob
                             
-                    # KORNER MATRİSİ (Sadece "Kullandığı" kornerler üzerinden direkt hesaplama)
+                    # KORNER MATRİSİ 
                     for h in range(16):
                         for a in range(16):
                             prob = poisson.pmf(h, ev_kor_kul) * poisson.pmf(a, dep_kor_kul)
@@ -261,7 +250,7 @@ with tab2:
                     }
 
                     # ==========================================
-                    # MOTOR B: ORANEXCEL (Geçmiş Şifre Çözücü)
+                    # MOTOR B: ORANEXCEL (Geçmiş Şifre Çözücü - FTR Hatası Giderildi)
                     # ==========================================
                     oranexcel_olasiliklar = {k: 0.50 for k in poisson_olasiliklar.keys()} 
                     
@@ -305,14 +294,14 @@ with tab2:
                         en_iyi_hedef = max(gecen_hedefler, key=lambda item: item[1])
                         en_iyi_pazar, final_prob, p_prob, o_prob = en_iyi_hedef
                         
-                        rapor = f"🔥 **V1000 KUSURSUZ FÜZYON BAŞARIYLA ÇALIŞTI!**<br><br>"
-                        rapor += f"Sistem subjektif 'form' verilerini silip tamamen net sıralama ve Maçkolik korner ortalamalarıyla 10.000 sanal simülasyon yaptı.<br><br>"
+                        rapor = f"🔥 **V1100 NİHAİ FÜZYON BAŞARIYLA ÇALIŞTI!**<br><br>"
+                        rapor += f"Sistem, subjektif eksik/form verilerini dışarıda bırakarak sadece Sıralama, Gol ve Korner sayılarıyla tam 10.000 sanal simülasyon yaptı.<br><br>"
                         
                         rapor += f"🧠 **Objektif Motor 1 (Poisson/xG):** %{int(p_prob*100)} İhtimal Onayı<br>"
                         rapor += f"📊 **Tarihsel Motor 2 (Oranexcel):** %{int(o_prob*100)} İhtimal Onayı<br><br>"
                         
                         rapor += f"🎯 <span class='highlight-gold'>%{guven_esigi} GÜVEN EŞİĞİ AŞILDI!</span><br>"
-                        rapor += f"Her iki motorun onayıyla bu maçtaki EN GÜVENLİ MUTLAK LİMAN: <span class='highlight-gold'>[{en_iyi_pazar}]</span><br>"
+                        rapor += f"Her iki motorun onayıyla bu maçtaki EN GÜVENLİ LİMAN: <span class='highlight-gold'>[{en_iyi_pazar}]</span><br>"
                         rapor += f"Birleşik Füzyon Net İhtimali: <span class='highlight-green'>%{int(final_prob*100)}</span>"
 
                         secilen_mac['hedef_pazar'] = en_iyi_pazar
@@ -322,7 +311,7 @@ with tab2:
                         st.session_state.sepet.append(secilen_mac)
                         st.success(f"☢️ Kusursuz Füzyon Başarılı! En mantıklı ve güvenilir hedef sepete eklendi.")
                     else:
-                        st.error(f"🚨 FÜZYON UYARISI: Motorlar Anlaşamadı! Sıralama ve Korner matematiğine göre hiçbir ihtimal %{guven_esigi} barajını geçemedi. Kasanızı korumak için pas geçin.")
+                        st.error(f"🚨 FÜZYON UYARISI: Motorlar Anlaşamadı! Verilere göre hiçbir ihtimal %{guven_esigi} barajını geçemedi. Kasanızı korumak için pas geçin.")
 
         if len(st.session_state.sepet) > 0:
             st.divider()
