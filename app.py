@@ -20,7 +20,7 @@ try:
 except ImportError:
     GSPREAD_INSTALLED = False
 
-st.set_page_config(page_title="V2300 SKYNET ANALİTİK", layout="wide", page_icon="📈")
+st.set_page_config(page_title="V2301 SKYNET ANALİTİK", layout="wide", page_icon="📈")
 
 st.markdown("""
     <style>
@@ -149,7 +149,7 @@ def check_match_result(sport_key, home, away, target_market, api_key):
     except: return "BEKLİYOR", "Hata"
 
 # --- ARAYÜZ ---
-st.markdown("<h1 style='text-align:center; color:#00ffcc; font-size:52px; margin-bottom:0; text-shadow: 0 0 20px rgba(0, 255, 204, 0.4);'>📈 V2300 SKYNET KÂR ANALİTİĞİ</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#00ffcc; font-size:52px; margin-bottom:0; text-shadow: 0 0 20px rgba(0, 255, 204, 0.4);'>📈 V2301 SKYNET KÂR ANALİTİĞİ</h1>", unsafe_allow_html=True)
 st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>Pazar Bazlı ROI (Kâr/Zarar) Tespiti | Oto-Pilot Yatırım Simülatörü</p><br>", unsafe_allow_html=True)
 
 tab1, tab4, tab3 = st.tabs(["📡 1. MAÇLARI ÇEK & OTO-PİLOT", "📈 2. BİLANÇO & KÂR/ZARAR ANALİZİ", "⚙️ MANUEL SİMÜLATÖR (ESKİ)"])
@@ -354,7 +354,6 @@ with tab4:
                 tutar = float(str(r[1]).replace(',','.').strip())
                 oran = float(str(r[2]).replace(',','.').strip())
                 
-                # Eğer eski kayıtlarda tutar 0 ise, hesaplama yapabilmek için varsayılan 100 TL kabul et.
                 if tutar == 0: tutar = 100.0 
                 
                 kar_zarar = (tutar * oran) - tutar if won else -tutar
@@ -388,7 +387,9 @@ with tab4:
         market_stats['İsabet Oranı (%)'] = market_stats['İsabet Oranı (%)'].apply(lambda x: f"%{x:.1f}")
         market_stats['ROI (%) (Kâr Marjı)'] = market_stats['ROI (%) (Kâr Marjı)'].apply(lambda x: f"%{x:.1f}")
         
-        # Sütunları düzenle
+        # HATA DÜZELTİLDİ: Sütun ismini atamadan önce değiştiriyoruz
+        market_stats.rename(columns={'Pazar': 'Bahis Pazarı'}, inplace=True)
+        
         market_stats = market_stats[['Bahis Pazarı', 'Toplam_Oynanan', 'Kazanan', 'Kaybeden', 'İsabet Oranı (%)', 'Net_Kar_Zarar', 'ROI (%) (Kâr Marjı)']]
         
         st.dataframe(market_stats, use_container_width=True, hide_index=True)
