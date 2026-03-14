@@ -13,8 +13,8 @@ try:
 except ImportError:
     GSPREAD_INSTALLED = False
 
-# --- V1400 DEĞER SNIPER: ÇÖP ORANLARA CEZA + ADİL ORAN HESABI ---
-st.set_page_config(page_title="V1400 DEĞER SNIPER", layout="wide", page_icon="🎯")
+# --- V1500 ŞEFFAF RADAR: TÜM ALTERNATİFLERİ LİSTELEME ---
+st.set_page_config(page_title="V1500 ŞEFFAF RADAR", layout="wide", page_icon="🎯")
 
 st.markdown("""
     <style>
@@ -105,17 +105,9 @@ def check_match_result(sport_key, home, away, target_market, api_key):
         return "BEKLİYOR", "Maç Bitmedi"
     except: return "BEKLİYOR", "Hata"
 
-# MAÇA DEĞER KATAN AĞIRLIK SİSTEMİ (Çöp oran cezalandırıcısı)
-def get_market_weight(market_name):
-    # Bu pazarların gelme ihtimali çok yüksek ama oranları çöp olduğu için gücünü kırıyoruz (Ceza)
-    if market_name in ["1.5 Üst", "İY 1.5 Alt", "3.5 Alt"]: return 0.75 
-    # Taraf bahisleri ve değerli pazarlara prim (Ödül)
-    if market_name in ["MS 1", "MS 2", "KG Var", "2.5 Üst"]: return 1.15 
-    return 1.0
-
 # --- ARAYÜZ ---
-st.markdown("<h1 style='text-align:center; color:#00ffcc; font-size:52px; margin-bottom:0; text-shadow: 0 0 20px rgba(0,255,204,0.3);'>🎯 V1400 DEĞER SNIPER</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>Çöp Oran Engelleyici | Adil Oran Hesaplama | Tek Maç Vur-Kaç</p><br>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#00ffcc; font-size:52px; margin-bottom:0; text-shadow: 0 0 20px rgba(0,255,204,0.3);'>🎯 V1500 ŞEFFAF RADAR</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>Tüm Alternatifleri Listeler | Kararı Sana Bırakır | Tek Maç Vur-Kaç</p><br>", unsafe_allow_html=True)
 
 tab1, tab2, tab3 = st.tabs(["📡 1. MAÇLARI ÇEK", "🔬 2. ANALİZ VE VUR-KAÇ (TEK EKRAN)", "💼 3. BİLANÇO MUHASEBESİ"])
 
@@ -182,8 +174,8 @@ with tab2:
             
             st.markdown("</div><br>", unsafe_allow_html=True)
             
-            if st.button("☢️ FÜZYON ANALİZİNİ BAŞLAT", use_container_width=True):
-                with st.spinner("Değer odaklı analiz yapılıyor, çöp oranlar eleniyor..."):
+            if st.button("☢️ ŞEFFAF ANALİZİ BAŞLAT", use_container_width=True):
+                with st.spinner("Tüm alternatifler taranıyor ve sıralanıyor..."):
                     
                     h_odd, d_odd, a_odd = 2.50, 3.20, 2.80
                     try:
@@ -272,54 +264,58 @@ with tab2:
                             oranexcel_olasiliklar["Korner 8.5 Üst"] = poisson_olasiliklar["Korner 8.5 Üst"] 
                             oranexcel_olasiliklar["Korner 9.5 Üst"] = poisson_olasiliklar["Korner 9.5 Üst"]
 
-                    # FÜZYON VE DEĞER PUANLAMASI (ÇÖP ORANLARA CEZA BURADA UYGULANIYOR)
+                    # FÜZYON
                     fuzyon_sonuclar = []
                     for pazar in poisson_olasiliklar.keys():
                         ort_ihtimal = (poisson_olasiliklar[pazar] + oranexcel_olasiliklar[pazar]) / 2.0
-                        deger_puani = ort_ihtimal * get_market_weight(pazar) # Ödül ve Cezalar eklendi
-                        fuzyon_sonuclar.append((pazar, ort_ihtimal, poisson_olasiliklar[pazar], oranexcel_olasiliklar[pazar], deger_puani))
+                        fuzyon_sonuclar.append((pazar, ort_ihtimal, poisson_olasiliklar[pazar], oranexcel_olasiliklar[pazar]))
 
                     THRESHOLD = guven_esigi / 100.0
-                    gecen_hedefler = [h for h in fuzyon_sonuclar if h[1] >= THRESHOLD]
+                    # Barajı geçenleri ihtimallerine göre BÜYÜKTEN KÜÇÜĞE sırala
+                    gecen_hedefler = sorted([h for h in fuzyon_sonuclar if h[1] >= THRESHOLD], key=lambda x: x[1], reverse=True)
                     
                     if len(gecen_hedefler) > 0:
-                        # Artık sadece saf ihtimale göre değil, DEĞER PUANINA göre sıralıyor (1.5 Üst arka planda kalacak)
-                        en_iyi_hedef = max(gecen_hedefler, key=lambda item: item[4]) 
-                        en_iyi_pazar, final_prob, p_prob, o_prob, _ = en_iyi_hedef
+                        rapor = f"🔥 <b>V1500 ŞEFFAF RADAR ÇALIŞTI!</b><br><br>"
+                        rapor += f"Eşiği (%{guven_esigi}) geçmeyi başaran <b>TÜM PAZARLAR</b> en yüksek ihtimalden en düşüğe doğru aşağıda listelenmiştir. İddaa oranlarına bakarak sana en değerli (Value) geleni kendin seçebilirsin.<br><br>"
                         
-                        adil_oran = 1.0 / final_prob if final_prob > 0 else 0
-                        
-                        rapor = f"🔥 <b>V1400 DEĞER ODAKLI SNIPER ÇALIŞTI!</b><br><br>"
-                        rapor += f"Sistem, sırf ihtimali yüksek diye verilen değersiz (1.05 vb.) pazarları cezalandırarak, <b>oran/değer dengesi en yüksek</b> olan ana hedefi buldu.<br><br>"
-                        
-                        rapor += f"🧠 <b>Poisson/xG:</b> %{int(p_prob*100)} İhtimal<br>"
-                        rapor += f"📊 <b>Oranexcel:</b> %{int(o_prob*100)} İhtimal<br><br>"
-                        
-                        rapor += f"🎯 <span class='highlight-gold'>%{guven_esigi} EŞİĞİ AŞILDI! EN DEĞERLİ HEDEF: [{en_iyi_pazar}]</span><br>"
-                        rapor += f"Birleşik Net İhtimal: <span class='highlight-green'>%{int(final_prob*100)}</span><br>"
-                        rapor += f"⚖️ <b>Matematiksel Adil Oran: {adil_oran:.2f}</b><br>"
-                        rapor += f"<i style='font-size:14px; color:#ff4b4b;'>Uyarı: İddaa bu bahse {adil_oran:.2f}'den daha düşük bir oran veriyorsa kesinlikle KASAYI RİSKE ATMAYIN ve pas geçin!</i>"
+                        for i, hedef in enumerate(gecen_hedefler):
+                            pazar, final_prob, p_prob, o_prob = hedef
+                            adil_oran = 1.0 / final_prob if final_prob > 0 else 0
+                            
+                            if i == 0:
+                                rapor += f"🥇 <span class='highlight-gold'><b>[{pazar}]</b></span> -> İhtimal: <span class='highlight-green'>%{int(final_prob*100)}</span> | Adil Oran: <b>{adil_oran:.2f}</b><br>"
+                            else:
+                                rapor += f"• <b>[{pazar}]</b> -> İhtimal: %{int(final_prob*100)} | Adil Oran: {adil_oran:.2f}<br>"
 
-                        secilen_mac['hedef_pazar'] = en_iyi_pazar
-                        secilen_mac['kalibre_ihtimal'] = final_prob
+                        secilen_mac['gecen_hedefler'] = gecen_hedefler
                         secilen_mac['ai_rapor'] = rapor
-                        secilen_mac['gecici_adil_oran'] = adil_oran
                         
-                        st.session_state.aktif_mac = secilen_mac # Tek maça döndük, sepeti iptal ettik.
-                        st.success(f"☢️ Hedef Kilitlendi! Değerli oran bulundu.")
+                        st.session_state.aktif_mac = secilen_mac 
+                        st.success(f"☢️ Hedefler Bulundu! Seçim senin.")
                     else:
                         st.session_state.aktif_mac = None
-                        st.error(f"🚨 UYARI: Motorlar Anlaşamadı! Verilere göre değerli hiçbir ihtimal %{guven_esigi} barajını geçemedi. Pas geçin.")
+                        st.error(f"🚨 UYARI: Motorlar Anlaşamadı! Verilere göre hiçbir ihtimal %{guven_esigi} barajını geçemedi. Pas geçin.")
 
         if 'aktif_mac' in st.session_state and st.session_state.aktif_mac is not None:
             m = st.session_state.aktif_mac
             st.divider()
-            st.markdown(f"<div class='match-card'><div class='match-title'>{m['home_team']} ⚡ {m['away_team']}</div><br><div class='target-market'>Hedef: {m['hedef_pazar']} (Adil Oranı: {m['gecici_adil_oran']:.2f})</div><br><br>", unsafe_allow_html=True)
-            st.markdown(f"<div class='ai-report'>{m['ai_rapor']}</div>", unsafe_allow_html=True)
+            
+            # --- YENİ ŞEFFAF ARAYÜZ ---
+            st.markdown(f"<div class='match-card'><div class='match-title'>{m['home_team']} ⚡ {m['away_team']}</div><br>", unsafe_allow_html=True)
+            st.markdown(f"<div class='ai-report'>{m['ai_rapor']}</div><br>", unsafe_allow_html=True)
+            
+            # Seçim Kutusunu Çok Net Hale Getirdik
+            hedef_opsiyonlari = [f"{h[0]} (İhtimal: %{int(h[1]*100)} - Adil Oran: {(1/h[1]):.2f})" for h in m['gecen_hedefler']]
+            secilen_hedef_str = st.selectbox("📌 KASAYA İŞLENECEK HEDEFİ SEÇİN (Hangisinin oranı kafana yattıysa):", hedef_opsiyonlari, key="nihai_hedef_secim")
+            
+            # Metinden sadece pazarın adını ve ihtimalini çektik
+            nihai_pazar = secilen_hedef_str.split(' (')[0]
+            nihai_prob_str = secilen_hedef_str.split('%')[1].split(' ')[0]
+            nihai_prob = float(nihai_prob_str) / 100.0
             
             c_oran, c_bos = st.columns([1, 1])
             with c_oran:
-                m['manuel_oran'] = st.number_input("İddaa'daki Gerçek Oranı Girin:", min_value=1.00, value=float(f"{m['gecici_adil_oran']:.2f}"), step=0.01, key="iddaa_guncel_oran")
+                m['manuel_oran'] = st.number_input(f"Seçtiğin [{nihai_pazar}] hedefinin İddaa'daki Gerçek Oranını Girin:", min_value=1.00, value=1.50, step=0.01, key="iddaa_guncel_oran")
             st.markdown("</div>", unsafe_allow_html=True)
             
             st.markdown("### 🚀 Vur Kaç (Tek İşlem Onayı)")
@@ -332,9 +328,6 @@ with tab2:
                 btn_sanal = st.button("👻 GÖLGE MODU (Eğitim)", use_container_width=True, key="onay_sanal_tek")
                 
             if btn_gercek or btn_sanal:
-                if m.get('manuel_oran', 1.0) < m.get('gecici_adil_oran', 1.0) * 0.90:
-                    st.warning("⚠️ Dikkat: Girdiğiniz İddaa oranı, sistemin hesapladığı Adil Orandan çok düşük! Uzun vadede kasa erir. Yine de işleme alınıyor...")
-                
                 yatirilacak_tutar = manuel_tutar if btn_gercek else 0.0
                 durum_text = "Bekliyor" if btn_gercek else "Sanal_Bekliyor"
                 
@@ -345,14 +338,14 @@ with tab2:
                 if sheet:
                     isimler = f"{m['home_team']} vs {m['away_team']}"
                     ligler = m['sport_key']
-                    tercihler = m['hedef_pazar']
-                    problar = f"{m['kalibre_ihtimal']:.3f}"
+                    tercihler = nihai_pazar  # Seçtiğin pazarı direkt excel'e yazıyoruz
+                    problar = f"{nihai_prob:.3f}"
                     oranlar = f"{m.get('manuel_oran', 1.50):.2f}"
                     
                     sheet.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), yatirilacak_tutar, m.get('manuel_oran', 1.50), durum_text, "0", st.session_state.lokal_kasa, st.session_state.bekleyen_tutar, st.session_state.baslangic_kasa, isimler, ligler, tercihler, problar, oranlar])
                 
                 st.session_state.aktif_mac = None
-                st.success("İşlem Başarılı! Maç sisteme ateşlendi.")
+                st.success(f"İşlem Başarılı! Seçtiğin [{nihai_pazar}] tahmini sisteme ateşlendi.")
                 st.rerun()
 
 with tab3:
