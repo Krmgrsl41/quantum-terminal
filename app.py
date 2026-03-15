@@ -18,7 +18,7 @@ try:
 except ImportError:
     GSPREAD_INSTALLED = False
 
-st.set_page_config(page_title="V3001 APEX - QUANTUM FON", layout="wide", page_icon="🐺")
+st.set_page_config(page_title="V3003 APEX - QUANTUM FON", layout="wide", page_icon="🐺")
 
 st.markdown("""
     <style>
@@ -37,6 +37,10 @@ st.markdown("""
     .report-title { color: #ff3366; font-weight: 900; font-size: 18px; margin-bottom: 5px;}
     
     .manual-panel { background: #11161d; border: 1px dashed #4a5568; padding: 20px; border-radius: 10px; margin-top: 15px; }
+    
+    .stat-box { background: rgba(0,0,0,0.4); border: 1px solid #2d3748; padding: 15px; border-radius: 8px; text-align: center; }
+    .stat-box b { color: #8b949e; font-size: 14px; text-transform: uppercase; }
+    .stat-box span { display: block; font-size: 28px; font-weight: 900; color: #00ffcc; margin-top: 5px; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -87,7 +91,7 @@ def load_and_train_ml_model():
                     dfs.append(df[['B365H', 'B365D', 'B365A', 'FTR', 'FTHG', 'FTAG']].dropna())
         except: pass
     
-    if not dfs: return None, None, None, None, None
+    if not dfs: return None, None, None, None, None, None
     df_train = pd.concat(dfs, ignore_index=True)
     
     weights = np.linspace(0.5, 1.5, len(df_train))
@@ -111,14 +115,12 @@ def load_and_train_ml_model():
     rf_gol_35.fit(X, y_gol_35, sample_weight=weights)
     rf_kg.fit(X, y_kg, sample_weight=weights)
     
-    return rf_taraf, rf_gol_25, rf_gol_15, rf_gol_35, rf_kg
+    return df_train, model_taraf, model_gol25, model_gol15, model_gol35, model_kg
 
-model_taraf, model_gol25, model_gol15, model_gol35, model_kg = load_and_train_ml_model()
+df_history, model_taraf, model_gol25, model_gol15, model_gol35, model_kg = load_and_train_ml_model()
 
-# Yeni Optimizasyonlu Denetçi Fonksiyonu (Hafızadan Okur)
 def check_match_result_optimized(home, away, target_market, lig_skor_havuzu):
-    if not lig_skor_havuzu:
-        return "BEKLİYOR", "-"
+    if not lig_skor_havuzu: return "BEKLİYOR", "-"
     for m in lig_skor_havuzu:
         if m['home_team'] == home and m['away_team'] == away:
             if m.get('completed', False):
@@ -128,7 +130,6 @@ def check_match_result_optimized(home, away, target_market, lig_skor_havuzu):
                 a_score = int(scores[1]['score']) if scores[1]['name'] == away else int(scores[0]['score'])
                 total = h_score + a_score
                 won = False
-                
                 if target_market == "2.5 Üst" and total > 2: won = True
                 elif target_market == "2.5 Alt" and total < 3: won = True
                 elif target_market == "3.5 Üst" and total > 3: won = True
@@ -139,14 +140,13 @@ def check_match_result_optimized(home, away, target_market, lig_skor_havuzu):
                 elif target_market == "MS 1" and h_score > a_score: won = True
                 elif target_market == "MS 2" and a_score > h_score: won = True
                 elif target_market == "MS 0" and h_score == a_score: won = True
-                
                 return ("KAZANDI" if won else "KAYBETTİ"), f"{h_score}-{a_score}"
     return "BEKLİYOR", "Maç Bitmedi"
 
-st.markdown("<h1 style='text-align:center; color:#ff3366; font-size:52px; margin-bottom:0; text-shadow: 0 0 20px rgba(255, 51, 102, 0.4);'>🐺 V3001 APEX </h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>Gelişmiş Görsel Raporlama | xG Motoru | Optimize Denetçi</p><br>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#ff3366; font-size:52px; margin-bottom:0; text-shadow: 0 0 20px rgba(255, 51, 102, 0.4);'>🐺 V3003 APEX PLUS</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>Oran Arşivi (Pattern Matcher) Entegre Edildi</p><br>", unsafe_allow_html=True)
 
-tab1, tab2, tab4, tab3 = st.tabs(["📡 1. PİYASA TARAMASI", "🧠 2. DERİN ANALİZ (xG)", "🤖 3. OTO-PİLOT (APEX)", "📈 4. FON BİLANÇOSU"])
+tab1, tab5, tab2, tab4, tab3 = st.tabs(["📡 1. PİYASA TARAMASI", "📊 5. GEÇMİŞ ORAN ARŞİVİ", "🧠 2. DERİN ANALİZ", "🤖 3. OTO-PİLOT", "📈 4. BİLANÇO"])
 
 c1, c2 = st.columns([2, 1])
 with c1: secilen_ligler = st.multiselect("Ligleri Seçin:", list(API_LEAGUES.keys()), default=["İngiltere Premier Lig", "Türkiye Süper Lig", "İspanya La Liga", "Almanya Bundesliga"])
@@ -175,6 +175,72 @@ with tab1:
                     except: pass
                 st.session_state.raw_api_data = toplanan_maclar
                 st.success(f"✅ Sistem Hazır. Toplam {len(toplanan_maclar)} eşleşme yakalandı.")
+
+# --- YENİ 5. SEKME: GEÇMİŞ ORAN ARŞİVİ (PATTERN MATCHER) ---
+with tab5:
+    st.markdown("### 📊 GEÇMİŞ ORAN ARŞİVİ (PATTERN ANALİZİ)")
+    st.markdown("<p style='color:#a0aec0;'>Aylık aidat ödediğin sistemin aynısı. Avrupa veritabanımızda girdiğin oranlara sahip geçmişteki maçları bulur ve sonuç istatistiklerini (Backtest) saniyeler içinde önüne döker.</p>", unsafe_allow_html=True)
+    
+    st.markdown("<div class='manual-panel'>", unsafe_allow_html=True)
+    
+    # 1. Sekmeden Maç Seçme Özelliği
+    mac_isimleri_5 = ["Manuel Oran Gireceğim"] + [f"{m['home_team']} vs {m['away_team']} ({m['kendi_ligi']})" for m in st.session_state.raw_api_data]
+    secilen_mac_str_5 = st.selectbox("🎯 İstersen Günün Maçlarından Birini Seç (Oranlar Otomatik Dolar):", mac_isimleri_5)
+    
+    oto_h, oto_d, oto_a = 2.10, 3.20, 2.80
+    if secilen_mac_str_5 != "Manuel Oran Gireceğim":
+        secilen_m = next(m for m in st.session_state.raw_api_data if f"{m['home_team']} vs {m['away_team']} ({m['kendi_ligi']})" == secilen_mac_str_5)
+        try:
+            for bkm in secilen_m.get('bookmakers', []):
+                for mkt in bkm.get('markets', []):
+                    if mkt['key'] == 'h2h':
+                        for out in mkt['outcomes']:
+                            if out['name'] == secilen_m['home_team']: oto_h = out['price']
+                            elif out['name'] == secilen_m['away_team']: oto_a = out['price']
+                            elif out['name'] == 'Draw': oto_d = out['price']
+        except: pass
+
+    c_h, c_d, c_a, c_tol = st.columns(4)
+    with c_h: s_h = st.number_input("MS 1 Oranı:", min_value=1.01, value=float(oto_h), step=0.05)
+    with c_d: s_d = st.number_input("MS 0 Oranı:", min_value=1.01, value=float(oto_d), step=0.05)
+    with c_a: s_a = st.number_input("MS 2 Oranı:", min_value=1.01, value=float(oto_a), step=0.05)
+    with c_tol: tolerans = st.number_input("Esneklik (± Oran):", min_value=0.0, value=0.05, step=0.01, help="Birebir aynı oranı bulmak zordur. Makine oranların örneğin 0.05 altını ve üstünü de tarar.")
+    st.markdown("</div><br>", unsafe_allow_html=True)
+
+    if st.button("🔍 AVRUPA ARŞİVİNİ TARA (PATTERN BUL)", use_container_width=True):
+        if df_history is None:
+            st.error("Makine Öğrenimi veritabanı (Avrupa arşivi) yüklenemedi.")
+        else:
+            with st.spinner(f"Veritabanındaki on binlerce maçta [{s_h} - {s_d} - {s_a}] kalıbı aranıyor..."):
+                mask = (
+                    (df_history['B365H'] >= s_h - tolerans) & (df_history['B365H'] <= s_h + tolerans) &
+                    (df_history['B365D'] >= s_d - tolerans) & (df_history['B365D'] <= s_d + tolerans) &
+                    (df_history['B365A'] >= s_a - tolerans) & (df_history['B365A'] <= s_a + tolerans)
+                )
+                filtered_df = df_history[mask]
+                
+                toplam_mac = len(filtered_df)
+                if toplam_mac > 0:
+                    ms1_yuzde = (len(filtered_df[filtered_df['FTR'] == 'H']) / toplam_mac) * 100
+                    ms0_yuzde = (len(filtered_df[filtered_df['FTR'] == 'D']) / toplam_mac) * 100
+                    ms2_yuzde = (len(filtered_df[filtered_df['FTR'] == 'A']) / toplam_mac) * 100
+                    ust25_yuzde = (len(filtered_df[(filtered_df['FTHG'] + filtered_df['FTAG']) > 2.5]) / toplam_mac) * 100
+                    kgvar_yuzde = (len(filtered_df[(filtered_df['FTHG'] > 0) & (filtered_df['FTAG'] > 0)]) / toplam_mac) * 100
+                    
+                    st.success(f"🎯 Veritabanında (±{tolerans} esneklikle) bu oran kalıbına sahip tam **{toplam_mac} maç** bulundu! İşte geçmişteki sonuçları:")
+                    
+                    c_r1, c_r2, c_r3, c_r4, c_r5 = st.columns(5)
+                    with c_r1: st.markdown(f"<div class='stat-box'><b>MS 1 İhtimali</b><span>%{ms1_yuzde:.1f}</span></div>", unsafe_allow_html=True)
+                    with c_r2: st.markdown(f"<div class='stat-box'><b>MS 0 İhtimali</b><span style='color:#ffcc00;'>%{ms0_yuzde:.1f}</span></div>", unsafe_allow_html=True)
+                    with c_r3: st.markdown(f"<div class='stat-box'><b>MS 2 İhtimali</b><span style='color:#ff3366;'>%{ms2_yuzde:.1f}</span></div>", unsafe_allow_html=True)
+                    with c_r4: st.markdown(f"<div class='stat-box'><b>2.5 ÜST İhtimali</b><span>%{ust25_yuzde:.1f}</span></div>", unsafe_allow_html=True)
+                    with c_r5: st.markdown(f"<div class='stat-box'><b>KG VAR İhtimali</b><span>%{kgvar_yuzde:.1f}</span></div>", unsafe_allow_html=True)
+                    
+                    # Değer (Value) Kontrolü (Amatörler için uyarı)
+                    st.markdown("<br><p style='color:#a0aec0;'><i>* Bir hedefin yüzdesi ne kadar yüksekse o kadar iyidir. Ancak unutmayın, bahis şirketinin açtığı oran ile bu geçmiş arşiv yüzdesi eşleşmiyorsa bu bir Value (Değer) bahsi olmayabilir.</i></p>", unsafe_allow_html=True)
+
+                else:
+                    st.warning(f"🚨 Veritabanında (±{tolerans} esneklikle bile) [{s_h} - {s_d} - {s_a}] kalıbına uyan HİÇBİR GEÇMİŞ MAÇ BULUNAMADI. İddaa bu oranları ilk defa deniyor olabilir. 'Esneklik (± Oran)' ayarını 0.10 veya 0.15'e çekip tekrar aratın.")
 
 with tab2:
     if len(st.session_state.raw_api_data) == 0:
@@ -308,7 +374,7 @@ with tab2:
                     gecen_hedefler = sorted(gecen_hedefler, key=lambda x: x[1], reverse=True)
                     
                     if len(gecen_hedefler) > 0:
-                        rapor = f"🧠 <b>V3001 APEX - MANTIK FİLTRELİ SONUÇLAR</b><br><br>"
+                        rapor = f"🧠 <b>V3003 APEX - MANTIK FİLTRELİ SONUÇLAR</b><br><br>"
                         rapor += f"📊 <b>xG Beklentisi:</b> Ev ({lambda_home:.2f}) - Dep ({lambda_away:.2f})<br>"
                         rapor += f"📡 <b>İddaa Oranları:</b> Ev ({h_odd:.2f}) | Brb ({d_odd:.2f}) | Dep ({a_odd:.2f})<br><br>"
                         
@@ -386,7 +452,7 @@ with tab2:
                 st.rerun()
 
 with tab4:
-    st.markdown("### 🤖 OTO-PİLOT (APEX V3001)")
+    st.markdown("### 🤖 OTO-PİLOT (APEX V3003)")
     st.markdown("<p style='color:#a0aec0;'>Makine günün maçlarını tarar. İhtimallerin ötesinde; maçın kalitesini ve gol beklentisi gücünü analiz eder.</p>", unsafe_allow_html=True)
     
     c_oto1, c_oto2 = st.columns(2)
@@ -569,7 +635,7 @@ with tab3:
                     if updates_made:
                         st.success("✅ Maçlar sonuçlandırıldı ve Kâr/Zarar hanesine işlendi!")
                         st.rerun()
-                    else: st.info("Maçlar henüz bitmemiş (veya skor sağlayıcıya yansımadı).")
+                    else: st.info("Maçlar henüz bitmemiş.")
 
     bekleyenler = [(idx+1, r) for idx, r in enumerate(all_vals) if len(r) > 3 and r[3] in ["Bekliyor", "Sanal_Bekliyor"]]
     if not bekleyenler: st.info("Bekleyen yatırımınız veya sanal eğitim işleminiz yok.")
@@ -585,8 +651,6 @@ with tab3:
             st.markdown(f"<div style='background: #11161d; border-left: 4px solid {border_color}; padding:20px; border-radius:10px; margin-bottom:15px;'><b style='font-size:18px;'>Maçlar:</b> <span style='color:#e2e8f0;'>{mac_isimleri}</span><br><br><b style='font-size:16px;'>🎯 Tercih:</b> <span style='color:#ff3366; font-size:18px; font-weight:bold;'>{bahis_turleri}</span><br><br><b style='font-size:16px;'>Yatırım:</b> <span style='font-size:18px;'>{tutar_text}</span> &nbsp;|&nbsp; <b style='font-size:16px;'>Oran:</b> <span style='color:#d4af37; font-size:18px; font-weight:bold;'>{b_oran:.2f}</span></div>", unsafe_allow_html=True)
 
     st.divider()
-    
-    # --- YENİ EKLENEN: GENEL PERFORMANS (KAZANAN / KAYBEDEN) TABLOSU ---
     st.markdown("### 📊 GENEL PERFORMANS ÖZETİ (TÜM İŞLEMLER)")
     kazanan_adet, kaybeden_adet = 0, 0
     kazanan_yatirim, kaybeden_yatirim = 0.0, 0.0
