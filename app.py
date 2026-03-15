@@ -18,7 +18,7 @@ try:
 except ImportError:
     GSPREAD_INSTALLED = False
 
-st.set_page_config(page_title="V2402 AKILLI SÜRPRİZ AVCISI", layout="wide", page_icon="🐺")
+st.set_page_config(page_title="V2403 ÇOKLU HEDEF AVCISI", layout="wide", page_icon="🐺")
 
 st.markdown("""
     <style>
@@ -142,10 +142,10 @@ def check_match_result(sport_key, home, away, target_market, api_key):
         return "BEKLİYOR", "Maç Bitmedi"
     except: return "BEKLİYOR", "Hata"
 
-st.markdown("<h1 style='text-align:center; color:#ff3366; font-size:52px; margin-bottom:0; text-shadow: 0 0 20px rgba(255, 51, 102, 0.4);'>🐺 V2402 AKILLI SÜRPRİZ AVCISI</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>Mükerrer İşlem Engelleyici | Hafızalı Otonom</p><br>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#ff3366; font-size:52px; margin-bottom:0; text-shadow: 0 0 20px rgba(255, 51, 102, 0.4);'>🐺 V2403 ÇOKLU HEDEF AVCISI</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>Aynı Maçta Farklı Sürprizleri Avlama | Hafızalı Otonom</p><br>", unsafe_allow_html=True)
 
-tab1, tab2, tab4, tab3 = st.tabs(["📡 1. MAÇLARI ÇEK", "🧠 2. MANUEL SÜRPRİZ AVI", "🤖 3. OTO-PİLOT (FİLTRELİ)", "📈 4. BİLANÇO"])
+tab1, tab2, tab4, tab3 = st.tabs(["📡 1. MAÇLARI ÇEK", "🧠 2. MANUEL SÜRPRİZ AVI", "🤖 3. OTO-PİLOT (ÇOKLU AV)", "📈 4. BİLANÇO"])
 
 c1, c2 = st.columns([2, 1])
 with c1: secilen_ligler = st.multiselect("Ligleri Seçin:", list(API_LEAGUES.keys()), default=["İngiltere Premier Lig", "Türkiye Süper Lig", "İspanya La Liga", "Almanya Bundesliga"])
@@ -291,7 +291,7 @@ with tab2:
                     gecen_hedefler = sorted(gecen_hedefler, key=lambda x: x[1], reverse=True)
                     
                     if len(gecen_hedefler) > 0:
-                        rapor = f"🧠 <b>V2402 SÜRPRİZ (VALUE) RÖNTGENİ</b><br><br>"
+                        rapor = f"🧠 <b>V2403 SÜRPRİZ (VALUE) RÖNTGENİ</b><br><br>"
                         rapor += f"📡 İddaa Oranları ➜ Ev Sahibi: <b>{h_odd:.2f}</b> | Beraberlik: <b>{d_odd:.2f}</b> | Deplasman: <b>{a_odd:.2f}</b><br><br>"
                         
                         for pazar, final_prob, p_prob, ml_prob in gecen_hedefler:
@@ -366,8 +366,8 @@ with tab2:
                 st.rerun()
 
 with tab4:
-    st.markdown("### 🤖 OTO-PİLOT (SÜRPRİZ FİLTRELİ)")
-    st.markdown("<p style='color:#a0aec0;'>Makine günün bütün maçlarını tarar, senin belirlediğin Minimum Oran Filtresi'ne uyan ve eşiği geçen maçları bulup <b>sanal olarak 100 TL</b> basar. <i>Önceden oynanan maçları hafızasında tutar ve tekrar oynamaz.</i></p>", unsafe_allow_html=True)
+    st.markdown("### 🤖 OTO-PİLOT (ÇOKLU AV FİLTRESİ)")
+    st.markdown("<p style='color:#a0aec0;'>Makine günün maçlarını tarar. Bir maçta eşiği geçen <b>BİRDEN FAZLA</b> bahis seçeneği varsa (Örn: Hem MS 1 hem 2.5 Üst) hepsini ayrı ayrı sanal portföye ekler. Daha önce oynadığı ihtimalleri hafızasından tanır ve tekrar oynamaz.</p>", unsafe_allow_html=True)
     
     c_oto1, c_oto2 = st.columns(2)
     with c_oto1:
@@ -375,16 +375,15 @@ with tab4:
     with c_oto2:
         oto_esik = st.slider("Yapay Zeka Otomatik Onay Eşiği (%):", min_value=30, max_value=90, value=40, step=1)
     
-    if st.button("🚀 GÜNÜN TÜM MAÇLARINDA SÜRPRİZ AVINA ÇIK (SANAL)", use_container_width=True):
+    if st.button("🚀 GÜNÜN TÜM MAÇLARINDA ÇOKLU SÜRPRİZ AVINA ÇIK", use_container_width=True):
         if len(st.session_state.raw_api_data) == 0:
             st.warning("Önce günün maçlarını çekmelisin!")
         elif model_taraf is None:
             st.error("Makine Öğrenimi aktif değil.")
         else:
-            with st.spinner(f"{len(st.session_state.raw_api_data)} maçta dev oranlar taranıyor... Mükerrer işlemler engelleniyor..."):
+            with st.spinner(f"{len(st.session_state.raw_api_data)} maç taranıyor... Her maç için tüm ihtimaller toplanıyor..."):
                 oto_oynanan_maclar = 0
                 
-                # HAFIZA MODÜLÜ (Duplicate Blocker): Zaten Excel'de 'Bekliyor' olanları tespit et
                 oynanmis_kombinasyonlar = set()
                 if all_vals:
                     for r in all_vals:
@@ -421,9 +420,9 @@ with tab4:
                     }
                     
                     THRESHOLD = oto_esik / 100.0
-                    en_iyi_hedef = None
-                    en_yuksek_ihtimal = 0
-                    gercek_oran = 1.0
+                    
+                    # YENİ EKLENEN KISIM: Sadece en yüksek olanı değil, barajı geçen HER ŞEYİ listeye al
+                    bulunan_hedefler = []
                     
                     for pazar, prob in ml_probs.items():
                         temp_oran = 1.0
@@ -434,32 +433,29 @@ with tab4:
                         
                         if pazar in ["MS 1", "MS 0", "MS 2"] and temp_oran < oto_min_oran: continue
                         
-                        # Eğer ihtimal yüksekse ama biz BU MAÇA BU PAZARDA daha önce oynadıysak ES GEÇ!
-                        if prob >= THRESHOLD and prob > en_yuksek_ihtimal:
+                        if prob >= THRESHOLD:
                             if f"{isimler}_{pazar}" not in oynanmis_kombinasyonlar:
-                                en_yuksek_ihtimal = prob
-                                en_iyi_hedef = pazar
-                                gercek_oran = temp_oran
+                                bulunan_hedefler.append((pazar, prob, temp_oran))
                             
-                    if en_iyi_hedef and sheet:
-                        ligler = m['sport_key']
-                        tercihler = en_iyi_hedef
-                        problar = f"{en_yuksek_ihtimal:.3f}"
-                        
-                        yatirilacak_tutar = 100.0 
-                        durum_text = "Sanal_Bekliyor"
-                        
-                        sheet.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), yatirilacak_tutar, f"{gercek_oran:.2f}", durum_text, "0", st.session_state.lokal_kasa, st.session_state.bekleyen_tutar, st.session_state.baslangic_kasa, isimler, ligler, tercihler, problar, f"{gercek_oran:.2f}"])
-                        
-                        # Hafızaya anında ekle ki aynı döngüde tekrar bulmasın
-                        oynanmis_kombinasyonlar.add(f"{isimler}_{tercihler}")
-                        oto_oynanan_maclar += 1
-                        st.write(f"🐺 **AVLANDI:** **{isimler}** ➜ {tercihler} (İddaa Oranı: **{gercek_oran:.2f}**) sanal portföye eklendi.")
+                    # Bulunan tüm geçerli hedefleri Excel'e kaydet
+                    for pazar, prob, gercek_oran in bulunan_hedefler:
+                        if sheet:
+                            ligler = m['sport_key']
+                            problar = f"{prob:.3f}"
+                            
+                            yatirilacak_tutar = 100.0 
+                            durum_text = "Sanal_Bekliyor"
+                            
+                            sheet.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), yatirilacak_tutar, f"{gercek_oran:.2f}", durum_text, "0", st.session_state.lokal_kasa, st.session_state.bekleyen_tutar, st.session_state.baslangic_kasa, isimler, ligler, pazar, problar, f"{gercek_oran:.2f}"])
+                            
+                            oynanmis_kombinasyonlar.add(f"{isimler}_{pazar}")
+                            oto_oynanan_maclar += 1
+                            st.write(f"🐺 **AVLANDI:** **{isimler}** ➜ {pazar} (İddaa Oranı: **{gercek_oran:.2f}**) sanal portföye eklendi.")
                 
                 if oto_oynanan_maclar > 0:
-                    st.success(f"🤖 GÖREV TAMAMLANDI! Yeni bulunan {oto_oynanan_maclar} maça yatırım yapıldı. Daha önceden oynanmış maçlar akıllıca es geçildi.")
+                    st.success(f"🤖 GÖREV TAMAMLANDI! {oto_oynanan_maclar} yeni pazar sanal portföye eklendi.")
                 else:
-                    st.warning(f"Sistem taramayı bitirdi. Listede eşiği geçen YENİ bir maç bulunamadı (Veya olanlar zaten oynanmış).")
+                    st.warning(f"Sistem taramayı bitirdi. {oto_min_oran} oran ve %{oto_esik} eşik şartlarını sağlayan YENİ hiçbir bahis bulunamadı.")
 
 with tab3:
     st.markdown("<h2 style='color:#d4af37;'>💼 Kuantum Fon Bilanço & Analitik</h2>", unsafe_allow_html=True)
