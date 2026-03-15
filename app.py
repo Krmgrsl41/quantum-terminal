@@ -131,7 +131,7 @@ def load_and_train_ml_model():
     rf_gol_35.fit(X, y_gol_35, sample_weight=weights)
     rf_kg.fit(X, y_kg, sample_weight=weights)
     
-    return df_train, model_taraf, model_gol25, model_gol15, model_gol35, model_kg
+    return df_train, rf_taraf, rf_gol_25, rf_gol_15, rf_gol_35, rf_kg
 
 df_history, model_taraf, model_gol25, model_gol15, model_gol35, model_kg = load_and_train_ml_model()
 
