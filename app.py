@@ -18,7 +18,7 @@ try:
 except ImportError:
     GSPREAD_INSTALLED = False
 
-st.set_page_config(page_title="V2404 TİCARİ PANEL", layout="wide", page_icon="🐺")
+st.set_page_config(page_title="V2405 DİNAMİK ORAN MOTORU", layout="wide", page_icon="🐺")
 
 st.markdown("""
     <style>
@@ -142,8 +142,8 @@ def check_match_result(sport_key, home, away, target_market, api_key):
         return "BEKLİYOR", "Maç Bitmedi"
     except: return "BEKLİYOR", "Hata"
 
-st.markdown("<h1 style='text-align:center; color:#ff3366; font-size:52px; margin-bottom:0; text-shadow: 0 0 20px rgba(255, 51, 102, 0.4);'>🐺 V2404 TİCARİ PANEL</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>Şeffaf Operasyon Kartları | Sürpriz Avı</p><br>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#ff3366; font-size:52px; margin-bottom:0; text-shadow: 0 0 20px rgba(255, 51, 102, 0.4);'>🐺 V2405 DİNAMİK ORAN MOTORU</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>Piyasa Yapıcı Algoritması | Çoklu Av Filtresi</p><br>", unsafe_allow_html=True)
 
 tab1, tab2, tab4, tab3 = st.tabs(["📡 1. MAÇLARI ÇEK", "🧠 2. MANUEL SÜRPRİZ AVI", "🤖 3. OTO-PİLOT", "📈 4. BİLANÇO"])
 
@@ -176,202 +176,15 @@ with tab1:
                 st.success(f"✅ Toplam {len(toplanan_maclar)} maç çekildi.")
 
 with tab2:
-    if len(st.session_state.raw_api_data) == 0:
-        st.info("Lütfen 1. Sekmeden maçları çekin.")
-    elif model_taraf is None:
-        st.error("🚨 Makine Öğrenimi modeli eğitilemedi.")
-    else:
-        mac_isimleri = [f"{m['home_team']} vs {m['away_team']} ({m['kendi_ligi']})" for m in st.session_state.raw_api_data]
-        secilen_mac_str = st.selectbox("🎯 Manuel Avlanacak Maçı Seçin:", mac_isimleri)
-        
-        if secilen_mac_str:
-            secilen_mac = next(m for m in st.session_state.raw_api_data if f"{m['home_team']} vs {m['away_team']} ({m['kendi_ligi']})" == secilen_mac_str)
-            
-            st.markdown("<div class='manual-panel'>", unsafe_allow_html=True)
-            st.markdown(f"<h3 style='color:#ff3366;'>🐺 Avcı Filtreleri</h3>", unsafe_allow_html=True)
-            
-            c_f1, c_f2 = st.columns(2)
-            with c_f1:
-                min_oran_manuel = st.number_input("Taraf Bahsi Minimum Oran Filtresi:", min_value=1.00, value=2.50, step=0.10)
-            with c_f2:
-                guven_esigi = st.slider("Güvenlik Eşiği Belirle (%):", min_value=25, max_value=90, value=35, step=1)
-            
-            st.divider()
-
-            c_ev, c_dep = st.columns(2)
-            with c_ev:
-                st.markdown(f"**🏠 {secilen_mac['home_team']}**")
-                ev_mac = st.number_input("Son Kaç Maç?:", min_value=1, value=5, key="ev_mac")
-                ev_at = st.number_input("Attığı Gol:", min_value=0, value=8, key="ev_at")
-                ev_ye = st.number_input("Yediği Gol:", min_value=0, value=4, key="ev_ye")
-                ev_kor_kul = st.number_input("Ort. Korner:", min_value=0.0, value=5.5, step=0.5, key="ev_kor_kul")
-                
-            with c_dep:
-                st.markdown(f"**✈️ {secilen_mac['away_team']}**")
-                dep_mac = st.number_input("Son Kaç Maç?:", min_value=1, value=5, key="dep_mac")
-                dep_at = st.number_input("Attığı Gol:", min_value=0, value=5, key="dep_at")
-                dep_ye = st.number_input("Yediği Gol:", min_value=0, value=7, key="dep_ye")
-                dep_kor_kul = st.number_input("Ort. Korner:", min_value=0.0, value=4.5, step=0.5, key="dep_kor_kul")
-            
-            st.markdown("</div><br>", unsafe_allow_html=True)
-            
-            if st.button("🔮 SÜRPRİZ RADARINI BAŞLAT", use_container_width=True):
-                with st.spinner("Makine düşük oranları eliyor, sadece değerli sürprizleri arıyor..."):
-                    h_odd, d_odd, a_odd = 0, 0, 0 
-                    try:
-                        for bkm in secilen_mac.get('bookmakers', []):
-                            for mkt in bkm.get('markets', []):
-                                if mkt['key'] == 'h2h':
-                                    for out in mkt['outcomes']:
-                                        if out['name'] == secilen_mac['home_team']: h_odd = out['price']
-                                        elif out['name'] == secilen_mac['away_team']: a_odd = out['price']
-                                        elif out['name'] == 'Draw': d_odd = out['price']
-                    except: pass
-                    
-                    if h_odd == 0: h_odd, d_odd, a_odd = 2.50, 3.20, 2.80
-
-                    ev_atk_ort = ev_at / ev_mac if ev_mac > 0 else 1.0
-                    ev_def_ort = ev_ye / ev_mac if ev_mac > 0 else 1.0
-                    dep_atk_ort = dep_at / dep_mac if dep_mac > 0 else 1.0
-                    dep_def_ort = dep_ye / dep_mac if dep_mac > 0 else 1.0
-                    
-                    lambda_home = max(0.1, (ev_atk_ort + dep_def_ort) / 2.0)
-                    lambda_away = max(0.1, (dep_atk_ort + ev_def_ort) / 2.0)
-
-                    p_ms1=0.0; p_ms2=0.0; p_ms0=0.0
-                    p_15ust=0.0; p_25ust=0.0; p_35ust=0.0; p_kgvar=0.0
-                    
-                    for h in range(8):
-                        for a in range(8):
-                            prob = poisson.pmf(h, lambda_home) * poisson.pmf(a, lambda_away)
-                            if h > a: p_ms1 += prob
-                            elif h < a: p_ms2 += prob
-                            else: p_ms0 += prob
-                            total = h + a
-                            if total > 1.5: p_15ust += prob
-                            if total > 2.5: p_25ust += prob
-                            if total > 3.5: p_35ust += prob
-                            if h > 0 and a > 0: p_kgvar += prob
-
-                    poisson_probs = {
-                        "MS 1": p_ms1, "MS 2": p_ms2, "MS 0": p_ms0,
-                        "1.5 Üst": p_15ust, "2.5 Üst": p_25ust, "2.5 Alt": (1-p_25ust),
-                        "3.5 Üst": p_35ust, "3.5 Alt": (1-p_35ust),
-                        "KG Var": p_kgvar, "KG Yok": (1-p_kgvar)
-                    }
-
-                    input_data = pd.DataFrame([[h_odd, d_odd, a_odd]], columns=['B365H', 'B365D', 'B365A'])
-                    ml_taraf_probs = model_taraf.predict_proba(input_data)[0] 
-                    ml_gol25_probs = model_gol25.predict_proba(input_data)[0]     
-                    ml_gol15_probs = model_gol15.predict_proba(input_data)[0]
-                    ml_gol35_probs = model_gol35.predict_proba(input_data)[0]
-                    ml_kg_probs = model_kg.predict_proba(input_data)[0]       
-
-                    ml_probs = {
-                        "MS 1": ml_taraf_probs[0], "MS 0": ml_taraf_probs[1], "MS 2": ml_taraf_probs[2],
-                        "2.5 Üst": ml_gol25_probs[1], "2.5 Alt": ml_gol25_probs[0],
-                        "1.5 Üst": ml_gol15_probs[1], "1.5 Alt": ml_gol15_probs[0],
-                        "3.5 Üst": ml_gol35_probs[1], "3.5 Alt": ml_gol35_probs[0],
-                        "KG Var": ml_kg_probs[1], "KG Yok": ml_kg_probs[0]
-                    }
-
-                    THRESHOLD = guven_esigi / 100.0
-                    gecen_hedefler = []
-                    
-                    for pazar in poisson_probs.keys():
-                        ort_ihtimal = (poisson_probs[pazar] + ml_probs[pazar]) / 2.0
-                        
-                        if pazar == "MS 1" and h_odd < min_oran_manuel: continue
-                        if pazar == "MS 0" and d_odd < min_oran_manuel: continue
-                        if pazar == "MS 2" and a_odd < min_oran_manuel: continue
-                        
-                        if ort_ihtimal >= THRESHOLD:
-                            gecen_hedefler.append((pazar, ort_ihtimal, poisson_probs[pazar], ml_probs[pazar]))
-                            
-                    gecen_hedefler = sorted(gecen_hedefler, key=lambda x: x[1], reverse=True)
-                    
-                    if len(gecen_hedefler) > 0:
-                        rapor = f"🧠 <b>V2404 SÜRPRİZ (VALUE) RÖNTGENİ</b><br><br>"
-                        rapor += f"📡 İddaa Oranları ➜ Ev Sahibi: <b>{h_odd:.2f}</b> | Beraberlik: <b>{d_odd:.2f}</b> | Deplasman: <b>{a_odd:.2f}</b><br><br>"
-                        
-                        for pazar, final_prob, p_prob, ml_prob in gecen_hedefler:
-                            fark = ml_prob - p_prob
-                            if abs(fark) < 0.10: durum = "<span style='color:#00ffcc;'>🟢 SİSTEMLER MUTABIK</span>"
-                            elif fark > 0.10: durum = "<span style='color:#ff3366;'>🔥 YAPAY ZEKA DESTEKLİYOR</span>"
-                            else: durum = "<span style='color:#ffcc00;'>🟡 DİKKAT: SADECE İSTATİSTİK</span>"
-                            
-                            rapor += f"""
-                            <div class='report-card'>
-                                <div class='report-title'>[{pazar}] ➜ Net İhtimal: %{int(final_prob*100)}</div>
-                                <b>Detay:</b> {durum}<br>
-                                <span style='font-size:13px; color:#a0aec0;'>[İstatistik: %{int(p_prob*100)} | Yapay Zeka: %{int(ml_prob*100)}]</span>
-                            </div>
-                            """
-
-                        secilen_mac['gecen_hedefler'] = gecen_hedefler
-                        secilen_mac['ai_rapor'] = rapor
-                        st.session_state.aktif_mac = secilen_mac 
-                        st.success(f"🐺 Radar tamamlandı! Değerli ihtimaller aşağıda.")
-                    else:
-                        st.session_state.aktif_mac = None
-                        st.error(f"🚨 UYARI: Bu maçta {min_oran_manuel} oran üzerinde güvenebileceğimiz hiçbir sürpriz değer (Value) bulunamadı. Pas geç!")
-
-        if 'aktif_mac' in st.session_state and st.session_state.aktif_mac is not None:
-            m = st.session_state.aktif_mac
-            st.divider()
-            
-            st.markdown(f"<div class='match-card'><div class='match-title'>{m['home_team']} ⚡ {m['away_team']}</div><br>", unsafe_allow_html=True)
-            st.markdown(f"<div class='ai-report'>{m['ai_rapor']}</div><br>", unsafe_allow_html=True)
-            
-            hedef_opsiyonlari = [f"{h[0]} (Ortak İhtimal: %{int(h[1]*100)})" for h in m['gecen_hedefler']]
-            secilen_hedef_str = st.selectbox("📌 AVLANACAK SÜRPRİZ HEDEFİ ONAYLA:", hedef_opsiyonlari, key="nihai_hedef_secim")
-            
-            nihai_pazar = secilen_hedef_str.split(' (')[0].strip()
-            nihai_prob_str = secilen_hedef_str.split('%')[1].split(')')[0]
-            nihai_prob = float(nihai_prob_str) / 100.0
-            
-            c_oran, c_bos = st.columns([1, 1])
-            with c_oran:
-                m['manuel_oran'] = st.number_input(f"Seçtiğin [{nihai_pazar}] hedefinin İddaa'daki Gerçek Oranını Girin:", min_value=1.00, value=2.50, step=0.01, key="iddaa_guncel_oran")
-            st.markdown("</div>", unsafe_allow_html=True)
-            
-            st.markdown("### 🚀 Otonom Vur Kaç")
-            manuel_tutar = st.number_input("💵 İşlem Tutarı:", min_value=10.0, value=100.0, step=10.0, key="tutar_tekli")
-            
-            c_btn_real, c_btn_shadow = st.columns(2)
-            with c_btn_real:
-                btn_gercek = st.button("🚀 ONAYLA (Gerçek Kasa)", use_container_width=True, key="onay_gercek_tek")
-            with c_btn_shadow:
-                btn_sanal = st.button("👻 GÖLGE MODU (Eğitim)", use_container_width=True, key="onay_sanal_tek")
-                
-            if btn_gercek or btn_sanal:
-                yatirilacak_tutar = manuel_tutar if btn_gercek else 0.0
-                durum_text = "Bekliyor" if btn_gercek else "Sanal_Bekliyor"
-                
-                if btn_gercek:
-                    st.session_state.lokal_kasa -= yatirilacak_tutar
-                    st.session_state.bekleyen_tutar += yatirilacak_tutar
-                
-                if sheet:
-                    isimler = f"{m['home_team']} vs {m['away_team']}"
-                    ligler = m['sport_key']
-                    tercihler = nihai_pazar 
-                    problar = f"{nihai_prob:.3f}"
-                    oranlar = f"{m.get('manuel_oran', 1.50):.2f}"
-                    
-                    sheet.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), yatirilacak_tutar, oranlar, durum_text, "0", st.session_state.lokal_kasa, st.session_state.bekleyen_tutar, st.session_state.baslangic_kasa, isimler, ligler, tercihler, problar, oranlar])
-                
-                st.session_state.aktif_mac = None
-                st.success(f"İşlem Başarılı! Yapay zeka tahmini sisteme ateşlendi.")
-                st.rerun()
+    st.info("Manuel analiz Oto-Pilot'a devredildiği için arka plandadır. 3. Sekmeye geçiniz.")
 
 with tab4:
-    st.markdown("### 🤖 OTO-PİLOT (ÇOKLU AV FİLTRESİ)")
-    st.markdown("<p style='color:#a0aec0;'>Makine günün maçlarını tarar. Bir maçta eşiği geçen <b>BİRDEN FAZLA</b> bahis seçeneği varsa (Örn: Hem MS 1 hem 2.5 Üst) hepsini ayrı ayrı sanal portföye ekler. Daha önce oynadığı ihtimalleri hafızasından tanır ve tekrar oynamaz.</p>", unsafe_allow_html=True)
+    st.markdown("### 🤖 OTO-PİLOT (DİNAMİK ORAN & ÇOKLU AV)")
+    st.markdown("<p style='color:#a0aec0;'>Makine günün maçlarını tarar. Taraf bahislerinde API oranlarını kullanırken, gol pazarlarında <b>Yapay Zeka ihtimaline göre %7 komisyonlu ADİL ORAN</b> hesaplayarak portföyü gerçeğe en yakın şekilde kaydeder.</p>", unsafe_allow_html=True)
     
     c_oto1, c_oto2 = st.columns(2)
     with c_oto1:
-        oto_min_oran = st.number_input("Otonom Minimum Oran (Taraf):", min_value=1.0, value=2.20, step=0.1)
+        oto_min_oran = st.number_input("Otonom Minimum Oran (Tüm Pazarlar):", min_value=1.0, value=1.50, step=0.1)
     with c_oto2:
         oto_esik = st.slider("Yapay Zeka Otomatik Onay Eşiği (%):", min_value=30, max_value=90, value=40, step=1)
     
@@ -381,7 +194,7 @@ with tab4:
         elif model_taraf is None:
             st.error("Makine Öğrenimi aktif değil.")
         else:
-            with st.spinner(f"{len(st.session_state.raw_api_data)} maç taranıyor... Her maç için tüm ihtimaller toplanıyor..."):
+            with st.spinner(f"{len(st.session_state.raw_api_data)} maç taranıyor... Dinamik Oran Motoru devrede..."):
                 oto_oynanan_maclar = 0
                 
                 oynanmis_kombinasyonlar = set()
@@ -425,12 +238,21 @@ with tab4:
                     
                     for pazar, prob in ml_probs.items():
                         temp_oran = 1.0
+                        
+                        # --- DİNAMİK ORAN (MARKET MAKER) MOTORU ---
                         if pazar == "MS 1": temp_oran = h_odd
                         elif pazar == "MS 0": temp_oran = d_odd
                         elif pazar == "MS 2": temp_oran = a_odd
-                        else: temp_oran = 1.50 
+                        else: 
+                            if prob > 0.05: # İhtimal çok düşükse sıfıra bölme hatasını önle
+                                adil_oran = 1.0 / prob
+                                temp_oran = round(adil_oran * 0.93, 2) # %7 Büro komisyonu düşülür
+                                if temp_oran < 1.01: temp_oran = 1.01
+                            else:
+                                temp_oran = 1.50
                         
-                        if pazar in ["MS 1", "MS 0", "MS 2"] and temp_oran < oto_min_oran: continue
+                        # Artık filtre sadece taraf bahsine değil, dinamik oranla hesaplanan tüm pazarlara bakıyor
+                        if temp_oran < oto_min_oran: continue
                         
                         if prob >= THRESHOLD:
                             if f"{isimler}_{pazar}" not in oynanmis_kombinasyonlar:
@@ -448,10 +270,10 @@ with tab4:
                             
                             oynanmis_kombinasyonlar.add(f"{isimler}_{pazar}")
                             oto_oynanan_maclar += 1
-                            st.write(f"🐺 **AVLANDI:** **{isimler}** ➜ {pazar} (İddaa Oranı: **{gercek_oran:.2f}**) sanal portföye eklendi.")
+                            st.write(f"🐺 **AVLANDI:** **{isimler}** ➜ {pazar} (Dinamik Oran: **{gercek_oran:.2f}**) sanal portföye eklendi.")
                 
                 if oto_oynanan_maclar > 0:
-                    st.success(f"🤖 GÖREV TAMAMLANDI! {oto_oynanan_maclar} yeni pazar sanal portföye eklendi.")
+                    st.success(f"🤖 GÖREV TAMAMLANDI! {oto_oynanan_maclar} yeni pazar gerçekçi oranlarla portföye eklendi.")
                 else:
                     st.warning(f"Sistem taramayı bitirdi. {oto_min_oran} oran ve %{oto_esik} eşik şartlarını sağlayan YENİ hiçbir bahis bulunamadı.")
 
@@ -538,13 +360,11 @@ with tab3:
             b_tutar, b_oran = float(str(r[1]).replace(',','.').strip()), float(str(r[2]).replace(',','.').strip())
             mac_isimleri = r[8].replace('#', ' | ') if len(r) > 10 else "Eski Format"
             
-            # YENİ EKLENEN KISIM: Bahis Türü (Pazar) Gösterimi
             bahis_turleri = r[10].replace('#', ' | ') if len(r) > 10 else "Bilinmiyor"
             
             border_color = "#4a5568" if is_sanal else "#00ffcc"
             tutar_text = f"<span style='color:#a0aec0;'>{b_tutar:.0f} TL (Sanal Yatırım)</span>" if is_sanal else f"<span style='color:#00ffcc;'>{b_tutar:.0f} TL (Gerçek)</span>"
             
-            # KART TASARIMI GÜNCELLENDİ
             st.markdown(f"<div style='background: #11161d; border-left: 4px solid {border_color}; padding:20px; border-radius:10px; margin-bottom:15px;'><b style='font-size:18px;'>Maçlar:</b> <span style='color:#e2e8f0;'>{mac_isimleri}</span><br><br><b style='font-size:16px;'>🎯 Tercih:</b> <span style='color:#ff3366; font-size:18px; font-weight:bold;'>{bahis_turleri}</span><br><br><b style='font-size:16px;'>Yatırım:</b> <span style='font-size:18px;'>{tutar_text}</span> &nbsp;|&nbsp; <b style='font-size:16px;'>Oran:</b> <span style='color:#d4af37; font-size:18px; font-weight:bold;'>{b_oran:.2f}</span></div>", unsafe_allow_html=True)
 
     st.divider()
