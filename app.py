@@ -18,7 +18,7 @@ try:
 except ImportError:
     GSPREAD_INSTALLED = False
 
-st.set_page_config(page_title="V2403 ÇOKLU HEDEF AVCISI", layout="wide", page_icon="🐺")
+st.set_page_config(page_title="V2404 TİCARİ PANEL", layout="wide", page_icon="🐺")
 
 st.markdown("""
     <style>
@@ -142,10 +142,10 @@ def check_match_result(sport_key, home, away, target_market, api_key):
         return "BEKLİYOR", "Maç Bitmedi"
     except: return "BEKLİYOR", "Hata"
 
-st.markdown("<h1 style='text-align:center; color:#ff3366; font-size:52px; margin-bottom:0; text-shadow: 0 0 20px rgba(255, 51, 102, 0.4);'>🐺 V2403 ÇOKLU HEDEF AVCISI</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>Aynı Maçta Farklı Sürprizleri Avlama | Hafızalı Otonom</p><br>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#ff3366; font-size:52px; margin-bottom:0; text-shadow: 0 0 20px rgba(255, 51, 102, 0.4);'>🐺 V2404 TİCARİ PANEL</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>Şeffaf Operasyon Kartları | Sürpriz Avı</p><br>", unsafe_allow_html=True)
 
-tab1, tab2, tab4, tab3 = st.tabs(["📡 1. MAÇLARI ÇEK", "🧠 2. MANUEL SÜRPRİZ AVI", "🤖 3. OTO-PİLOT (ÇOKLU AV)", "📈 4. BİLANÇO"])
+tab1, tab2, tab4, tab3 = st.tabs(["📡 1. MAÇLARI ÇEK", "🧠 2. MANUEL SÜRPRİZ AVI", "🤖 3. OTO-PİLOT", "📈 4. BİLANÇO"])
 
 c1, c2 = st.columns([2, 1])
 with c1: secilen_ligler = st.multiselect("Ligleri Seçin:", list(API_LEAGUES.keys()), default=["İngiltere Premier Lig", "Türkiye Süper Lig", "İspanya La Liga", "Almanya Bundesliga"])
@@ -291,7 +291,7 @@ with tab2:
                     gecen_hedefler = sorted(gecen_hedefler, key=lambda x: x[1], reverse=True)
                     
                     if len(gecen_hedefler) > 0:
-                        rapor = f"🧠 <b>V2403 SÜRPRİZ (VALUE) RÖNTGENİ</b><br><br>"
+                        rapor = f"🧠 <b>V2404 SÜRPRİZ (VALUE) RÖNTGENİ</b><br><br>"
                         rapor += f"📡 İddaa Oranları ➜ Ev Sahibi: <b>{h_odd:.2f}</b> | Beraberlik: <b>{d_odd:.2f}</b> | Deplasman: <b>{a_odd:.2f}</b><br><br>"
                         
                         for pazar, final_prob, p_prob, ml_prob in gecen_hedefler:
@@ -421,7 +421,6 @@ with tab4:
                     
                     THRESHOLD = oto_esik / 100.0
                     
-                    # YENİ EKLENEN KISIM: Sadece en yüksek olanı değil, barajı geçen HER ŞEYİ listeye al
                     bulunan_hedefler = []
                     
                     for pazar, prob in ml_probs.items():
@@ -437,7 +436,6 @@ with tab4:
                             if f"{isimler}_{pazar}" not in oynanmis_kombinasyonlar:
                                 bulunan_hedefler.append((pazar, prob, temp_oran))
                             
-                    # Bulunan tüm geçerli hedefleri Excel'e kaydet
                     for pazar, prob, gercek_oran in bulunan_hedefler:
                         if sheet:
                             ligler = m['sport_key']
@@ -539,9 +537,15 @@ with tab3:
             is_sanal = (r[3] == "Sanal_Bekliyor")
             b_tutar, b_oran = float(str(r[1]).replace(',','.').strip()), float(str(r[2]).replace(',','.').strip())
             mac_isimleri = r[8].replace('#', ' | ') if len(r) > 10 else "Eski Format"
+            
+            # YENİ EKLENEN KISIM: Bahis Türü (Pazar) Gösterimi
+            bahis_turleri = r[10].replace('#', ' | ') if len(r) > 10 else "Bilinmiyor"
+            
             border_color = "#4a5568" if is_sanal else "#00ffcc"
             tutar_text = f"<span style='color:#a0aec0;'>{b_tutar:.0f} TL (Sanal Yatırım)</span>" if is_sanal else f"<span style='color:#00ffcc;'>{b_tutar:.0f} TL (Gerçek)</span>"
-            st.markdown(f"<div style='background: #11161d; border-left: 4px solid {border_color}; padding:20px; border-radius:10px; margin-bottom:15px;'><b style='font-size:18px;'>Maçlar:</b> <span style='color:#e2e8f0;'>{mac_isimleri}</span><br><br><b style='font-size:16px;'>Yatırım:</b> <span style='font-size:18px;'>{tutar_text}</span> &nbsp;|&nbsp; <b style='font-size:16px;'>Oran:</b> <span style='color:#d4af37; font-size:18px; font-weight:bold;'>{b_oran:.2f}</span></div>", unsafe_allow_html=True)
+            
+            # KART TASARIMI GÜNCELLENDİ
+            st.markdown(f"<div style='background: #11161d; border-left: 4px solid {border_color}; padding:20px; border-radius:10px; margin-bottom:15px;'><b style='font-size:18px;'>Maçlar:</b> <span style='color:#e2e8f0;'>{mac_isimleri}</span><br><br><b style='font-size:16px;'>🎯 Tercih:</b> <span style='color:#ff3366; font-size:18px; font-weight:bold;'>{bahis_turleri}</span><br><br><b style='font-size:16px;'>Yatırım:</b> <span style='font-size:18px;'>{tutar_text}</span> &nbsp;|&nbsp; <b style='font-size:16px;'>Oran:</b> <span style='color:#d4af37; font-size:18px; font-weight:bold;'>{b_oran:.2f}</span></div>", unsafe_allow_html=True)
 
     st.divider()
     st.markdown("### 💎 PAZAR BAZLI KÂR/ZARAR (ROI) ANALİZİ")
