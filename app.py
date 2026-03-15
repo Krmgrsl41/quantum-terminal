@@ -18,7 +18,7 @@ try:
 except ImportError:
     GSPREAD_INSTALLED = False
 
-st.set_page_config(page_title="V3000 APEX - QUANTUM FON", layout="wide", page_icon="🐺")
+st.set_page_config(page_title="V3001 APEX - QUANTUM FON", layout="wide", page_icon="🐺")
 
 st.markdown("""
     <style>
@@ -73,10 +73,9 @@ API_LEAGUES = {
 def load_and_train_ml_model():
     leagues_codes = ['E0', 'T1', 'D1', 'SP1', 'I1', 'F1', 'N1', 'B1']
     urls = []
-    # Son 2 sezonu çekiyoruz, ancak V3000 ile ağırlıklandıracağız
     for code in leagues_codes:
-        urls.append(f'https://www.football-data.co.uk/mmz4281/2324/{code}.csv') # Eski Sezon
-        urls.append(f'https://www.football-data.co.uk/mmz4281/2425/{code}.csv') # Yeni Sezon
+        urls.append(f'https://www.football-data.co.uk/mmz4281/2324/{code}.csv') 
+        urls.append(f'https://www.football-data.co.uk/mmz4281/2425/{code}.csv') 
         
     dfs = []
     for url in urls:
@@ -91,8 +90,6 @@ def load_and_train_ml_model():
     if not dfs: return None, None, None, None, None
     df_train = pd.concat(dfs, ignore_index=True)
     
-    # AŞAMA 2: ZAMAN AĞIRLIKLI ÖĞRENME (Exponential Decay Simülasyonu)
-    # Yeni maçların (dataframe sonu) makine kararında etkisi 1.5 kat, eskilerin 0.5 kat olacak.
     weights = np.linspace(0.5, 1.5, len(df_train))
     
     X = df_train[['B365H', 'B365D', 'B365A']]
@@ -108,7 +105,6 @@ def load_and_train_ml_model():
     rf_gol_35 = RandomForestClassifier(n_estimators=100, random_state=42, max_depth=5)
     rf_kg = RandomForestClassifier(n_estimators=100, random_state=42, max_depth=5)
     
-    # Modele ağırlıkları vererek eğitiyoruz
     rf_taraf.fit(X, y_taraf, sample_weight=weights)
     rf_gol_25.fit(X, y_gol_25, sample_weight=weights)
     rf_gol_15.fit(X, y_gol_15, sample_weight=weights)
@@ -119,37 +115,36 @@ def load_and_train_ml_model():
 
 model_taraf, model_gol25, model_gol15, model_gol35, model_kg = load_and_train_ml_model()
 
-def check_match_result(sport_key, home, away, target_market, api_key):
-    url = f"https://api.the-odds-api.com/v4/sports/{sport_key}/scores/?apiKey={api_key}&daysFrom=3"
-    try:
-        resp = requests.get(url).json()
-        for m in resp:
-            if m['home_team'] == home and m['away_team'] == away:
-                if m.get('completed', False):
-                    scores = m.get('scores', [])
-                    if not scores: return "BEKLİYOR", "-"
-                    h_score = int(scores[0]['score']) if scores[0]['name'] == home else int(scores[1]['score'])
-                    a_score = int(scores[1]['score']) if scores[1]['name'] == away else int(scores[0]['score'])
-                    total = h_score + a_score
-                    won = False
-                    
-                    if target_market == "2.5 Üst" and total > 2: won = True
-                    elif target_market == "2.5 Alt" and total < 3: won = True
-                    elif target_market == "3.5 Üst" and total > 3: won = True
-                    elif target_market == "3.5 Alt" and total < 4: won = True
-                    elif target_market == "1.5 Üst" and total > 1: won = True
-                    elif target_market == "KG Var" and h_score > 0 and a_score > 0: won = True
-                    elif target_market == "KG Yok" and (h_score == 0 or a_score == 0): won = True
-                    elif target_market == "MS 1" and h_score > a_score: won = True
-                    elif target_market == "MS 2" and a_score > h_score: won = True
-                    elif target_market == "MS 0" and h_score == a_score: won = True
-                    
-                    return ("KAZANDI" if won else "KAYBETTİ"), f"{h_score}-{a_score}"
-        return "BEKLİYOR", "Maç Bitmedi"
-    except: return "BEKLİYOR", "Hata"
+# Yeni Optimizasyonlu Denetçi Fonksiyonu (Hafızadan Okur)
+def check_match_result_optimized(home, away, target_market, lig_skor_havuzu):
+    if not lig_skor_havuzu:
+        return "BEKLİYOR", "-"
+    for m in lig_skor_havuzu:
+        if m['home_team'] == home and m['away_team'] == away:
+            if m.get('completed', False):
+                scores = m.get('scores', [])
+                if not scores: return "BEKLİYOR", "-"
+                h_score = int(scores[0]['score']) if scores[0]['name'] == home else int(scores[1]['score'])
+                a_score = int(scores[1]['score']) if scores[1]['name'] == away else int(scores[0]['score'])
+                total = h_score + a_score
+                won = False
+                
+                if target_market == "2.5 Üst" and total > 2: won = True
+                elif target_market == "2.5 Alt" and total < 3: won = True
+                elif target_market == "3.5 Üst" and total > 3: won = True
+                elif target_market == "3.5 Alt" and total < 4: won = True
+                elif target_market == "1.5 Üst" and total > 1: won = True
+                elif target_market == "KG Var" and h_score > 0 and a_score > 0: won = True
+                elif target_market == "KG Yok" and (h_score == 0 or a_score == 0): won = True
+                elif target_market == "MS 1" and h_score > a_score: won = True
+                elif target_market == "MS 2" and a_score > h_score: won = True
+                elif target_market == "MS 0" and h_score == a_score: won = True
+                
+                return ("KAZANDI" if won else "KAYBETTİ"), f"{h_score}-{a_score}"
+    return "BEKLİYOR", "Maç Bitmedi"
 
-st.markdown("<h1 style='text-align:center; color:#ff3366; font-size:52px; margin-bottom:0; text-shadow: 0 0 20px rgba(255, 51, 102, 0.4);'>🐺 V3000 APEX </h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>xG Motoru | Yapay Zeka Kuralları (Heuristics) | Zaman Ağırlıklı ML</p><br>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#ff3366; font-size:52px; margin-bottom:0; text-shadow: 0 0 20px rgba(255, 51, 102, 0.4);'>🐺 V3001 APEX </h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>Gelişmiş Görsel Raporlama | xG Motoru | Optimize Denetçi</p><br>", unsafe_allow_html=True)
 
 tab1, tab2, tab4, tab3 = st.tabs(["📡 1. PİYASA TARAMASI", "🧠 2. DERİN ANALİZ (xG)", "🤖 3. OTO-PİLOT (APEX)", "📈 4. FON BİLANÇOSU"])
 
@@ -209,20 +204,20 @@ with tab2:
                 st.markdown(f"**🏠 {secilen_mac['home_team']}**")
                 ev_mac = st.number_input("Son Kaç Maç?:", min_value=1, value=5, key="ev_mac")
                 ev_at = st.number_input("Attığı Gol:", min_value=0, value=8, key="ev_at")
-                ev_sut = st.number_input("Ort. İsabetli Şut:", min_value=0.0, value=4.5, step=0.5, key="ev_sut", help="Kaleye giden tehlikeli şutlar (xG proxy)")
+                ev_sut = st.number_input("Ort. İsabetli Şut:", min_value=0.0, value=4.5, step=0.5, key="ev_sut")
                 ev_ye = st.number_input("Yediği Gol:", min_value=0, value=4, key="ev_ye")
                 
             with c_dep:
                 st.markdown(f"**✈️ {secilen_mac['away_team']}**")
                 dep_mac = st.number_input("Son Kaç Maç?:", min_value=1, value=5, key="dep_mac")
                 dep_at = st.number_input("Attığı Gol:", min_value=0, value=5, key="dep_at")
-                dep_sut = st.number_input("Ort. İsabetli Şut:", min_value=0.0, value=3.5, step=0.5, key="dep_sut", help="Kaleye giden tehlikeli şutlar (xG proxy)")
+                dep_sut = st.number_input("Ort. İsabetli Şut:", min_value=0.0, value=3.5, step=0.5, key="dep_sut")
                 dep_ye = st.number_input("Yediği Gol:", min_value=0, value=7, key="dep_ye")
             
             st.markdown("</div><br>", unsafe_allow_html=True)
             
             if st.button("🔮 KUSURSUZ xG RADARINI BAŞLAT", use_container_width=True):
-                with st.spinner("Makine xG simülasyonunu yapıyor, mantık filtreleri (Heuristics) devrede..."):
+                with st.spinner("Makine xG simülasyonunu yapıyor..."):
                     h_odd, d_odd, a_odd = 0, 0, 0 
                     try:
                         for bkm in secilen_mac.get('bookmakers', []):
@@ -236,8 +231,6 @@ with tab2:
                     
                     if h_odd == 0: h_odd, d_odd, a_odd = 2.50, 3.20, 2.80
 
-                    # --- AŞAMA 1: İLERİ SEVİYE POISSON (xG Proxy Entegrasyonu) ---
-                    # Salt gole değil, isabetli şuta göre gol beklentisi (xG) hesaplıyoruz
                     ev_xg_proxy = ((ev_at / ev_mac) * 0.5) + (ev_sut * 0.2) if ev_mac > 0 else 1.0
                     ev_def_ort = ev_ye / ev_mac if ev_mac > 0 else 1.0
                     
@@ -303,13 +296,11 @@ with tab2:
                         
                         if temp_oran < min_oran_manuel: continue
 
-                        # --- AŞAMA 3: ACIMASIZ HEURISTIC (MANTIK) FİLTRELERİ ---
-                        # Makine yüksek ihtimal verse bile, futbola aykırıysa sil!
-                        if pazar == "MS 0" and (h_odd < 1.70 or a_odd < 1.70): continue # Biri ezici favoriyse 0 oynama
-                        if pazar == "MS 1" and (ev_xg_proxy < dep_xg_proxy): continue # Ev sahibinin xG'si kötüyse MS 1 alma
+                        if pazar == "MS 0" and (h_odd < 1.70 or a_odd < 1.70): continue 
+                        if pazar == "MS 1" and (ev_xg_proxy < dep_xg_proxy): continue 
                         if pazar == "MS 2" and (dep_xg_proxy < ev_xg_proxy): continue 
-                        if pazar == "2.5 Üst" and (lambda_home + lambda_away < 2.0): continue # Beklenen gol 2'nin altındaysa 2.5 Üst oynama
-                        if pazar == "KG Var" and (ev_xg_proxy < 0.8 or dep_xg_proxy < 0.8): continue # İki takımdan birinin gol atma gücü çok düşükse KG Var oynama
+                        if pazar == "2.5 Üst" and (lambda_home + lambda_away < 2.0): continue 
+                        if pazar == "KG Var" and (ev_xg_proxy < 0.8 or dep_xg_proxy < 0.8): continue 
                         
                         if ort_ihtimal >= THRESHOLD:
                             gecen_hedefler.append((pazar, ort_ihtimal, poisson_probs[pazar], ml_probs[pazar], temp_oran))
@@ -317,7 +308,7 @@ with tab2:
                     gecen_hedefler = sorted(gecen_hedefler, key=lambda x: x[1], reverse=True)
                     
                     if len(gecen_hedefler) > 0:
-                        rapor = f"🧠 <b>V3000 APEX - MANTIK FİLTRELİ SONUÇLAR</b><br><br>"
+                        rapor = f"🧠 <b>V3001 APEX - MANTIK FİLTRELİ SONUÇLAR</b><br><br>"
                         rapor += f"📊 <b>xG Beklentisi:</b> Ev ({lambda_home:.2f}) - Dep ({lambda_away:.2f})<br>"
                         rapor += f"📡 <b>İddaa Oranları:</b> Ev ({h_odd:.2f}) | Brb ({d_odd:.2f}) | Dep ({a_odd:.2f})<br><br>"
                         
@@ -341,7 +332,7 @@ with tab2:
                         st.success(f"🐺 Radar tamamlandı! Çöpler ve illüzyonlar ayıklandı.")
                     else:
                         st.session_state.aktif_mac = None
-                        st.error(f"🚨 UYARI: Bu maç Wall Street filtrelerini (Heuristic kuralları) GEÇEMEDİ. Matematiksel olarak KESİNLİKLE uzak durulmalı!")
+                        st.error(f"🚨 UYARI: Bu maç filtreleri geçemedi. Uzak durulmalı!")
 
         if 'aktif_mac' in st.session_state and st.session_state.aktif_mac is not None:
             m = st.session_state.aktif_mac
@@ -365,7 +356,7 @@ with tab2:
             st.markdown("</div>", unsafe_allow_html=True)
             
             st.markdown("### 🚀 Otonom Vur Kaç (Flat Betting)")
-            manuel_tutar = st.number_input("💵 İşlem Tutarı (Birim/Unit):", min_value=10.0, value=100.0, step=10.0, key="tutar_tekli", help="Kasanızın %2'sini geçmemeli!")
+            manuel_tutar = st.number_input("💵 İşlem Tutarı (Birim/Unit):", min_value=10.0, value=100.0, step=10.0, key="tutar_tekli")
             
             c_btn_real, c_btn_shadow = st.columns(2)
             with c_btn_real:
@@ -395,8 +386,8 @@ with tab2:
                 st.rerun()
 
 with tab4:
-    st.markdown("### 🤖 OTO-PİLOT (APEX V3000)")
-    st.markdown("<p style='color:#a0aec0;'>Makine günün maçlarını tarar. İhtimallerin ötesinde; maçın kalitesini, takımların xG (gol beklentisi) gücünü analiz eder. Akla ve futbola aykırı hiçbir senaryoyu, ihtimali %90 olsa dahi oynamaz!</p>", unsafe_allow_html=True)
+    st.markdown("### 🤖 OTO-PİLOT (APEX V3001)")
+    st.markdown("<p style='color:#a0aec0;'>Makine günün maçlarını tarar. İhtimallerin ötesinde; maçın kalitesini ve gol beklentisi gücünü analiz eder.</p>", unsafe_allow_html=True)
     
     c_oto1, c_oto2 = st.columns(2)
     with c_oto1:
@@ -410,7 +401,7 @@ with tab4:
         elif model_taraf is None:
             st.error("Makine Öğrenimi aktif değil.")
         else:
-            with st.spinner(f"Kusursuz Algoritma Devrede... {len(st.session_state.raw_api_data)} maçta Heuristic filtreler çalışıyor..."):
+            with st.spinner(f"Kusursuz Algoritma Devrede..."):
                 oto_oynanan_maclar = 0
                 oynanmis_kombinasyonlar = set()
                 if all_vals:
@@ -462,10 +453,8 @@ with tab4:
                             else: temp_oran = 1.50
                         
                         if temp_oran < oto_min_oran: continue
-                        
-                        # --- OTO-PİLOT HEURISTIC (MANTIK) KORUMASI ---
                         if pazar == "MS 0" and (h_odd < 1.70 or a_odd < 1.70): continue 
-                        if pazar == "MS 1" and h_odd > a_odd: continue # Eğer takım ML favorisi ise ama oran olarak deplasman favoriyse risk alma
+                        if pazar == "MS 1" and h_odd > a_odd: continue 
                         if pazar == "MS 2" and a_odd > h_odd: continue
                         
                         if prob >= THRESHOLD:
@@ -486,9 +475,9 @@ with tab4:
                             st.write(f"🐺 **APEX ONAYLI:** **{isimler}** ➜ {pazar} (Oran: **{gercek_oran:.2f}**)")
                 
                 if oto_oynanan_maclar > 0:
-                    st.success(f"🤖 GÖREV TAMAMLANDI! {oto_oynanan_maclar} adet kusursuz matematiksel işlem yapıldı.")
+                    st.success(f"🤖 GÖREV TAMAMLANDI! {oto_oynanan_maclar} adet işlem yapıldı.")
                 else:
-                    st.warning(f"Sistem taramayı bitirdi. APEX filtrelerini ve {oto_min_oran} oran sınırını geçebilen YENİ maç kalmadı.")
+                    st.warning(f"Sistem taramayı bitirdi. YENİ maç kalmadı.")
 
 with tab3:
     st.markdown("<h2 style='color:#d4af37;'>💼 Kuantum Fon Bilanço & Analitik</h2>", unsafe_allow_html=True)
@@ -507,7 +496,23 @@ with tab3:
         if st.button("🤖 OTONOM DENETÇİYİ ÇALIŞTIR", use_container_width=True, key="otonom_denetci_btn"):
             if not api_key: st.error("API Anahtarı eksik!")
             else:
-                with st.spinner("Skorlar denetleniyor, yapay zeka hafızasını güncelliyor..."):
+                with st.spinner("Skorlar denetleniyor (Toplu İndirme Devrede)..."):
+                    bekleyen_ligler = set()
+                    for r in all_vals:
+                        if len(r) > 12 and r[3] in ["Bekliyor", "Sanal_Bekliyor"]:
+                            ligler_str = r[9].split('#')
+                            for l in ligler_str:
+                                if l.strip(): bekleyen_ligler.add(l.strip())
+                    
+                    skor_havuzu = {}
+                    for lig in bekleyen_ligler:
+                        try:
+                            url = f"https://api.the-odds-api.com/v4/sports/{lig}/scores/?apiKey={api_key.strip()}&daysFrom=3"
+                            resp = requests.get(url).json()
+                            if isinstance(resp, list):
+                                skor_havuzu[lig] = resp
+                        except: pass
+
                     updates_made = False
                     for idx, r in enumerate(all_vals):
                         if len(r) > 12 and r[3] in ["Bekliyor", "Sanal_Bekliyor"]:
@@ -524,7 +529,8 @@ with tab3:
                             for m_isim, m_lig, m_pazar in zip(maclar, ligler, pazarlar):
                                 if ' vs ' in m_isim:
                                     ev, dep = m_isim.split(' vs ')
-                                    res, skor = check_match_result(m_lig, ev, dep, m_pazar.strip(), api_key) 
+                                    ilgili_havuz = skor_havuzu.get(m_lig.strip(), [])
+                                    res, skor = check_match_result_optimized(ev, dep, m_pazar.strip(), ilgili_havuz) 
                                 else:
                                     res, skor = "BEKLİYOR", "-"
                                     
@@ -563,7 +569,7 @@ with tab3:
                     if updates_made:
                         st.success("✅ Maçlar sonuçlandırıldı ve Kâr/Zarar hanesine işlendi!")
                         st.rerun()
-                    else: st.info("Maçlar henüz bitmemiş.")
+                    else: st.info("Maçlar henüz bitmemiş (veya skor sağlayıcıya yansımadı).")
 
     bekleyenler = [(idx+1, r) for idx, r in enumerate(all_vals) if len(r) > 3 and r[3] in ["Bekliyor", "Sanal_Bekliyor"]]
     if not bekleyenler: st.info("Bekleyen yatırımınız veya sanal eğitim işleminiz yok.")
@@ -579,6 +585,52 @@ with tab3:
             st.markdown(f"<div style='background: #11161d; border-left: 4px solid {border_color}; padding:20px; border-radius:10px; margin-bottom:15px;'><b style='font-size:18px;'>Maçlar:</b> <span style='color:#e2e8f0;'>{mac_isimleri}</span><br><br><b style='font-size:16px;'>🎯 Tercih:</b> <span style='color:#ff3366; font-size:18px; font-weight:bold;'>{bahis_turleri}</span><br><br><b style='font-size:16px;'>Yatırım:</b> <span style='font-size:18px;'>{tutar_text}</span> &nbsp;|&nbsp; <b style='font-size:16px;'>Oran:</b> <span style='color:#d4af37; font-size:18px; font-weight:bold;'>{b_oran:.2f}</span></div>", unsafe_allow_html=True)
 
     st.divider()
+    
+    # --- YENİ EKLENEN: GENEL PERFORMANS (KAZANAN / KAYBEDEN) TABLOSU ---
+    st.markdown("### 📊 GENEL PERFORMANS ÖZETİ (TÜM İŞLEMLER)")
+    kazanan_adet, kaybeden_adet = 0, 0
+    kazanan_yatirim, kaybeden_yatirim = 0.0, 0.0
+    kazanan_kar, kaybeden_zarar = 0.0, 0.0
+
+    for r in all_vals:
+        if len(r) > 10:
+            status = r[3]
+            if status in ["Kazandı_Sonuc", "Sanal_Kazandı"]:
+                kazanan_adet += 1
+                tutar = float(str(r[1]).replace(',','.').strip())
+                oran = float(str(r[2]).replace(',','.').strip())
+                kazanan_yatirim += tutar
+                kazanan_kar += (tutar * oran) - tutar
+            elif status in ["Kaybetti_Sonuc", "Sanal_Kaybetti"]:
+                kaybeden_adet += 1
+                tutar = float(str(r[1]).replace(',','.').strip())
+                kaybeden_yatirim += tutar
+                kaybeden_zarar += tutar
+                
+    genel_html = f"""
+    <table style="width:100%; text-align:center; border-collapse: collapse; margin-bottom: 30px; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+        <tr style="background: linear-gradient(to right, #1a202c, #2d3748); color: #a0aec0; font-size: 16px;">
+            <th style="padding: 15px; border-bottom: 2px solid #4a5568;">DURUM</th>
+            <th style="padding: 15px; border-bottom: 2px solid #4a5568;">TOPLAM MAÇ</th>
+            <th style="padding: 15px; border-bottom: 2px solid #4a5568;">TOPLAM YATIRIM</th>
+            <th style="padding: 15px; border-bottom: 2px solid #4a5568;">NET KÂR / ZARAR</th>
+        </tr>
+        <tr style="background-color: rgba(0, 255, 204, 0.05); border-bottom: 1px solid #2d3748;">
+            <td style="padding: 15px; color: #00ffcc; font-weight: 900; font-size: 18px;">✅ KAZANAN</td>
+            <td style="padding: 15px; color: #e2e8f0; font-weight: bold; font-size: 18px;">{kazanan_adet}</td>
+            <td style="padding: 15px; color: #e2e8f0; font-size: 16px;">{kazanan_yatirim:.2f} ₺</td>
+            <td style="padding: 15px; color: #00ffcc; font-weight: 900; font-size: 18px;">+{kazanan_kar:.2f} ₺</td>
+        </tr>
+        <tr style="background-color: rgba(255, 51, 102, 0.05);">
+            <td style="padding: 15px; color: #ff3366; font-weight: 900; font-size: 18px;">❌ KAYBEDEN</td>
+            <td style="padding: 15px; color: #e2e8f0; font-weight: bold; font-size: 18px;">{kaybeden_adet}</td>
+            <td style="padding: 15px; color: #e2e8f0; font-size: 16px;">{kaybeden_yatirim:.2f} ₺</td>
+            <td style="padding: 15px; color: #ff3366; font-weight: 900; font-size: 18px;">-{kaybeden_zarar:.2f} ₺</td>
+        </tr>
+    </table>
+    """
+    st.markdown(genel_html, unsafe_allow_html=True)
+    
     st.markdown("### 💎 PAZAR BAZLI KÂR/ZARAR (ROI) ANALİZİ")
     ai_stats = []
     for r in all_vals:
