@@ -100,7 +100,6 @@ def load_and_train_ml_model():
             r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=3)
             if r.status_code == 200:
                 df = pd.read_csv(io.StringIO(r.text))
-                # HTR (İlk Yarı Sonucu) veritabanına eklendi
                 if 'B365H' in df.columns: 
                     dfs.append(df[['B365H', 'B365D', 'B365A', 'FTR', 'FTHG', 'FTAG', 'HTR']].dropna())
         except: pass
@@ -129,12 +128,10 @@ def load_and_train_ml_model():
     rf_gol_35.fit(X, y_gol_35, sample_weight=weights)
     rf_kg.fit(X, y_kg, sample_weight=weights)
     
-    # HATA ÇÖZÜMÜ BURADA: Doğru değişken isimleri döndürüldü
     return df_train, rf_taraf, rf_gol_25, rf_gol_15, rf_gol_35, rf_kg
 
 df_history, model_taraf, model_gol25, model_gol15, model_gol35, model_kg = load_and_train_ml_model()
 
-# API KREDİ KALKANI: Skorlar 30 dakika boyunca önbellekte kalır
 @st.cache_data(ttl=1800, show_spinner=False)
 def get_cached_scores(api_key, lig):
     url = f"https://api.the-odds-api.com/v4/sports/{lig}/scores/?apiKey={api_key.strip()}&daysFrom=3"
@@ -616,78 +613,61 @@ with tab3:
                         st.rerun()
                     else: st.info("Maçlar henüz bitmemiş.")
 
-# YEPYENİ 6. SEKME: SADECE GEÇMİŞ İSTATİSTİKLERE DAYALI İY/MS RADARI
+# YEPYENİ 6. SEKME: %100 ÇEVRİMDIŞI VE MANUEL İY/MS RADARI
 with tab6:
-    st.markdown("### ⏱️ KESKİN NİŞANCI: İY/MS RADARI")
-    st.markdown("<p style='color:#a0aec0;'>Gözüne kestirdiğin maçı seç, geçmiş 4 yılda bu oranlara sahip maçlarda en çok hangi İY/MS senaryosunun geldiğini somut rakamlarla gör. (Sıfır yorum, sadece istatistik)</p>", unsafe_allow_html=True)
+    st.markdown("### ⏱️ KESKİN NİŞANCI: İY/MS RADARI (TAMAMEN MANUEL)")
+    st.markdown("<p style='color:#a0aec0;'>Gözüne kestirdiğin maçın ana İddaa oranlarını (MS1, MS0, MS2) elle gir. Sistem API'ye hiç bağlanmadan 4 yıllık dev arşivi tarasın ve bu oranlarla geçmişte en çok hangi İY/MS senaryosunun geldiğini sana somut rakamlarla söylesin.</p>", unsafe_allow_html=True)
 
-    if len(st.session_state.raw_api_data) == 0:
-        st.info("Lütfen önce 1. Sekmeden günün piyasa verilerini çekin.")
-    elif df_history is None:
-        st.error("🚨 Makine Öğrenimi veritabanı yüklenemedi.")
+    if df_history is None:
+        st.error("🚨 Makine Öğrenimi veritabanı yüklenemedi. Biraz bekleyip sayfayı yenileyin.")
     else:
-        mac_isimleri_6 = [f"{m['home_team']} vs {m['away_team']} ({m['kendi_ligi']})" for m in st.session_state.raw_api_data]
-        secilen_mac_str_6 = st.selectbox("🎯 Hangi Maçın Geçmiş İY/MS İstatistiklerini Görmek İstiyorsun?:", ["Seçim Yapın..."] + mac_isimleri_6, key="iyms_mac_secim")
-
-        if secilen_mac_str_6 != "Seçim Yapın...":
-            secilen_m = next(m for m in st.session_state.raw_api_data if f"{m['home_team']} vs {m['away_team']} ({m['kendi_ligi']})" == secilen_mac_str_6)
-
-            # API'den güncel MS oranlarını alıyoruz
-            oto_h, oto_d, oto_a = 2.10, 3.20, 2.80
-            try:
-                for bkm in secilen_m.get('bookmakers', []):
-                    for mkt in bkm.get('markets', []):
-                        if mkt['key'] == 'h2h':
-                            for out in mkt['outcomes']:
-                                if out['name'] == secilen_m['home_team']: oto_h = out['price']
-                                elif out['name'] == secilen_m['away_team']: oto_a = out['price']
-                                elif out['name'] == 'Draw': oto_d = out['price']
-            except: pass
-
-            st.markdown("<div class='manual-panel'>", unsafe_allow_html=True)
-            st.markdown("Bu maçın güncel İddaa oranları aşağıda otomatik dolduruldu. İstersen oranları kendin de değiştirebilirsin:")
-            c_h2, c_d2, c_a2 = st.columns(3)
-            with c_h2: man_h = st.number_input("MS 1 Oranı:", min_value=1.01, value=float(oto_h), step=0.05, key="man_h")
-            with c_d2: man_d = st.number_input("MS 0 Oranı:", min_value=1.01, value=float(oto_d), step=0.05, key="man_d")
-            with c_a2: man_a = st.number_input("MS 2 Oranı:", min_value=1.01, value=float(oto_a), step=0.05, key="man_a")
-            
+        st.markdown("<div class='manual-panel'>", unsafe_allow_html=True)
+        c_h2, c_d2, c_a2 = st.columns(3)
+        with c_h2: man_h = st.number_input("Manuel MS 1 Oranı:", min_value=1.01, value=2.10, step=0.05, key="man_h_6")
+        with c_d2: man_d = st.number_input("Manuel MS 0 Oranı:", min_value=1.01, value=3.20, step=0.05, key="man_d_6")
+        with c_a2: man_a = st.number_input("Manuel MS 2 Oranı:", min_value=1.01, value=2.80, step=0.05, key="man_a_6")
+        
+        c_sen, c_tol = st.columns(2)
+        with c_sen:
             senaryolar = ["Tümünü Sırala", "1/1", "1/0", "1/2", "0/1", "0/0", "0/2", "2/1", "2/0", "2/2"]
             hedef_iyms = st.selectbox("📌 Özellikle Görmek İstediğin Bir Senaryo Var Mı?", senaryolar)
-            st.markdown("</div><br>", unsafe_allow_html=True)
+        with c_tol:
+            tolerans = st.number_input("Oran Esnekliği (± Tolerans):", min_value=0.00, value=0.10, step=0.05)
+        st.markdown("</div><br>", unsafe_allow_html=True)
 
-            if st.button("🔍 GEÇMİŞ İY/MS İSTATİSTİKLERİNİ GETİR", use_container_width=True):
-                with st.spinner(f"Son 4 yıldaki [{man_h} - {man_d} - {man_a}] oranlı maçlar taranıyor..."):
-                    tolerans = 0.15
-                    mask = (
-                        (df_history['B365H'] >= man_h - tolerans) & (df_history['B365H'] <= man_h + tolerans) &
-                        (df_history['B365A'] >= man_a - tolerans) & (df_history['B365A'] <= man_a + tolerans)
-                    )
-                    benzer_maclar = df_history[mask].copy()
-                    benzer_maclar = benzer_maclar.dropna(subset=['HTR', 'FTR'])
-                    toplam_benzer_mac = len(benzer_maclar)
+        if st.button("🔍 API KULLANMADAN GEÇMİŞİ TARA", use_container_width=True):
+            with st.spinner(f"Son 4 yıldaki [{man_h} - {man_d} - {man_a}] oranlı maçlar taranıyor..."):
+                mask = (
+                    (df_history['B365H'] >= man_h - tolerans) & (df_history['B365H'] <= man_h + tolerans) &
+                    (df_history['B365A'] >= man_a - tolerans) & (df_history['B365A'] <= man_a + tolerans) &
+                    (df_history['B365D'] >= man_d - tolerans) & (df_history['B365D'] <= man_d + tolerans)
+                )
+                benzer_maclar = df_history[mask].copy()
+                benzer_maclar = benzer_maclar.dropna(subset=['HTR', 'FTR'])
+                toplam_benzer_mac = len(benzer_maclar)
 
-                    if toplam_benzer_mac < 10:
-                        st.warning(f"🚨 Geçmişte bu oran kalıbına sahip yeterli maç oynanmamış (Sadece {toplam_benzer_mac} maç bulundu). Sağlıklı bir istatistik verilemiyor.")
-                    else:
-                        st.success(f"✅ Geçmiş 4 yılda tam **{toplam_benzer_mac}** adet maç bu oran kalıbıyla oynanmış. İşte somut sonuçları:")
-                        
-                        ht_map = {'H': '1', 'D': '0', 'A': '2'}
-                        ft_map = {'H': '1', 'D': '0', 'A': '2'}
-                        benzer_maclar['IYMS_Kombinasyon'] = benzer_maclar['HTR'].map(ht_map) + "/" + benzer_maclar['FTR'].map(ft_map)
-                        
-                        sonuclar = benzer_maclar['IYMS_Kombinasyon'].value_counts().reset_index()
-                        sonuclar.columns = ['İY / MS', 'Kaç Kere Geldi']
-                        sonuclar['Gelme İhtimali (%)'] = (sonuclar['Kaç Kere Geldi'] / toplam_benzer_mac) * 100
-                        sonuclar['Gelme İhtimali (%)'] = sonuclar['Gelme İhtimali (%)'].apply(lambda x: f"% {x:.1f}")
+                if toplam_benzer_mac < 10:
+                    st.warning(f"🚨 Geçmişte bu oran kalıbına sahip yeterli maç oynanmamış (Sadece {toplam_benzer_mac} maç bulundu). Daha sağlıklı bir istatistik için 'Oran Esnekliği' (Tolerans) değerini 0.15 veya 0.20 yapıp tekrar deneyebilirsin.")
+                else:
+                    st.success(f"✅ Geçmiş 4 yılda tam **{toplam_benzer_mac}** adet maç bu oran kalıbıyla oynanmış. İşte somut sonuçları:")
+                    
+                    ht_map = {'H': '1', 'D': '0', 'A': '2'}
+                    ft_map = {'H': '1', 'D': '0', 'A': '2'}
+                    benzer_maclar['IYMS_Kombinasyon'] = benzer_maclar['HTR'].map(ht_map) + "/" + benzer_maclar['FTR'].map(ft_map)
+                    
+                    sonuclar = benzer_maclar['IYMS_Kombinasyon'].value_counts().reset_index()
+                    sonuclar.columns = ['İY / MS', 'Kaç Kere Geldi']
+                    sonuclar['Gelme İhtimali (%)'] = (sonuclar['Kaç Kere Geldi'] / toplam_benzer_mac) * 100
+                    sonuclar['Gelme İhtimali (%)'] = sonuclar['Gelme İhtimali (%)'].apply(lambda x: f"% {x:.1f}")
 
-                        if hedef_iyms != "Tümünü Sırala":
-                            hedef_veri = sonuclar[sonuclar['İY / MS'] == hedef_iyms]
-                            if not hedef_veri.empty:
-                                kac_kere = hedef_veri.iloc[0]['Kaç Kere Geldi']
-                                yuzde = hedef_veri.iloc[0]['Gelme İhtimali (%)']
-                                st.markdown(f"<div style='background:rgba(255,51,102,0.1); border:1px solid #ff3366; padding:15px; border-radius:8px; text-align:center; margin-bottom:20px;'><h3 style='margin:0; color:#ff3366;'>Senin Seçimin: {hedef_iyms}</h3><p style='margin-top:10px; font-size:18px;'>Geçmişte <b>{toplam_benzer_mac}</b> maçın <b>{kac_kere}</b> tanesinde senin hedefin gelmiş (<b>{yuzde}</b>).</p></div>", unsafe_allow_html=True)
-                            else:
-                                st.warning(f"Geçmişteki {toplam_benzer_mac} maçın HİÇBİRİ {hedef_iyms} olarak bitmemiş!")
+                    if hedef_iyms != "Tümünü Sırala":
+                        hedef_veri = sonuclar[sonuclar['İY / MS'] == hedef_iyms]
+                        if not hedef_veri.empty:
+                            kac_kere = hedef_veri.iloc[0]['Kaç Kere Geldi']
+                            yuzde = hedef_veri.iloc[0]['Gelme İhtimali (%)']
+                            st.markdown(f"<div style='background:rgba(255,51,102,0.1); border:1px solid #ff3366; padding:15px; border-radius:8px; text-align:center; margin-bottom:20px;'><h3 style='margin:0; color:#ff3366;'>Senin Seçimin: {hedef_iyms}</h3><p style='margin-top:10px; font-size:18px;'>Geçmişte <b>{toplam_benzer_mac}</b> maçın <b>{kac_kere}</b> tanesinde senin hedefin gelmiş (<b>{yuzde}</b>).</p></div>", unsafe_allow_html=True)
+                        else:
+                            st.warning(f"Geçmişteki {toplam_benzer_mac} maçın HİÇBİRİ {hedef_iyms} olarak bitmemiş!")
 
-                        st.markdown("### 🏆 En Çok Gelen İY/MS Liderlik Tablosu")
-                        st.dataframe(sonuclar, use_container_width=True, hide_index=True)
+                    st.markdown("### 🏆 En Çok Gelen İY/MS Liderlik Tablosu")
+                    st.dataframe(sonuclar, use_container_width=True, hide_index=True)
