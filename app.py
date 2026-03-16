@@ -66,7 +66,6 @@ if 'lokal_kasa' not in st.session_state:
 
 if 'raw_api_data' not in st.session_state: st.session_state.raw_api_data = []
 
-# --- YENİ EKLENEN ALT LİGLER VE MADENLER ---
 API_LEAGUES = {
     "İngiltere Premier Lig": "soccer_epl", 
     "İngiltere Championship": "soccer_efl_championship",
@@ -87,9 +86,8 @@ API_LEAGUES = {
 
 @st.cache_data(ttl=86400, show_spinner=False)
 def load_and_train_ml_model():
-    # Makinenin beynine Avrupa'nın hem majör hem alt ligleri yükleniyor
     leagues_codes = ['E0', 'E1', 'E2', 'E3', 'T1', 'D1', 'SP1', 'I1', 'F1', 'N1', 'B1', 'P1', 'SC0', 'G1']
-    seasons = ['2223', '2324', '2425', '2526'] # Son 4 Sezon (2022'den 2026'ya)
+    seasons = ['2223', '2324', '2425', '2526']
     urls = []
     
     for code in leagues_codes:
@@ -102,14 +100,14 @@ def load_and_train_ml_model():
             r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=3)
             if r.status_code == 200:
                 df = pd.read_csv(io.StringIO(r.text))
+                # HTR (İlk Yarı Sonucu) veritabanına eklendi
                 if 'B365H' in df.columns: 
-                    dfs.append(df[['B365H', 'B365D', 'B365A', 'FTR', 'FTHG', 'FTAG']].dropna())
+                    dfs.append(df[['B365H', 'B365D', 'B365A', 'FTR', 'FTHG', 'FTAG', 'HTR']].dropna())
         except: pass
     
     if not dfs: return None, None, None, None, None, None
     df_train = pd.concat(dfs, ignore_index=True)
     
-    # 4 Yıllık dev veri havuzunu taze tutmak için ağırlık (Exponential Decay)
     weights = np.linspace(0.3, 1.5, len(df_train))
     
     X = df_train[['B365H', 'B365D', 'B365A']]
@@ -131,9 +129,20 @@ def load_and_train_ml_model():
     rf_gol_35.fit(X, y_gol_35, sample_weight=weights)
     rf_kg.fit(X, y_kg, sample_weight=weights)
     
+    # HATA ÇÖZÜMÜ BURADA: Doğru değişken isimleri döndürüldü
     return df_train, rf_taraf, rf_gol_25, rf_gol_15, rf_gol_35, rf_kg
 
 df_history, model_taraf, model_gol25, model_gol15, model_gol35, model_kg = load_and_train_ml_model()
+
+# API KREDİ KALKANI: Skorlar 30 dakika boyunca önbellekte kalır
+@st.cache_data(ttl=1800, show_spinner=False)
+def get_cached_scores(api_key, lig):
+    url = f"https://api.the-odds-api.com/v4/sports/{lig}/scores/?apiKey={api_key.strip()}&daysFrom=3"
+    try:
+        resp = requests.get(url, timeout=5).json()
+        if isinstance(resp, list): return resp
+    except: pass
+    return []
 
 def check_match_result_optimized(home, away, target_market, lig_skor_havuzu):
     if not lig_skor_havuzu: return "BEKLİYOR", "-"
@@ -162,10 +171,10 @@ def check_match_result_optimized(home, away, target_market, lig_skor_havuzu):
 st.markdown("<h1 style='text-align:center; color:#ff3366; font-size:52px; margin-bottom:0; text-shadow: 0 0 20px rgba(255, 51, 102, 0.4);'>🐺 V3004 APEX GLOBAL</h1>", unsafe_allow_html=True)
 st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>4 Yıllık Derin Arşiv | Alt Lig (Karanlık Maden) Tarayıcısı</p><br>", unsafe_allow_html=True)
 
-tab1, tab5, tab2, tab4, tab3 = st.tabs(["📡 1. PİYASA TARAMASI", "📊 5. GEÇMİŞ ORAN ARŞİVİ", "🧠 2. DERİN ANALİZ", "🤖 3. OTO-PİLOT", "📈 4. BİLANÇO"])
+# 6. Sekme Eklendi
+tab1, tab5, tab2, tab4, tab3, tab6 = st.tabs(["📡 1. PİYASA TARAMASI", "📊 5. GEÇMİŞ ORAN ARŞİVİ", "🧠 2. DERİN ANALİZ", "🤖 3. OTO-PİLOT", "📈 4. BİLANÇO", "⏱️ 6. İY/MS RADARI"])
 
 c1, c2 = st.columns([2, 1])
-# Tüm ligler varsayılan olarak seçili gelsin ki makine tam kapasite çalışsın
 with c1: secilen_ligler = st.multiselect("Ligleri Seçin:", list(API_LEAGUES.keys()), default=list(API_LEAGUES.keys())[:8])
 with c2: api_key = st.text_input("The-Odds-API Anahtarı:", value=st.secrets.get("API_KEY", ""), type="password", key="odds_api_key")
 
@@ -173,7 +182,7 @@ with tab1:
     if st.button("📡 GÜNÜN MAÇLARINI ÇEK", use_container_width=True):
         if not api_key: st.error("API Anahtarı eksik!")
         else:
-            with st.spinner("Büyük Veri (Big Data) radarı aktif... İngiltere alt liglerinden İskoçya'ya tüm oranlar çekiliyor..."):
+            with st.spinner("Büyük Veri radarı aktif... Tüm oranlar çekiliyor..."):
                 toplanan_maclar = []
                 now_utc = datetime.datetime.now(datetime.timezone.utc)
                 now_tr = now_utc + datetime.timedelta(hours=3)
@@ -191,15 +200,14 @@ with tab1:
                                     toplanan_maclar.append(m)
                     except: pass
                 st.session_state.raw_api_data = toplanan_maclar
-                st.success(f"✅ Sistem Hazır. Toplam {len(toplanan_maclar)} dev eşleşme yakalandı.")
+                st.success(f"✅ Sistem Hazır. Toplam {len(toplanan_maclar)} eşleşme yakalandı.")
 
 with tab5:
     st.markdown("### 📊 GEÇMİŞ ORAN ARŞİVİ (4 YILLIK BÜYÜK VERİ)")
-    st.markdown("<p style='color:#a0aec0;'>Makinenin beyninde 2022'den 2026'ya kadar oynanmış on binlerce Avrupa maçı var. Merak ettiğin oranı yaz, geçmiş yıllarda bu oran açıldığında ne olmuş saniyeler içinde gör.</p>", unsafe_allow_html=True)
     
     st.markdown("<div class='manual-panel'>", unsafe_allow_html=True)
     mac_isimleri_5 = ["Manuel Oran Gireceğim"] + [f"{m['home_team']} vs {m['away_team']} ({m['kendi_ligi']})" for m in st.session_state.raw_api_data]
-    secilen_mac_str_5 = st.selectbox("🎯 İstersen Günün Maçlarından Birini Seç (Oranlar Otomatik Dolar):", mac_isimleri_5)
+    secilen_mac_str_5 = st.selectbox("🎯 İstersen Günün Maçlarından Birini Seç:", mac_isimleri_5)
     
     oto_h, oto_d, oto_a = 2.10, 3.20, 2.80
     if secilen_mac_str_5 != "Manuel Oran Gireceğim":
@@ -223,9 +231,9 @@ with tab5:
 
     if st.button("🔍 4 YILLIK ARŞİVİ TARA (BİG DATA)", use_container_width=True):
         if df_history is None:
-            st.error("Makine Öğrenimi veritabanı (Avrupa arşivi) yüklenemedi. Biraz bekleyip tekrar deneyin.")
+            st.error("Makine Öğrenimi veritabanı yüklenemedi.")
         else:
-            with st.spinner(f"Veritabanındaki {len(df_history)} maçta [{s_h} - {s_d} - {s_a}] kalıbı aranıyor..."):
+            with st.spinner(f"Veritabanında oran aranıyor..."):
                 mask = (
                     (df_history['B365H'] >= s_h - tolerans) & (df_history['B365H'] <= s_h + tolerans) &
                     (df_history['B365D'] >= s_d - tolerans) & (df_history['B365D'] <= s_d + tolerans) &
@@ -241,7 +249,7 @@ with tab5:
                     ust25_yuzde = (len(filtered_df[(filtered_df['FTHG'] + filtered_df['FTAG']) > 2.5]) / toplam_mac) * 100
                     kgvar_yuzde = (len(filtered_df[(filtered_df['FTHG'] > 0) & (filtered_df['FTAG'] > 0)]) / toplam_mac) * 100
                     
-                    st.success(f"🎯 Veritabanında (±{tolerans} esneklikle) bu oran kalıbına sahip tam **{toplam_mac} maç** bulundu! İşte 4 yıllık sonuçları:")
+                    st.success(f"🎯 Veritabanında tam **{toplam_mac} maç** bulundu! Sonuçları:")
                     
                     c_r1, c_r2, c_r3, c_r4, c_r5 = st.columns(5)
                     with c_r1: st.markdown(f"<div class='stat-box'><b>MS 1 İhtimali</b><span>%{ms1_yuzde:.1f}</span></div>", unsafe_allow_html=True)
@@ -249,9 +257,8 @@ with tab5:
                     with c_r3: st.markdown(f"<div class='stat-box'><b>MS 2 İhtimali</b><span style='color:#ff3366;'>%{ms2_yuzde:.1f}</span></div>", unsafe_allow_html=True)
                     with c_r4: st.markdown(f"<div class='stat-box'><b>2.5 ÜST İhtimali</b><span>%{ust25_yuzde:.1f}</span></div>", unsafe_allow_html=True)
                     with c_r5: st.markdown(f"<div class='stat-box'><b>KG VAR İhtimali</b><span>%{kgvar_yuzde:.1f}</span></div>", unsafe_allow_html=True)
-
                 else:
-                    st.warning(f"🚨 4 yıllık dev arşivde bile (±{tolerans} esneklikle) [{s_h} - {s_d} - {s_a}] kalıbına uyan MAÇ BULUNAMADI. Esnekliği (± 0.10) yapıp tekrar taratın.")
+                    st.warning("MAÇ BULUNAMADI.")
 
 with tab2:
     if len(st.session_state.raw_api_data) == 0:
@@ -269,10 +276,8 @@ with tab2:
             st.markdown(f"<h3 style='color:#ff3366;'>🔬 Aşama 1: xG (Gol Beklentisi) Veri Girişi</h3>", unsafe_allow_html=True)
             
             c_f1, c_f2 = st.columns(2)
-            with c_f1:
-                min_oran_manuel = st.number_input("Minimum Oran Filtresi:", min_value=1.00, value=1.50, step=0.10)
-            with c_f2:
-                guven_esigi = st.slider("Güvenlik Eşiği Belirle (%):", min_value=25, max_value=90, value=40, step=1)
+            with c_f1: min_oran_manuel = st.number_input("Minimum Oran Filtresi:", min_value=1.00, value=1.50, step=0.10)
+            with c_f2: guven_esigi = st.slider("Güvenlik Eşiği Belirle (%):", min_value=25, max_value=90, value=40, step=1)
             
             st.divider()
 
@@ -372,7 +377,6 @@ with tab2:
                             else: temp_oran = 1.50
                         
                         if temp_oran < min_oran_manuel: continue
-
                         if pazar == "MS 0" and (h_odd < 1.70 or a_odd < 1.70): continue 
                         if pazar == "MS 1" and (ev_xg_proxy < dep_xg_proxy): continue 
                         if pazar == "MS 2" and (dep_xg_proxy < ev_xg_proxy): continue 
@@ -402,14 +406,13 @@ with tab2:
                                 <span style='font-size:13px; color:#a0aec0;'>[xG/Poisson İhtimali: %{int(p_prob*100)} | ML Ağ İhtimali: %{int(ml_prob*100)}]</span>
                             </div>
                             """
-
                         secilen_mac['gecen_hedefler'] = gecen_hedefler
                         secilen_mac['ai_rapor'] = rapor
                         st.session_state.aktif_mac = secilen_mac 
-                        st.success(f"🐺 Radar tamamlandı! Çöpler ve illüzyonlar ayıklandı.")
+                        st.success(f"🐺 Radar tamamlandı!")
                     else:
                         st.session_state.aktif_mac = None
-                        st.error(f"🚨 UYARI: Bu maç filtreleri geçemedi. Uzak durulmalı!")
+                        st.error(f"🚨 UYARI: Bu maç filtreleri geçemedi.")
 
         if 'aktif_mac' in st.session_state and st.session_state.aktif_mac is not None:
             m = st.session_state.aktif_mac
@@ -436,10 +439,8 @@ with tab2:
             manuel_tutar = st.number_input("💵 İşlem Tutarı (Birim/Unit):", min_value=10.0, value=100.0, step=10.0, key="tutar_tekli")
             
             c_btn_real, c_btn_shadow = st.columns(2)
-            with c_btn_real:
-                btn_gercek = st.button("🚀 ONAYLA (Gerçek Kasa)", use_container_width=True, key="onay_gercek_tek")
-            with c_btn_shadow:
-                btn_sanal = st.button("👻 GÖLGE MODU (Eğitim)", use_container_width=True, key="onay_sanal_tek")
+            with c_btn_real: btn_gercek = st.button("🚀 ONAYLA (Gerçek Kasa)", use_container_width=True, key="onay_gercek_tek")
+            with c_btn_shadow: btn_sanal = st.button("👻 GÖLGE MODU (Eğitim)", use_container_width=True, key="onay_sanal_tek")
                 
             if btn_gercek or btn_sanal:
                 yatirilacak_tutar = manuel_tutar if btn_gercek else 0.0
@@ -464,19 +465,13 @@ with tab2:
 
 with tab4:
     st.markdown("### 🤖 OTO-PİLOT (APEX V3004)")
-    st.markdown("<p style='color:#a0aec0;'>Makinenin beyninde artık İngiltere Alt Liglerinden, İskoçya'ya kadar 15 lig ve 4 yıllık dev bir veri var. Büyük av başlıyor.</p>", unsafe_allow_html=True)
-    
     c_oto1, c_oto2 = st.columns(2)
-    with c_oto1:
-        oto_min_oran = st.number_input("Otonom Minimum Oran Sınırı:", min_value=1.0, value=1.50, step=0.1)
-    with c_oto2:
-        oto_esik = st.slider("APEX Otomatik Onay Eşiği (%):", min_value=30, max_value=90, value=45, step=1)
+    with c_oto1: oto_min_oran = st.number_input("Otonom Minimum Oran Sınırı:", min_value=1.0, value=1.50, step=0.1)
+    with c_oto2: oto_esik = st.slider("APEX Otomatik Onay Eşiği (%):", min_value=30, max_value=90, value=45, step=1)
     
     if st.button("🚀 BÜTÜN LİGLERDE APEX TARAMASI YAP", use_container_width=True):
-        if len(st.session_state.raw_api_data) == 0:
-            st.warning("Önce günün maçlarını çekmelisin!")
-        elif model_taraf is None:
-            st.error("Makine Öğrenimi aktif değil.")
+        if len(st.session_state.raw_api_data) == 0: st.warning("Önce günün maçlarını çekmelisin!")
+        elif model_taraf is None: st.error("Makine Öğrenimi aktif değil.")
         else:
             with st.spinner(f"Global Veri Ağı Devrede..."):
                 oto_oynanan_maclar = 0
@@ -484,9 +479,7 @@ with tab4:
                 if all_vals:
                     for r in all_vals:
                         if len(r) > 10 and r[3] in ["Bekliyor", "Sanal_Bekliyor"]:
-                            mac_ismi = r[8].strip()
-                            bahis_turu = r[10].strip()
-                            oynanmis_kombinasyonlar.add(f"{mac_ismi}_{bahis_turu}")
+                            oynanmis_kombinasyonlar.add(f"{r[8].strip()}_{r[10].strip()}")
                 
                 for m in st.session_state.raw_api_data:
                     h_odd, d_odd, a_odd = 0, 0, 0
@@ -524,8 +517,7 @@ with tab4:
                         elif pazar == "MS 2": temp_oran = a_odd
                         else: 
                             if prob > 0.05:
-                                adil_oran = 1.0 / prob
-                                temp_oran = round(adil_oran * 0.93, 2)
+                                temp_oran = round((1.0 / prob) * 0.93, 2)
                                 if temp_oran < 1.01: temp_oran = 1.01
                             else: temp_oran = 1.50
                         
@@ -540,21 +532,12 @@ with tab4:
                             
                     for pazar, prob, gercek_oran in bulunan_hedefler:
                         if sheet:
-                            ligler = m['sport_key']
-                            problar = f"{prob:.3f}"
-                            yatirilacak_tutar = 100.0 
-                            durum_text = "Sanal_Bekliyor"
-                            
-                            sheet.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), yatirilacak_tutar, f"{gercek_oran:.2f}", durum_text, "0", st.session_state.lokal_kasa, st.session_state.bekleyen_tutar, st.session_state.baslangic_kasa, isimler, ligler, pazar, problar, f"{gercek_oran:.2f}"])
-                            
+                            sheet.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), 100.0, f"{gercek_oran:.2f}", "Sanal_Bekliyor", "0", st.session_state.lokal_kasa, st.session_state.bekleyen_tutar, st.session_state.baslangic_kasa, isimler, m['sport_key'], pazar, f"{prob:.3f}", f"{gercek_oran:.2f}"])
                             oynanmis_kombinasyonlar.add(f"{isimler}_{pazar}")
                             oto_oynanan_maclar += 1
-                            st.write(f"🐺 **APEX ONAYLI:** **{isimler}** ➜ {pazar} (Oran: **{gercek_oran:.2f}**)")
                 
-                if oto_oynanan_maclar > 0:
-                    st.success(f"🤖 GÖREV TAMAMLANDI! {oto_oynanan_maclar} adet değerli oran portföye eklendi.")
-                else:
-                    st.warning(f"Sistem taramayı bitirdi. YENİ maç kalmadı.")
+                if oto_oynanan_maclar > 0: st.success(f"🤖 {oto_oynanan_maclar} adet oran eklendi.")
+                else: st.warning(f"Yeni maç kalmadı.")
 
 with tab3:
     st.markdown("<h2 style='color:#d4af37;'>💼 Kuantum Fon Bilanço & Analitik</h2>", unsafe_allow_html=True)
@@ -573,22 +556,16 @@ with tab3:
         if st.button("🤖 OTONOM DENETÇİYİ ÇALIŞTIR", use_container_width=True, key="otonom_denetci_btn"):
             if not api_key: st.error("API Anahtarı eksik!")
             else:
-                with st.spinner("Skorlar denetleniyor (Toplu İndirme Devrede)..."):
+                with st.spinner("Skorlar denetleniyor (Cache Sistemi Devrede)..."):
                     bekleyen_ligler = set()
                     for r in all_vals:
                         if len(r) > 12 and r[3] in ["Bekliyor", "Sanal_Bekliyor"]:
-                            ligler_str = r[9].split('#')
-                            for l in ligler_str:
+                            for l in r[9].split('#'):
                                 if l.strip(): bekleyen_ligler.add(l.strip())
                     
                     skor_havuzu = {}
                     for lig in bekleyen_ligler:
-                        try:
-                            url = f"https://api.the-odds-api.com/v4/sports/{lig}/scores/?apiKey={api_key.strip()}&daysFrom=3"
-                            resp = requests.get(url).json()
-                            if isinstance(resp, list):
-                                skor_havuzu[lig] = resp
-                        except: pass
+                        skor_havuzu[lig] = get_cached_scores(api_key, lig)
 
                     updates_made = False
                     for idx, r in enumerate(all_vals):
@@ -597,20 +574,12 @@ with tab3:
                             b_tutar = float(str(r[1]).replace(',','.'))
                             b_oran = float(str(r[2]).replace(',','.'))
                             
-                            maclar = r[8].split('#')
-                            ligler = r[9].split('#')
-                            pazarlar = r[10].split('#')
-                            
-                            durumlar = []
-                            skorlar = []
-                            for m_isim, m_lig, m_pazar in zip(maclar, ligler, pazarlar):
+                            durumlar, skorlar = [], []
+                            for m_isim, m_lig, m_pazar in zip(r[8].split('#'), r[9].split('#'), r[10].split('#')):
                                 if ' vs ' in m_isim:
                                     ev, dep = m_isim.split(' vs ')
-                                    ilgili_havuz = skor_havuzu.get(m_lig.strip(), [])
-                                    res, skor = check_match_result_optimized(ev, dep, m_pazar.strip(), ilgili_havuz) 
-                                else:
-                                    res, skor = "BEKLİYOR", "-"
-                                    
+                                    res, skor = check_match_result_optimized(ev, dep, m_pazar.strip(), skor_havuzu.get(m_lig.strip(), [])) 
+                                else: res, skor = "BEKLİYOR", "-"
                                 durumlar.append(res)
                                 skorlar.append(skor)
                             
@@ -622,10 +591,8 @@ with tab3:
                             if nihai_sonuc != "BEKLİYOR":
                                 updates_made = True
                                 sheet.update_cell(idx+1, 4, "Bekliyor_Kapandı" if not is_sanal else "Sanal_Kapandı")
-                                
                                 net_kar = (b_tutar * b_oran) - b_tutar if nihai_sonuc == "KAZANDI" else -b_tutar
                                 k_z_metni = f"+{net_kar:.2f}" if net_kar > 0 else f"{net_kar:.2f}"
-                                
                                 yeni_satir = [datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), b_tutar, b_oran]
                                 
                                 if nihai_sonuc == "KAZANDI":
@@ -643,98 +610,84 @@ with tab3:
                                 yeni_satir.extend([st.session_state.lokal_kasa, st.session_state.bekleyen_tutar, st.session_state.baslangic_kasa])
                                 yeni_satir.extend([r[8] + f" (Skorlar: {' | '.join(skorlar)})"] + r[9:])
                                 sheet.append_row(yeni_satir)
+                    
                     if updates_made:
-                        st.success("✅ Maçlar sonuçlandırıldı ve Kâr/Zarar hanesine işlendi!")
+                        st.success("✅ Maçlar sonuçlandırıldı!")
                         st.rerun()
                     else: st.info("Maçlar henüz bitmemiş.")
 
-    bekleyenler = [(idx+1, r) for idx, r in enumerate(all_vals) if len(r) > 3 and r[3] in ["Bekliyor", "Sanal_Bekliyor"]]
-    if not bekleyenler: st.info("Bekleyen yatırımınız veya sanal eğitim işleminiz yok.")
+# YEPYENİ 6. SEKME: SADECE GEÇMİŞ İSTATİSTİKLERE DAYALI İY/MS RADARI
+with tab6:
+    st.markdown("### ⏱️ KESKİN NİŞANCI: İY/MS RADARI")
+    st.markdown("<p style='color:#a0aec0;'>Gözüne kestirdiğin maçı seç, geçmiş 4 yılda bu oranlara sahip maçlarda en çok hangi İY/MS senaryosunun geldiğini somut rakamlarla gör. (Sıfır yorum, sadece istatistik)</p>", unsafe_allow_html=True)
+
+    if len(st.session_state.raw_api_data) == 0:
+        st.info("Lütfen önce 1. Sekmeden günün piyasa verilerini çekin.")
+    elif df_history is None:
+        st.error("🚨 Makine Öğrenimi veritabanı yüklenemedi.")
     else:
-        for row_idx, r in bekleyenler:
-            is_sanal = (r[3] == "Sanal_Bekliyor")
-            b_tutar, b_oran = float(str(r[1]).replace(',','.').strip()), float(str(r[2]).replace(',','.').strip())
-            mac_isimleri = r[8].replace('#', ' | ') if len(r) > 10 else "Eski Format"
-            bahis_turleri = r[10].replace('#', ' | ') if len(r) > 10 else "Bilinmiyor"
-            border_color = "#4a5568" if is_sanal else "#00ffcc"
-            tutar_text = f"<span style='color:#a0aec0;'>{b_tutar:.0f} TL (Sanal Yatırım)</span>" if is_sanal else f"<span style='color:#00ffcc;'>{b_tutar:.0f} TL (Gerçek)</span>"
+        mac_isimleri_6 = [f"{m['home_team']} vs {m['away_team']} ({m['kendi_ligi']})" for m in st.session_state.raw_api_data]
+        secilen_mac_str_6 = st.selectbox("🎯 Hangi Maçın Geçmiş İY/MS İstatistiklerini Görmek İstiyorsun?:", ["Seçim Yapın..."] + mac_isimleri_6, key="iyms_mac_secim")
+
+        if secilen_mac_str_6 != "Seçim Yapın...":
+            secilen_m = next(m for m in st.session_state.raw_api_data if f"{m['home_team']} vs {m['away_team']} ({m['kendi_ligi']})" == secilen_mac_str_6)
+
+            # API'den güncel MS oranlarını alıyoruz
+            oto_h, oto_d, oto_a = 2.10, 3.20, 2.80
+            try:
+                for bkm in secilen_m.get('bookmakers', []):
+                    for mkt in bkm.get('markets', []):
+                        if mkt['key'] == 'h2h':
+                            for out in mkt['outcomes']:
+                                if out['name'] == secilen_m['home_team']: oto_h = out['price']
+                                elif out['name'] == secilen_m['away_team']: oto_a = out['price']
+                                elif out['name'] == 'Draw': oto_d = out['price']
+            except: pass
+
+            st.markdown("<div class='manual-panel'>", unsafe_allow_html=True)
+            st.markdown("Bu maçın güncel İddaa oranları aşağıda otomatik dolduruldu. İstersen oranları kendin de değiştirebilirsin:")
+            c_h2, c_d2, c_a2 = st.columns(3)
+            with c_h2: man_h = st.number_input("MS 1 Oranı:", min_value=1.01, value=float(oto_h), step=0.05, key="man_h")
+            with c_d2: man_d = st.number_input("MS 0 Oranı:", min_value=1.01, value=float(oto_d), step=0.05, key="man_d")
+            with c_a2: man_a = st.number_input("MS 2 Oranı:", min_value=1.01, value=float(oto_a), step=0.05, key="man_a")
             
-            st.markdown(f"<div style='background: #11161d; border-left: 4px solid {border_color}; padding:20px; border-radius:10px; margin-bottom:15px;'><b style='font-size:18px;'>Maçlar:</b> <span style='color:#e2e8f0;'>{mac_isimleri}</span><br><br><b style='font-size:16px;'>🎯 Tercih:</b> <span style='color:#ff3366; font-size:18px; font-weight:bold;'>{bahis_turleri}</span><br><br><b style='font-size:16px;'>Yatırım:</b> <span style='font-size:18px;'>{tutar_text}</span> &nbsp;|&nbsp; <b style='font-size:16px;'>Oran:</b> <span style='color:#d4af37; font-size:18px; font-weight:bold;'>{b_oran:.2f}</span></div>", unsafe_allow_html=True)
+            senaryolar = ["Tümünü Sırala", "1/1", "1/0", "1/2", "0/1", "0/0", "0/2", "2/1", "2/0", "2/2"]
+            hedef_iyms = st.selectbox("📌 Özellikle Görmek İstediğin Bir Senaryo Var Mı?", senaryolar)
+            st.markdown("</div><br>", unsafe_allow_html=True)
 
-    st.divider()
-    st.markdown("### 📊 GENEL PERFORMANS ÖZETİ (TÜM İŞLEMLER)")
-    kazanan_adet, kaybeden_adet = 0, 0
-    kazanan_yatirim, kaybeden_yatirim = 0.0, 0.0
-    kazanan_kar, kaybeden_zarar = 0.0, 0.0
+            if st.button("🔍 GEÇMİŞ İY/MS İSTATİSTİKLERİNİ GETİR", use_container_width=True):
+                with st.spinner(f"Son 4 yıldaki [{man_h} - {man_d} - {man_a}] oranlı maçlar taranıyor..."):
+                    tolerans = 0.15
+                    mask = (
+                        (df_history['B365H'] >= man_h - tolerans) & (df_history['B365H'] <= man_h + tolerans) &
+                        (df_history['B365A'] >= man_a - tolerans) & (df_history['B365A'] <= man_a + tolerans)
+                    )
+                    benzer_maclar = df_history[mask].copy()
+                    benzer_maclar = benzer_maclar.dropna(subset=['HTR', 'FTR'])
+                    toplam_benzer_mac = len(benzer_maclar)
 
-    for r in all_vals:
-        if len(r) > 10:
-            status = r[3]
-            if status in ["Kazandı_Sonuc", "Sanal_Kazandı"]:
-                kazanan_adet += 1
-                tutar = float(str(r[1]).replace(',','.').strip())
-                oran = float(str(r[2]).replace(',','.').strip())
-                kazanan_yatirim += tutar
-                kazanan_kar += (tutar * oran) - tutar
-            elif status in ["Kaybetti_Sonuc", "Sanal_Kaybetti"]:
-                kaybeden_adet += 1
-                tutar = float(str(r[1]).replace(',','.').strip())
-                kaybeden_yatirim += tutar
-                kaybeden_zarar += tutar
-                
-    genel_html = f"""
-    <table style="width:100%; text-align:center; border-collapse: collapse; margin-bottom: 30px; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
-        <tr style="background: linear-gradient(to right, #1a202c, #2d3748); color: #a0aec0; font-size: 16px;">
-            <th style="padding: 15px; border-bottom: 2px solid #4a5568;">DURUM</th>
-            <th style="padding: 15px; border-bottom: 2px solid #4a5568;">TOPLAM MAÇ</th>
-            <th style="padding: 15px; border-bottom: 2px solid #4a5568;">TOPLAM YATIRIM</th>
-            <th style="padding: 15px; border-bottom: 2px solid #4a5568;">NET KÂR / ZARAR</th>
-        </tr>
-        <tr style="background-color: rgba(0, 255, 204, 0.05); border-bottom: 1px solid #2d3748;">
-            <td style="padding: 15px; color: #00ffcc; font-weight: 900; font-size: 18px;">✅ KAZANAN</td>
-            <td style="padding: 15px; color: #e2e8f0; font-weight: bold; font-size: 18px;">{kazanan_adet}</td>
-            <td style="padding: 15px; color: #e2e8f0; font-size: 16px;">{kazanan_yatirim:.2f} ₺</td>
-            <td style="padding: 15px; color: #00ffcc; font-weight: 900; font-size: 18px;">+{kazanan_kar:.2f} ₺</td>
-        </tr>
-        <tr style="background-color: rgba(255, 51, 102, 0.05);">
-            <td style="padding: 15px; color: #ff3366; font-weight: 900; font-size: 18px;">❌ KAYBEDEN</td>
-            <td style="padding: 15px; color: #e2e8f0; font-weight: bold; font-size: 18px;">{kaybeden_adet}</td>
-            <td style="padding: 15px; color: #e2e8f0; font-size: 16px;">{kaybeden_yatirim:.2f} ₺</td>
-            <td style="padding: 15px; color: #ff3366; font-weight: 900; font-size: 18px;">-{kaybeden_zarar:.2f} ₺</td>
-        </tr>
-    </table>
-    """
-    st.markdown(genel_html, unsafe_allow_html=True)
-    
-    st.markdown("### 💎 PAZAR BAZLI KÂR/ZARAR (ROI) ANALİZİ")
-    ai_stats = []
-    for r in all_vals:
-        if len(r) > 10:
-            status = r[3]
-            if status in ["Kazandı_Sonuc", "Sanal_Kazandı", "Kaybetti_Sonuc", "Sanal_Kaybetti"]:
-                won = status in ["Kazandı_Sonuc", "Sanal_Kazandı"]
-                tutar = float(str(r[1]).replace(',','.').strip())
-                oran = float(str(r[2]).replace(',','.').strip())
-                if tutar == 0: tutar = 100.0 
-                kar_zarar = (tutar * oran) - tutar if won else -tutar
-                pazarlar = r[10].split('#')
-                for p in pazarlar:
-                    pazar_adi = p.strip()
-                    if not pazar_adi[0].isdigit() or "Üst" in pazar_adi or "Alt" in pazar_adi or "MS" in pazar_adi:
-                        ai_stats.append({"Pazar": pazar_adi, "Sonuc": won, "Yatirim": tutar, "Net_Kar": kar_zarar})
+                    if toplam_benzer_mac < 10:
+                        st.warning(f"🚨 Geçmişte bu oran kalıbına sahip yeterli maç oynanmamış (Sadece {toplam_benzer_mac} maç bulundu). Sağlıklı bir istatistik verilemiyor.")
+                    else:
+                        st.success(f"✅ Geçmiş 4 yılda tam **{toplam_benzer_mac}** adet maç bu oran kalıbıyla oynanmış. İşte somut sonuçları:")
+                        
+                        ht_map = {'H': '1', 'D': '0', 'A': '2'}
+                        ft_map = {'H': '1', 'D': '0', 'A': '2'}
+                        benzer_maclar['IYMS_Kombinasyon'] = benzer_maclar['HTR'].map(ht_map) + "/" + benzer_maclar['FTR'].map(ft_map)
+                        
+                        sonuclar = benzer_maclar['IYMS_Kombinasyon'].value_counts().reset_index()
+                        sonuclar.columns = ['İY / MS', 'Kaç Kere Geldi']
+                        sonuclar['Gelme İhtimali (%)'] = (sonuclar['Kaç Kere Geldi'] / toplam_benzer_mac) * 100
+                        sonuclar['Gelme İhtimali (%)'] = sonuclar['Gelme İhtimali (%)'].apply(lambda x: f"% {x:.1f}")
 
-    if ai_stats:
-        df_stats = pd.DataFrame(ai_stats)
-        market_stats = df_stats.groupby('Pazar').agg(Toplam_Oynanan=('Sonuc', 'count'), Kazanan=('Sonuc', 'sum'), Toplam_Yatirim=('Yatirim', 'sum'), Net_Kar_Zarar=('Net_Kar', 'sum')).reset_index()
-        market_stats['Kaybeden'] = market_stats['Toplam_Oynanan'] - market_stats['Kazanan']
-        market_stats['İsabet Oranı (%)'] = (market_stats['Kazanan'] / market_stats['Toplam_Oynanan']) * 100
-        market_stats['ROI (%) (Kâr Marjı)'] = (market_stats['Net_Kar_Zarar'] / market_stats['Toplam_Yatirim']) * 100
-        market_stats = market_stats.sort_values(by='Net_Kar_Zarar', ascending=False)
-        market_stats['Net_Kar_Zarar'] = market_stats['Net_Kar_Zarar'].apply(lambda x: f"+{x:.2f} ₺" if x > 0 else f"{x:.2f} ₺")
-        market_stats['İsabet Oranı (%)'] = market_stats['İsabet Oranı (%)'].apply(lambda x: f"%{x:.1f}")
-        market_stats['ROI (%) (Kâr Marjı)'] = market_stats['ROI (%) (Kâr Marjı)'].apply(lambda x: f"%{x:.1f}")
-        market_stats.rename(columns={'Pazar': 'Bahis Pazarı'}, inplace=True)
-        market_stats = market_stats[['Bahis Pazarı', 'Toplam_Oynanan', 'Kazanan', 'Kaybeden', 'İsabet Oranı (%)', 'Net_Kar_Zarar', 'ROI (%) (Kâr Marjı)']]
-        st.dataframe(market_stats, use_container_width=True, hide_index=True)
-    else:
-        st.info("Kâr/Zarar tablosu için sonuçlanan maç bekleniyor.")
+                        if hedef_iyms != "Tümünü Sırala":
+                            hedef_veri = sonuclar[sonuclar['İY / MS'] == hedef_iyms]
+                            if not hedef_veri.empty:
+                                kac_kere = hedef_veri.iloc[0]['Kaç Kere Geldi']
+                                yuzde = hedef_veri.iloc[0]['Gelme İhtimali (%)']
+                                st.markdown(f"<div style='background:rgba(255,51,102,0.1); border:1px solid #ff3366; padding:15px; border-radius:8px; text-align:center; margin-bottom:20px;'><h3 style='margin:0; color:#ff3366;'>Senin Seçimin: {hedef_iyms}</h3><p style='margin-top:10px; font-size:18px;'>Geçmişte <b>{toplam_benzer_mac}</b> maçın <b>{kac_kere}</b> tanesinde senin hedefin gelmiş (<b>{yuzde}</b>).</p></div>", unsafe_allow_html=True)
+                            else:
+                                st.warning(f"Geçmişteki {toplam_benzer_mac} maçın HİÇBİRİ {hedef_iyms} olarak bitmemiş!")
+
+                        st.markdown("### 🏆 En Çok Gelen İY/MS Liderlik Tablosu")
+                        st.dataframe(sonuclar, use_container_width=True, hide_index=True)
