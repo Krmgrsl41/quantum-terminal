@@ -168,7 +168,6 @@ def check_match_result_optimized(home, away, target_market, lig_skor_havuzu):
 st.markdown("<h1 style='text-align:center; color:#ff3366; font-size:52px; margin-bottom:0; text-shadow: 0 0 20px rgba(255, 51, 102, 0.4);'>🐺 V3004 APEX GLOBAL</h1>", unsafe_allow_html=True)
 st.markdown("<p style='text-align:center; color:#8b949e; font-size:18px;'>4 Yıllık Derin Arşiv | Alt Lig (Karanlık Maden) Tarayıcısı</p><br>", unsafe_allow_html=True)
 
-# 6. Sekme Eklendi
 tab1, tab5, tab2, tab4, tab3, tab6 = st.tabs(["📡 1. PİYASA TARAMASI", "📊 5. GEÇMİŞ ORAN ARŞİVİ", "🧠 2. DERİN ANALİZ", "🤖 3. OTO-PİLOT", "📈 4. BİLANÇO", "⏱️ 6. İY/MS RADARI"])
 
 c1, c2 = st.columns([2, 1])
@@ -473,6 +472,8 @@ with tab4:
             with st.spinner(f"Global Veri Ağı Devrede..."):
                 oto_oynanan_maclar = 0
                 oynanmis_kombinasyonlar = set()
+                toplu_kayit_listesi = [] # GOOGLE ICIN TOPLU PAKET LISTESI
+                
                 if all_vals:
                     for r in all_vals:
                         if len(r) > 10 and r[3] in ["Bekliyor", "Sanal_Bekliyor"]:
@@ -524,16 +525,24 @@ with tab4:
                         if pazar == "MS 2" and a_odd > h_odd: continue
                         
                         if prob >= THRESHOLD:
-                            if f"{isimler}_{pazar}" not in oynanmis_kombinasyonlar:
-                                bulunan_hedefler.append((pazar, prob, temp_oran))
+                            bulunan_hedefler.append((pazar, prob, temp_oran))
                             
                     for pazar, prob, gercek_oran in bulunan_hedefler:
-                        if sheet:
-                            sheet.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), 100.0, f"{gercek_oran:.2f}", "Sanal_Bekliyor", "0", st.session_state.lokal_kasa, st.session_state.bekleyen_tutar, st.session_state.baslangic_kasa, isimler, m['sport_key'], pazar, f"{prob:.3f}", f"{gercek_oran:.2f}"])
-                            oynanmis_kombinasyonlar.add(f"{isimler}_{pazar}")
+                        isimler_pazar = f"{isimler}_{pazar}"
+                        if isimler_pazar not in oynanmis_kombinasyonlar:
+                            yeni_satir = [datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), 100.0, f"{gercek_oran:.2f}", "Sanal_Bekliyor", "0", st.session_state.lokal_kasa, st.session_state.bekleyen_tutar, st.session_state.baslangic_kasa, isimler, m['sport_key'], pazar, f"{prob:.3f}", f"{gercek_oran:.2f}"]
+                            toplu_kayit_listesi.append(yeni_satir)
+                            oynanmis_kombinasyonlar.add(isimler_pazar)
                             oto_oynanan_maclar += 1
                 
-                if oto_oynanan_maclar > 0: st.success(f"🤖 {oto_oynanan_maclar} adet oran eklendi.")
+                # BÜTÜN TARAMA BİTTİKTEN SONRA GOOGLE'A TEK SEFERDE GÖNDER!
+                if sheet and len(toplu_kayit_listesi) > 0:
+                    try:
+                        sheet.append_rows(toplu_kayit_listesi)
+                    except Exception as e:
+                        st.error(f"Toplu kayıt sırasında bir hata oluştu: {e}")
+
+                if oto_oynanan_maclar > 0: st.success(f"🤖 {oto_oynanan_maclar} adet oran başarıyla eklendi.")
                 else: st.warning(f"Yeni maç kalmadı.")
 
 with tab3:
@@ -613,7 +622,6 @@ with tab3:
                         st.rerun()
                     else: st.info("Maçlar henüz bitmemiş.")
 
-# YEPYENİ 6. SEKME: %100 ÇEVRİMDIŞI VE MANUEL İY/MS RADARI
 with tab6:
     st.markdown("### ⏱️ KESKİN NİŞANCI: İY/MS RADARI (TAMAMEN MANUEL)")
     st.markdown("<p style='color:#a0aec0;'>Gözüne kestirdiğin maçın ana İddaa oranlarını (MS1, MS0, MS2) elle gir. Sistem API'ye hiç bağlanmadan 4 yıllık dev arşivi tarasın ve bu oranlarla geçmişte en çok hangi İY/MS senaryosunun geldiğini sana somut rakamlarla söylesin.</p>", unsafe_allow_html=True)
