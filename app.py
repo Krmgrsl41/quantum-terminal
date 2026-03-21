@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import datetime
+import time
 from scipy.stats import poisson
 import requests
 import io
@@ -562,7 +563,7 @@ with tab3:
         if st.button("🤖 OTONOM DENETÇİYİ ÇALIŞTIR", use_container_width=True, key="otonom_denetci_btn"):
             if not api_key: st.error("API Anahtarı eksik!")
             else:
-                with st.spinner("Skorlar denetleniyor (Cache Sistemi Devrede)..."):
+                with st.spinner("Skorlar denetleniyor (API Koruma Sistemi Devrede)..."):
                     bekleyen_ligler = set()
                     for r in all_vals:
                         if len(r) > 12 and r[3] in ["Bekliyor", "Sanal_Bekliyor"]:
@@ -596,26 +597,30 @@ with tab3:
                             
                             if nihai_sonuc != "BEKLİYOR":
                                 updates_made = True
-                                sheet.update_cell(idx+1, 4, "Bekliyor_Kapandı" if not is_sanal else "Sanal_Kapandı")
-                                net_kar = (b_tutar * b_oran) - b_tutar if nihai_sonuc == "KAZANDI" else -b_tutar
-                                k_z_metni = f"+{net_kar:.2f}" if net_kar > 0 else f"{net_kar:.2f}"
-                                yeni_satir = [datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), b_tutar, b_oran]
-                                
-                                if nihai_sonuc == "KAZANDI":
-                                    if not is_sanal:
-                                        st.session_state.lokal_kasa += (b_tutar * b_oran)
-                                        st.session_state.bekleyen_tutar = max(0.0, st.session_state.bekleyen_tutar - b_tutar)
-                                        yeni_satir.extend(["Kazandı_Sonuc", k_z_metni])
-                                    else: yeni_satir.extend(["Sanal_Kazandı", k_z_metni]) 
-                                else:
-                                    if not is_sanal:
-                                        st.session_state.bekleyen_tutar = max(0.0, st.session_state.bekleyen_tutar - b_tutar)
-                                        yeni_satir.extend(["Kaybetti_Sonuc", k_z_metni])
-                                    else: yeni_satir.extend(["Sanal_Kaybetti", k_z_metni]) 
+                                try:
+                                    sheet.update_cell(idx+1, 4, "Bekliyor_Kapandı" if not is_sanal else "Sanal_Kapandı")
+                                    net_kar = (b_tutar * b_oran) - b_tutar if nihai_sonuc == "KAZANDI" else -b_tutar
+                                    k_z_metni = f"+{net_kar:.2f}" if net_kar > 0 else f"{net_kar:.2f}"
+                                    yeni_satir = [datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), b_tutar, b_oran]
                                     
-                                yeni_satir.extend([st.session_state.lokal_kasa, st.session_state.bekleyen_tutar, st.session_state.baslangic_kasa])
-                                yeni_satir.extend([r[8] + f" (Skorlar: {' | '.join(skorlar)})"] + r[9:])
-                                sheet.append_row(yeni_satir)
+                                    if nihai_sonuc == "KAZANDI":
+                                        if not is_sanal:
+                                            st.session_state.lokal_kasa += (b_tutar * b_oran)
+                                            st.session_state.bekleyen_tutar = max(0.0, st.session_state.bekleyen_tutar - b_tutar)
+                                            yeni_satir.extend(["Kazandı_Sonuc", k_z_metni])
+                                        else: yeni_satir.extend(["Sanal_Kazandı", k_z_metni]) 
+                                    else:
+                                        if not is_sanal:
+                                            st.session_state.bekleyen_tutar = max(0.0, st.session_state.bekleyen_tutar - b_tutar)
+                                            yeni_satir.extend(["Kaybetti_Sonuc", k_z_metni])
+                                        else: yeni_satir.extend(["Sanal_Kaybetti", k_z_metni]) 
+                                        
+                                    yeni_satir.extend([st.session_state.lokal_kasa, st.session_state.bekleyen_tutar, st.session_state.baslangic_kasa])
+                                    yeni_satir.extend([r[8] + f" (Skorlar: {' | '.join(skorlar)})"] + r[9:])
+                                    sheet.append_row(yeni_satir)
+                                    time.sleep(1.5) # GOOGLE SHEETS API BAN KORUMASI EKLENDİ
+                                except:
+                                    time.sleep(2.0)
                     
                     if updates_made:
                         st.success("✅ Maçlar sonuçlandırıldı!")
